@@ -13,7 +13,7 @@ SYSTYPE="#SYSTYPE#"
 EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
-         nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o
+         nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o cubspl.o
 
 INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
 
@@ -38,6 +38,7 @@ OPTIONS =  $(OPT)
 
 
 CC       =   mpicc        # sets the C-compiler (default)
+FC			=   mpif90
 OPTIMIZE =   -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
 MPICHLIB = # -lmpich
 FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
@@ -175,6 +176,9 @@ CFLAGS =   $(OPTIONS)  $(OPTIMIZE)  $(FFTW_INCL) $(GSL_INCL)
 
 $(EXEC): $(OBJS) 
 	$(CC) $(OPTIMIZE) $(OBJS) $(LIBS)   -o  $(EXEC)  
+
+cubspl.o: cubspl.f
+	$(FC) -c cubspl.f
 
 $(OBJS): $(INCL) 
 
