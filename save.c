@@ -53,6 +53,8 @@ void save_local_data(void)
   size_t bytes;
   float *block;
   int *blockid;
+  int blkheadsize = sizeof(int) + 4 * sizeof(char);
+  int nextblock;
   long long *blocklongid;
   int blockmaxlen, maxidlen, maxlongidlen;
   int4byte dummy;
@@ -145,6 +147,14 @@ void save_local_data(void)
   header.hashtabsize = 0;
 
   dummy = sizeof(header);
+#ifdef FORMAT_TWO
+      /*Write format 2 header header*/
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+      my_fwrite("HEAD", sizeof(char), 4, fd);
+      nextblock = dummy + 2 * sizeof(int);
+      my_fwrite(&nextblock, sizeof(int), 1, fd);
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   my_fwrite(&header, sizeof(header), 1, fd);
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
@@ -172,6 +182,16 @@ void save_local_data(void)
   dummy = sizeof(float) * 3 * NumPart;
 #ifdef  PRODUCEGAS
   dummy *= 2;
+#endif
+#ifdef FORMAT_TWO
+          /*Write position header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("POS ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing position header*/
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -221,6 +241,16 @@ void save_local_data(void)
   dummy = sizeof(float) * 3 * NumPart;
 #ifdef  PRODUCEGAS
   dummy *= 2;
+#endif
+#ifdef FORMAT_TWO
+          /*Write velocity header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("VEL ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing velocity header*/
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -279,6 +309,16 @@ void save_local_data(void)
 #endif
 #ifdef  PRODUCEGAS
   dummy *= 2;
+#endif
+#ifdef FORMAT_TWO
+          /*Write ID header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("ID  ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing ID header*/
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -350,6 +390,16 @@ void save_local_data(void)
   /* write zero temperatures if needed */
 #ifdef  PRODUCEGAS
   dummy = sizeof(float) * NumPart;
+#ifdef FORMAT_TWO
+          /*Write temperature header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("U   ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing temperature header*/
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
