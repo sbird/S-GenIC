@@ -10,7 +10,7 @@ SYSTYPE="#SYSTYPE#"
 #SYSTYPE="OPA-Cluster64"
 
 
-EXEC   = #EXECNAME#
+EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
          nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o
@@ -38,8 +38,10 @@ OPTIONS =  $(OPT)
 
 
 CC       =   mpicc        # sets the C-compiler (default)
-OPTIMIZE =   -O3 -Wall    # optimization and warning flags (default)
-MPICHLIB =  -lmpich
+OPTIMIZE =   -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
+MPICHLIB = # -lmpich
+FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
+FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
 
 
 
