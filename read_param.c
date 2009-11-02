@@ -136,6 +136,18 @@ void read_parameterfile(char *fname)
   addr[nt] = &WDM_PartMass_in_kev;
   id[nt++] = FLOAT;
 
+  strcpy(tag[nt], "NumKnots");
+  addr[nt] = &NumKnots;
+  id[nt++] = INT;
+
+  strcpy(tag[nt], "KnotPositions");
+  addr[nt] = &KnotPositions;
+  id[nt++] = STRING;
+
+  strcpy(tag[nt], "KnotValues");
+  addr[nt] = &KnotValues;
+  id[nt++] = STRING;
+
   if((fd = fopen(fname, "r")))
     {
       while(!feof(fd))

@@ -41,6 +41,10 @@ double InitTime;
 double Redshift;
 double MassTable[6];
 
+/*Parameters for spline knots*/
+int NumKnots;
+char KnotValues[400];
+char KnotPositions[400];
 
 char OutputDir[1000], FileBase[1000];
 int NumFilesWrittenInParallel;

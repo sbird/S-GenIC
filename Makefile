@@ -25,7 +25,7 @@ OPT   +=  -DPRODUCEGAS   # Set this to automatically produce gas particles
 
 #OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
 
-#OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on
+OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on
                                      # particle type
 
 OPT   +=  -DNO64BITID    # switch this on if you want normal 32-bit IDs

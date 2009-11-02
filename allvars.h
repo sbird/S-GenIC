@@ -76,6 +76,10 @@ extern int      NumPart;
 extern int      NTaskWithN;
 
 
+/*Parameters for spline knots*/
+extern int NumKnots;
+extern char KnotValues[400];
+extern char KnotPositions[400];
 extern int      *Slab_to_task;
 
 

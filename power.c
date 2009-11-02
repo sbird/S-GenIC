@@ -10,20 +10,62 @@ static double AA, BB, CC;
 static double nu;
 static double Norm;
 
-
+/*This stores the conversion between the tables and the internal units. By default 1e-3*/
+static double kctog;
+/* These are arrays to store the spline parameters.
+ * Because we don't know the size of them until we know NumKnots, we 
+ * can't just read them in read_param.h, so we read them in as a string
+ * in KnotValues and KnotPositions, and then we do some manipulation to turn 
+ * them into these arrays in initialise_splines.*/
+static double *KnotPos;
+static double *SplineCoeffs;
+/*This is a function to compute the splines*/
+extern void cubspl_(double *, double *, int *, int *, int *);
+/*This prints the CAMB transfer function*/
+double tk_CAMB(double k, int Type);
+/*This prints the value of the spline at k*/
+double splineval(double k);
+/*Power spectra*/
+double PowerSpec_CAMB(double k, int Type);
+double PowerSpec_Spline(double k, int Type);
 static int NPowerTable;
+#define APRIM 2.4e-9
 
+/*Structure for matter power table*/
 static struct pow_table
 {
   double logk, logD;
 }
  *PowerTable;
 
+ /*Structure for transfer table*/
+static struct trans_row{
+	double k;
+	double T_CDM;
+	double T_b;
+	double T_g;
+	double T_r;
+	double T_n;
+	double T_t;
+} *transfer_tables;
+
+/*Search function*/
+int find_less(double k);
 
 double PowerSpec(double k)
 {
   double power, alpha, Tf;
-
+  /*ADD THE FACTOR OF (2π)^3 to convert from CAMB conventions to GADGET conventions!!*/
+#ifdef DIFFERENT_TRANSFER_FUNC
+  if(WhichSpectrum == 3)
+  {
+     return PowerSpec_CAMB(k,Type)/pow(2*M_PI,3);
+  }
+  if(WhichSpectrum==4)
+  {
+     return PowerSpec_Spline(k,Type)/pow(2*M_PI,3);
+  }
+#endif
   switch (WhichSpectrum)
     {
     case 1:
@@ -80,6 +122,87 @@ double PowerSpec_DM_2ndSpecies(double k)
 }
 
 
+/*Read the transfer tables from CAMB*/
+void read_transfer_table(void)
+{
+  /* Transfer file format:  
+   * k/h Delta_CDM/k2 Delta_b/k2 Delta_g/k2 Delata_r/k2 Delta_nu/k2 Delta_tot/k2
+   *     CDM, baryon,photon,massless neutrino, massive neutrinos, and total (massive)*/
+	FILE *trans;
+	char buf[200];
+	int index;
+	int filelines=0;
+	struct trans_row tmp_row;
+        kctog=UnitLength_in_cm
+                /InputSpectrum_UnitLength_in_cm;
+	/*Open file*/
+	sprintf(buf,FileWithInputSpectrum);
+	if(!(trans=fopen(buf,"r")))
+	{
+		fprintf(stderr,"Can't open transfer file %s! You probably forgot to create it!\n",buf);
+		FatalError(17);
+	} 
+	/*Work out how many lines in file*/
+	if(NPowerTable)
+	{
+		fprintf(stderr,"read_CAMB_tables has been called more than once! Failing.");
+		FatalError(19);
+	}
+	while(fscanf(trans," %lg %lg %lg %lg %lg %lg %lg\n",&tmp_row.k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)==7)
+	{
+		filelines++;
+		if(feof(trans))
+			break;
+	}
+	if(ferror(trans))
+	{
+		fprintf(stderr,"Error reading file for the first time: %d",errno);
+		FatalError(21);
+	}
+	if(ThisTask==0)
+		printf("Found %d rows in input CAMB transfer file\n",filelines);
+	/*Allocate array with enough space*/
+	transfer_tables=malloc(filelines*sizeof(struct trans_row));
+	if(transfer_tables==NULL)
+	{
+		fprintf(stderr, "Failed to allocate memory for transfer tables");
+		FatalError(23);
+	}
+	/*Read a line, first seeking back to the start of the file.*/
+	rewind(trans);
+	for(index=0;index < filelines; index++)
+	{
+		if(fscanf(trans,"  %lg  %lg  %lg  %lg  %lg  %lg  %lg",&tmp_row.k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)!=7)
+			break;
+		/* k needs to go from (h/Mpc) units to internal Gadget units (h/kpc) by default.
+                 * kctog is by default 1e-3 */
+		tmp_row.k *= kctog;
+		/*Append line to table.*/
+		transfer_tables[index]=tmp_row;
+		NPowerTable++;
+		if(feof(trans))
+			break;
+	}
+	if(ferror(trans))
+	{
+		fprintf(stderr,"Error reading file for the second time: %d",errno);
+		FatalError(25);
+	}
+	fclose(trans);
+	/*The CAMB T_f/k_c is in units of Mpc^2! NOTE NO h!*/
+	double tctog=(HubbleParam*HubbleParam)/(kctog*kctog);
+	for(index=0; index<NPowerTable; index++)
+	{
+	/*The transfer function should be normalized to about 1 on large scales.*/
+		transfer_tables[index].T_CDM *= tctog;
+		transfer_tables[index].T_g *= tctog;
+		transfer_tables[index].T_b *= tctog;
+		transfer_tables[index].T_r *= tctog;
+		transfer_tables[index].T_n *= tctog;
+		transfer_tables[index].T_t *= tctog;
+	}
+	return;
+}
 
 void read_power_table(void)
 {
@@ -172,6 +295,8 @@ void initialize_powerspectrum(void)
 
   if(WhichSpectrum == 2)
     read_power_table();
+  if(WhichSpectrum > 2)
+    read_transfer_table();
 
 #ifdef DIFFERENT_TRANSFER_FUNC
   Type = 1;
@@ -180,6 +305,7 @@ void initialize_powerspectrum(void)
   Norm = 1.0;
   res = TopHatSigma2(R8);
 
+  if(WhichSpectrum < 3){
   if(ThisTask == 0 && WhichSpectrum == 2)
     printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
 
@@ -187,8 +313,13 @@ void initialize_powerspectrum(void)
 
   if(ThisTask == 0 && WhichSpectrum == 2)
     printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-
-  Dplus = GrowthFactor(InitTime, 1.0);
+          Dplus = GrowthFactor(InitTime, 1.0);
+  }
+  else{
+    if(ThisTask == 0)
+        printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
+    Dplus=1.0;
+  }
 }
 
 double PowerSpec_Tabulated(double k)
@@ -212,9 +343,9 @@ double PowerSpec_Tabulated(double k)
     {
       binmid = (binhigh + binlow) / 2;
       if(logk < PowerTable[binmid].logk)
-	binhigh = binmid;
+      	binhigh = binmid;
       else
-	binlow = binmid;
+      	binlow = binmid;
     }
 
   dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
@@ -246,6 +377,15 @@ double PowerSpec_EH(double k)	/* Eisenstein & Hu */
 }
 
 
+double PowerSpec_CAMB(double k, int Type)
+{
+	return APRIM*2*M_PI*M_PI*k*pow(k,PrimordialIndex-1.0)*pow(tk_CAMB(k, Type),2);
+}
+
+double PowerSpec_Spline(double k,int Type)
+{
+  return splineval(k)*k*pow(tk_CAMB(k, Type),2);
+}
 
 
 double tk_eh(double k)		/* from Martin White */
@@ -279,7 +419,59 @@ double tk_eh(double k)		/* from Martin White */
   return (tmp);
 }
 
+/*Return interpolated value of transfer function from table*/
+double tk_CAMB(double k, int Type)
+{
+	int lessind;
+	double T1,T2,k1,k2;
+	double tkout;
+	if(NPowerTable==0)
+	{
+		fprintf(stderr, "Some kind of error; tables not initialised!\n");
+		FatalError(18);
+	}
+	/*No power outside of our boundaries.*/
+	if((k>transfer_tables[NPowerTable-1].k) || (k<transfer_tables[0].k))
+		return 0;
+	lessind=find_less(k);
+	/*Linear interpolation. Different transfer functions used for baryons and DM*/
+        if(Type==1)
+        {
+        	T1=transfer_tables[lessind].T_CDM;
+        	T2=transfer_tables[lessind+1].T_CDM;
+        }
+        if(Type==0)
+        {
+        	T1=transfer_tables[lessind].T_b;
+        	T2=transfer_tables[lessind+1].T_b;
+        }
+        else
+        {
+        	T1=transfer_tables[lessind].T_t;
+        	T2=transfer_tables[lessind+1].T_t;
+        }
+	k1=transfer_tables[lessind].k;
+	k2=transfer_tables[lessind+1].k;
+	//Do it in log space!
+	tkout=exp((log(T2)*(log(k)-log(k1))+log(T1)*(log(k2)-log(k)))/(log(k2)-log(k1)));
+	return tkout;
+}
 
+/*Binary search*/
+int find_less(double k)
+{
+	int j,jlow=0,jhigh=NPowerTable-1;
+	/*What I need here is an "associative array", but better keep C compat for now.*/
+	while(jhigh-jlow > 1)
+	{
+		j=floor((jhigh+jlow)/2);
+		if(transfer_tables[j].k>k )
+			jhigh=j;
+		else
+			jlow=j;
+	}
+	return jlow;
+}
 
 double TopHatSigma2(double R)
 {
@@ -425,4 +617,136 @@ void add_WDM_thermal_speeds(float *vel)
   vel[0] += vx;
   vel[1] += vy;
   vel[2] += vz;
+}
+
+/* Function to get a spline from a set of knots and values.*/
+void initialise_splines(void)
+{
+   int i=0,j=0;
+   int strindex=0;
+   /*Temporary variable to store the split strings*/
+#define STRBFSZ 50
+   char strs[NumKnots][STRBFSZ];
+   if(NumKnots<2)
+   {
+       fprintf(stderr, "Need at least two knots for splines! NumKnots=%d\n",NumKnots);
+       FatalError(5);
+   }
+   KnotPos=malloc(NumKnots*sizeof(double));
+   /*Note this is going to have to be stored in FORTRAN ORDER!
+    * So the FIRST index varies most quickly.
+    * ie, it is stored S(0,0), S(1,0)... S(3,0), S(0,1)...*/
+   SplineCoeffs=malloc(NumKnots*4*sizeof(double));
+   if(!KnotPos || !SplineCoeffs)
+   {
+       fprintf(stderr,"Failed to allocate memory for splines! NumKnots=%d\n", NumKnots);
+       FatalError(5);
+   }
+   /*Now we must parse the strings, C-style!*/
+   /*First we split them into NumKnots smaller strings, then we run atof on them*/
+   /*Read KnotValues*/
+   while(KnotValues[i] != '\0')
+   {
+       if(j>STRBFSZ)
+       {
+          fprintf(stderr, "Not enough buffer space (%d) to for knot positions!\n",STRBFSZ);
+          fprintf(stderr, "Read so far: %d, %s\n",j,strs[strindex]);
+          FatalError(5);
+       }
+       if(KnotValues[i] == ',')
+       {
+         /*Terminate the string*/
+         strs[strindex++][j]='\0';
+         i++;
+         j=0;
+         continue;
+       }
+       strs[strindex][j++]=KnotValues[i++];
+   }
+   /*Terminate final string*/
+   strs[strindex++][j]='\0';
+   if(strindex!=NumKnots)
+   {
+      fprintf(stderr, "Error:Could not read %d knot values. Read %d\n", NumKnots, strindex);
+      FatalError(5);
+   }
+   for(i=0;i<NumKnots*4;i++)
+           SplineCoeffs[i]=0;
+   for(i=0; i<strindex; i++)
+      /*FORTRAN ORDER!
+       * Cubic spline, so four entries in each first coeff*/
+      SplineCoeffs[i*4]=atof(strs[i]);
+   /*Read KnotPositions*/
+   strindex=0; 
+   j=0;
+   i=0;
+   while(KnotPositions[i] != '\0')
+   {
+       if(j>STRBFSZ)
+       {
+          fprintf(stderr, "Not enough buffer space (%d) to for knot positions!\n",STRBFSZ);
+          fprintf(stderr, "Read so far: %d, %s\n",j,strs[strindex]);
+          FatalError(5);
+       }
+       if(KnotPositions[i] == ',')
+       {
+         /*Terminate the string*/
+         strs[strindex++][j]='\0';
+         i++;
+         j=0;
+         continue;
+       }
+       strs[strindex][j++]=KnotPositions[i++];
+   }
+   /*Terminate final string*/
+   strs[strindex++][j]='\0';
+   if(strindex!=NumKnots)
+   {
+      fprintf(stderr, "Error:Could not read %d knot positions. Read %d\n", NumKnots, strindex);
+      FatalError(5);
+   }
+   for(i=0; i<strindex; i++)
+      KnotPos[i]=log(atof(strs[i])*kctog);
+   /*We now (hopefully) have a list of spline parameters, so feed it to cubspl
+    * remember to use the right linkage! Usually this is just cubspl_, 
+    * as there are no modules in f77. */
+   /*The last two arguments specify the boundary conditions on the splines. 
+    * 0 0 means a cts third derivative at both ends */ 
+   /* Usually take a very wide k because of a wide kernel 
+    * P(k) are flat outside  area with statistical power, so BCs are zero derivatives at edge. */
+   int bc=0;
+   cubspl_(KnotPos, SplineCoeffs, &NumKnots, &bc,&bc);
+   /*Hopefully we now have a spline.*/
+   /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
+    * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
+   return;
+}
+
+/*Function to recover the value of the spline at a given k*/
+double splineval(double k)
+{
+   int i=0,ilow=0, ihigh=NumKnots-1;
+   /*Find index of this k-value*/
+   double logk=log(k);
+   if(logk >= KnotPos[0])
+   {
+      if(logk > KnotPos[ihigh])
+         i=ihigh;
+      else
+      	while(ihigh-ilow > 1)
+   	   {
+      		i=floor((ihigh+ilow)/2);
+      		if(KnotPos[i]>logk )
+   	   		ihigh=i;
+      		else
+      			ilow=i;
+      	}
+   }
+   i=ilow;
+   /*For the final knot, the cubic and quadratic terms are a bit strange. 
+    * Try not to do extrapolation. */
+   /*FORTRAN ORDER*/
+   return SplineCoeffs[i*4]+SplineCoeffs[i*4+1]*(logk-KnotPos[i])
+           +SplineCoeffs[i+4+2]*pow(logk-KnotPos[i],2)/2.0
+           +SplineCoeffs[i+4+3]*pow(logk-KnotPos[i],3)/6.0;
 }

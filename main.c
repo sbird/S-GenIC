@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
-#include <drfftw_mpi.h>
+#include <srfftw_mpi.h>
 #include <mpi.h>
 #include <gsl/gsl_rng.h>
 
@@ -412,16 +412,25 @@ void displacement_fields(void)
 		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk] * f6 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k] * f7 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk] * f8;
+                  if(isnan(dis)){
+                   fprintf(stderr, "i=%d j=%d k=%d Nmesh=%d f1=%g f2=%g f3=%g f4=%g f5=%g f6=%g f7=%g f8=%g\n",i,j,k,Nmesh,f1,f2,f3,f4,f5,f6,f7,f8);
+                   fprintf(stderr, "%g %g %g %g %g %g %g %g\n",Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k],Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
+		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k], 
+		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
+		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk]);
+                   FatalError(2);
+                  }
 
 		  P[n].Vel[axes] = dis;
-
 		  if(dis > maxdisp)
 		    maxdisp = dis;
 		}
 	    }
 	}
     }
-
 
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
   for(n = 0; n < NumPart; n++)
