@@ -31,7 +31,7 @@ OPT	+= -DFORMAT_TWO			#Set this if you want to output IC files in format 2.
 
 OPT   +=  -DNO64BITID    # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
-
+OPT	+= -DDOUBLEPRECISION_FFTW
 
 
 OPTIONS =  $(OPT)

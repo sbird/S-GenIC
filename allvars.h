@@ -1,4 +1,8 @@
-#include <drfftw_mpi.h>
+#ifdef DOUBLEPRECISION_FFTW
+   #include <drfftw_mpi.h>
+#else
+   #include <srfftw_mpi.h>
+#endif
 
 #define  PI          3.14159265358979323846 
 #define  GRAVITY     6.672e-8

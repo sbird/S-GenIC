@@ -291,7 +291,7 @@ void initialize_powerspectrum(void)
   nu = 1.13;
 
   R8 = 8 * (3.085678e24 / UnitLength_in_cm);	/* 8 Mpc/h */
-
+  Dplus=1.0;
 
   if(WhichSpectrum == 2)
     read_power_table();
@@ -435,21 +435,21 @@ double tk_CAMB(double k, int Type)
 		return 0;
 	lessind=find_less(k);
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
-        if(Type==1)
-        {
-        	T1=transfer_tables[lessind].T_CDM;
-        	T2=transfer_tables[lessind+1].T_CDM;
-        }
-        if(Type==0)
-        {
-        	T1=transfer_tables[lessind].T_b;
-        	T2=transfer_tables[lessind+1].T_b;
-        }
-        else
-        {
+/*         if(Type==1) */
+/*         { */
+/*         	T1=transfer_tables[lessind].T_CDM; */
+/*         	T2=transfer_tables[lessind+1].T_CDM; */
+/*         } */
+/*         if(Type==0) */
+/*         { */
+/*         	T1=transfer_tables[lessind].T_b; */
+/*         	T2=transfer_tables[lessind+1].T_b; */
+/*         } */
+/*         else */
+/*         { */
         	T1=transfer_tables[lessind].T_t;
         	T2=transfer_tables[lessind+1].T_t;
-        }
+/*         } */
 	k1=transfer_tables[lessind].k;
 	k2=transfer_tables[lessind+1].k;
 	//Do it in log space!

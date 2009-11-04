@@ -1,6 +1,10 @@
 #include <math.h>
 #include <stdlib.h>
-#include <srfftw_mpi.h>
+#ifdef DOUBLEPRECISION_FFTW
+   #include <drfftw_mpi.h>
+#else
+   #include <srfftw_mpi.h>
+#endif
 #include <mpi.h>
 #include <gsl/gsl_rng.h>
 
@@ -625,7 +629,7 @@ void print_spec(void)
 	      knl = 0;
 	    }
 
-	  fprintf(fd, "%12g %12g    %12g %12g\n", k, dl, knl, dnl);
+	  fprintf(fd, "%12g %12g %12g  %12g %12g\n", k,po, dl, knl, dnl);
 	}
       fclose(fd);
     }

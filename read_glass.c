@@ -272,7 +272,7 @@ int find_files(char *fname)
 
       return header.num_files;
     }
-
+   fprintf(stderr,"Error! Glass file not found as %s or %s. Bailing.\n",buf,buf1);
   FatalError(121);
   return 0;
 }
