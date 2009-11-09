@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  print_spec();
+/*   print_spec(); */
 
   MPI_Finalize();		/* clean up & finalize MPI */
   exit(0);
@@ -146,8 +146,10 @@ void displacement_fields(void)
   for(Type = MinType; Type <= MaxType; Type++)
 #endif
     {
+#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
       if(ThisTask==0)
           fprintf(stderr, "Starting type %d\n",Type);
+#endif
       for(axes = 0; axes < 3; axes++)
 	{
 	  if(ThisTask == 0)
