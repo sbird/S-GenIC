@@ -146,6 +146,8 @@ void displacement_fields(void)
   for(Type = MinType; Type <= MaxType; Type++)
 #endif
     {
+      if(ThisTask==0)
+          fprintf(stderr, "Starting type %d\n",Type);
       for(axes = 0; axes < 3; axes++)
 	{
 	  if(ThisTask == 0)

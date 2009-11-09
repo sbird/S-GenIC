@@ -90,7 +90,7 @@ void save_local_data(void)
   qsort(P, NumPart, sizeof(struct part_data), compare_type);  /* sort particles by type, because that's how they should be stored in a gadget binary file */
 
   for(i = 0; i < 3; i++)
-    header.npartTotal[i] = header1.npartTotal[i + 1] * GlassTileFac * GlassTileFac * GlassTileFac;
+    header.npartTotal[i] = header1.npartTotal[i] * GlassTileFac * GlassTileFac * GlassTileFac;
 
   for(i = 0; i < NumPart; i++)
     header.npart[P[i].Type]++;
@@ -101,8 +101,7 @@ void save_local_data(void)
 
   if(header.npartTotal[1])
     header.mass[1] =
-      (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box,
-											    3) /
+      (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box,3) /
       (header.npartTotal[1]);
 
   if(header.npartTotal[2])
@@ -203,7 +202,6 @@ void save_local_data(void)
 	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + shift_gas);
 #endif
 	}
-
       pc++;
 
       if(pc == blockmaxlen)
@@ -424,6 +422,16 @@ void save_local_data(void)
   if(header.npart[0])
     {
       dummy = sizeof(float) * header.npart[0];
+#ifdef FORMAT_TWO
+          /*Write temperature header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("U   ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing temperature header*/
+#endif
       my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
       for(i = 0, pc = 0; i < header.npart[0]; i++)

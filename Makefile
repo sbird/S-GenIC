@@ -19,11 +19,11 @@ INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
 
 
 
-OPT   +=  -DPRODUCEGAS   # Set this to automatically produce gas particles 
+#OPT   +=  -DPRODUCEGAS   # Set this to automatically produce gas particles 
                          # for a single DM species in the input file by interleaved by a half a grid spacing
 
 
-#OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
+OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
 
 OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on
                                     # particle type

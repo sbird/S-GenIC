@@ -96,6 +96,7 @@ double PowerSpec(double k)
 
   if(Type == 2)
     {
+            fprintf(stderr,"type 2! SECOND VARIETY!\n");
       power = PowerSpec_DM_2ndSpecies(k);
     }
 
@@ -435,21 +436,21 @@ double tk_CAMB(double k, int Type)
 		return 0;
 	lessind=find_less(k);
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
-/*         if(Type==1) */
-/*         { */
-/*         	T1=transfer_tables[lessind].T_CDM; */
-/*         	T2=transfer_tables[lessind+1].T_CDM; */
-/*         } */
-/*         if(Type==0) */
-/*         { */
-/*         	T1=transfer_tables[lessind].T_b; */
-/*         	T2=transfer_tables[lessind+1].T_b; */
-/*         } */
-/*         else */
-/*         { */
+        if(Type==1)
+        {
+        	T1=transfer_tables[lessind].T_CDM;
+        	T2=transfer_tables[lessind+1].T_CDM;
+        }
+        else if(Type==0)
+        {
+        	T1=transfer_tables[lessind].T_b;
+        	T2=transfer_tables[lessind+1].T_b;
+        }
+        else
+        {
         	T1=transfer_tables[lessind].T_t;
         	T2=transfer_tables[lessind+1].T_t;
-/*         } */
+        }
 	k1=transfer_tables[lessind].k;
 	k2=transfer_tables[lessind+1].k;
 	//Do it in log space!

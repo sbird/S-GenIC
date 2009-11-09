@@ -83,7 +83,7 @@ void read_glass(char *fname)
 
 	  if(dummy != sizeof(float) * 3 * nlocal || dummy2 != sizeof(float) * 3 * nlocal)
 	    {
-	      printf("incorrect block structure in positions block!\n");
+	      printf("incorrect block structure in positions block! dummy=%d dummy2=%d\n",dummy,dummy2);
 	      FatalError(3);
 	    }
 	  skip += nlocal;
@@ -121,11 +121,11 @@ void read_glass(char *fname)
   for(type = 0; type < 6; type++)
     if(header1.npartTotal[type])
       {
-	if(MinType > type - 1)
-	  MinType = type - 1;
+	if(MinType > type)
+	  MinType = type;
 
-	if(MaxType < type - 1)
-	  MaxType = type - 1;
+	if(MaxType < type)
+	  MaxType = type;
       }
 #endif
 
@@ -219,7 +219,7 @@ void read_glass(char *fname)
 		      P[count].Pos[1] = y;
 		      P[count].Pos[2] = z;
 #ifdef  MULTICOMPONENTGLASSFILE
-		      P[count].Type = type - 1;
+		      P[count].Type = type;
 #endif
 		      P[count].ID = IDStart;
 
