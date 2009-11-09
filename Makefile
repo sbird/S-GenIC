@@ -23,10 +23,9 @@ INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
                          # for a single DM species in the input file by interleaved by a half a grid spacing
 
 
-OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
+#OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
 
-OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on
-                                    # particle type
+OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
 OPT	+= -DFORMAT_TWO			#Set this if you want to output IC files in format 2.												
 
 OPT   +=  -DNO64BITID    # switch this on if you want normal 32-bit IDs

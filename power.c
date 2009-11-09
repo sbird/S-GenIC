@@ -436,6 +436,7 @@ double tk_CAMB(double k, int Type)
 		return 0;
 	lessind=find_less(k);
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
+#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
         if(Type==1)
         {
         	T1=transfer_tables[lessind].T_CDM;
@@ -448,9 +449,12 @@ double tk_CAMB(double k, int Type)
         }
         else
         {
+#endif
         	T1=transfer_tables[lessind].T_t;
         	T2=transfer_tables[lessind+1].T_t;
+#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
         }
+#endif
 	k1=transfer_tables[lessind].k;
 	k2=transfer_tables[lessind+1].k;
 	//Do it in log space!
