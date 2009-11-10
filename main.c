@@ -51,7 +51,6 @@ int main(int argc, char **argv)
 
   if(ThisTask == 0)
     {
-      printf("\nIC's generated.\n\n");
       printf("Initial scale factor = %g\n", InitTime);
       printf("\n");
     }
@@ -89,8 +88,7 @@ void displacement_fields(void)
 
   if(ThisTask == 0)
     {
-      printf("\nstart computing displacement fields...\n");
-      fflush(stdout);
+      printf("Starting to compute displacement fields.\n");
     }
 
   hubble_a =
@@ -148,14 +146,13 @@ void displacement_fields(void)
     {
 #if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
       if(ThisTask==0)
-          fprintf(stderr, "Starting type %d\n",Type);
+          fprintf(stderr, "\nStarting type %d\n",Type);
 #endif
       for(axes = 0; axes < 3; axes++)
 	{
 	  if(ThisTask == 0)
 	    {
-	      printf("\nstarting axes=%d...\n", axes);
-	      fflush(stdout);
+	      fprintf(stderr,"Starting axis %d.\n", axes);
 	    }
 
 	  /* first, clean the array */
@@ -532,7 +529,7 @@ void initialize_ffts(void)
   if(Disp && Workspace)
     {
       if(ThisTask == 0)
-	printf("\nallocated %g Mbyte on Task %d for FFT's\n", bytes / (1024.0 * 1024.0), ThisTask);
+	printf("\nAllocated %g MB on task %d for FFTs\n", bytes / (1024.0 * 1024.0), ThisTask);
     }
   else
     {

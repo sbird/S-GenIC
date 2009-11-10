@@ -12,7 +12,7 @@ void write_particle_data(void)
   int nprocgroup, groupTask, masterTask;
 
   if(ThisTask == 0)
-    printf("\nwriting initial conditions... \n");
+    printf("\nWriting IC-file\n");
 
 
   if((NTask < NumFilesWrittenInParallel))
@@ -41,7 +41,7 @@ void write_particle_data(void)
     }
 
   if(ThisTask == 0)
-    printf("done with writing initial conditions.\n");
+    printf("Finished writing IC file.\n");
 }
 
 

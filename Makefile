@@ -23,23 +23,23 @@ INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
                          # for a single DM species in the input file by interleaved by a half a grid spacing
 
 
-#OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
+OPT   += -DMULTICOMPONENTGLASSFILE # set this if the initial glass file contains multiple components
 
-OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
-OPT	+= -DFORMAT_TWO			#Set this if you want to output IC files in format 2.												
+OPT   += -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
+OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.												
 
-OPT   +=  -DNO64BITID    # switch this on if you want normal 32-bit IDs
+OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
 OPT	+= -DDOUBLEPRECISION_FFTW
 
 
-OPTIONS =  $(OPT)
+OPTIONS = $(OPT)
 
 
 
-CC       =   mpicc        # sets the C-compiler (default)
-FC			=   mpif90
-OPTIMIZE =   -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
+CC       =  mpicc  # sets the C-compiler (default)
+FC			=  mpif90
+OPTIMIZE =  -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
 MPICHLIB = # -lmpich
 FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
 FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
@@ -172,7 +172,7 @@ endif
 
 
 
-CFLAGS =   $(OPTIONS)  $(OPTIMIZE)  $(FFTW_INCL) $(GSL_INCL)
+CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL)
 
 $(EXEC): $(OBJS) 
 	$(CC) $(OPTIMIZE) $(OBJS) $(LIBS)   -o  $(EXEC)  
@@ -180,12 +180,10 @@ $(EXEC): $(OBJS)
 cubspl.o: cubspl.f
 	$(FC) -c cubspl.f
 
-$(OBJS): $(INCL) 
+$(OBJS): $(INCL)
 
 
 .PHONY : clean
 clean:
 	rm -f $(OBJS) $(EXEC)
-
-
 

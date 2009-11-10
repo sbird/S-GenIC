@@ -24,9 +24,6 @@ void read_glass(char *fname)
 
   if(ThisTask == 0)
     {
-      printf("\nreading Lagrangian glass file...\n");
-      fflush(stdout);
-
       numfiles = find_files(fname);
 
       for(num = 0, skip = 0; num < numfiles; num++)
@@ -57,7 +54,7 @@ void read_glass(char *fname)
 	  for(k = 0; k < 6; k++)
 	    nlocal += header1.npart[k];
 
-	  printf("reading '%s' with %d particles\n", fname, nlocal);
+	  printf("Reading pre-IC file '%s'. Nglass=%d.\n", fname, nlocal);
 
 	  if(num == 0)
 	    {
@@ -66,7 +63,6 @@ void read_glass(char *fname)
 	      for(k = 0; k < 6; k++)
 		Nglass += header1.npartTotal[k];
 
-	      printf("\nNglass= %d\n\n", Nglass);
 	      pos = (float *) malloc(sizeof(float) * Nglass * 3);
 
 	      if(!(pos))
