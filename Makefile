@@ -48,7 +48,7 @@ FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
 
 ifeq ($(SYSTYPE),"OPA-Cluster64")
 CC       =   mpiccg   
-OPTIMIZE =  -O3 -Wall -m64
+OPTIMIZE =  -O2 -Wall -m64
 GSL_INCL =  -I/afs/rzg/bc-b/vrs/opteron64/include
 GSL_LIBS =  -L/afs/rzg/bc-b/vrs/opteron64/lib  -Wl,"-R /afs/rzg/bc-b/vrs/opteron64/lib"
 FFTW_INCL=  -I/afs/rzg/bc-b/vrs/opteron64/include

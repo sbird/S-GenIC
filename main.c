@@ -80,6 +80,7 @@ void displacement_fields(void)
   double u, v, w;
   double f1, f2, f3, f4, f5, f6, f7, f8;
   double dis, maxdisp, max_disp_glob;
+  double mindisp, min_disp_glob;
   unsigned int *seedtable;
 
 #ifdef CORRECT_CIC
@@ -226,6 +227,8 @@ void displacement_fields(void)
 			  p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */
+           /*If we are using the CAMB P(k), Dplus=1.
+            * fac=(2π/Box)^1.5*/
 
 #ifdef CORRECT_CIC
 			  /* do deconvolution of CIC interpolation */
@@ -417,7 +420,7 @@ void displacement_fields(void)
 		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk] * f6 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k] * f7 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk] * f8;
-                  if(isnan(dis)){
+                  /*if(isnan(dis)){
                    fprintf(stderr, "i=%d j=%d k=%d Nmesh=%d f1=%g f2=%g f3=%g f4=%g f5=%g f6=%g f7=%g f8=%g\n",i,j,k,Nmesh,f1,f2,f3,f4,f5,f6,f7,f8);
                    fprintf(stderr, "%g %g %g %g %g %g %g %g\n",Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k],Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
 		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
@@ -427,11 +430,13 @@ void displacement_fields(void)
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk]);
                    FatalError(2);
-                  }
+                  }*/
 
 		  P[n].Vel[axes] = dis;
 		  if(dis > maxdisp)
 		    maxdisp = dis;
+                  if(dis <mindisp)
+                    mindisp=dis;
 		}
 	    }
 	}
@@ -456,6 +461,13 @@ void displacement_fields(void)
     {
       printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
 	     max_disp_glob, max_disp_glob / (Box / Nmesh));
+    }
+  MPI_Reduce(&mindisp, &min_disp_glob, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  if(ThisTask == 0)
+    {
+      printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
+	     min_disp_glob, min_disp_glob / (Box / Nmesh));
     }
 }
 
