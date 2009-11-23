@@ -323,7 +323,6 @@ void initialize_powerspectrum(void)
   else{
     if(ThisTask == 0)
         printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
-    Dplus=1.0;
   }
 }
 
@@ -389,7 +388,7 @@ double PowerSpec_CAMB(double k, int Type)
 
 double PowerSpec_Spline(double k,int Type)
 {
-  return splineval(k)*k*pow(tk_CAMB(k, Type),2);
+  return APRIM*2*M_PI*M_PI*splineval(k)*k*pow(tk_CAMB(k, Type),2);
 }
 
 
@@ -634,7 +633,7 @@ void initialize_splines(void)
    int i=0,j=0;
    int strindex=0;
    /*Temporary variable to store the split strings*/
-#define STRBFSZ 50
+#define STRBFSZ 500
    char strs[NumKnots][STRBFSZ];
    if(NumKnots<2)
    {
@@ -684,7 +683,7 @@ void initialize_splines(void)
    for(i=0; i<strindex; i++)
       /*FORTRAN ORDER!
        * Cubic spline, so four entries in each first coeff*/
-      SplineCoeffs[i*4]=atof(strs[i]);
+      SplineCoeffs[i*4]=atof(strs[i])/(APRIM*2*M_PI*M_PI);
    /*Read KnotPositions*/
    strindex=0; 
    j=0;
@@ -728,8 +727,15 @@ void initialize_splines(void)
    /*Hopefully we now have a spline.*/
    /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
     * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
-	if(ThisTask==0)
+	if(ThisTask==0){
+/*      double k;
+      int i;*/
 		printf("Initialized %d-knot spline\n",NumKnots);
+/*       for(i=0; i<NumKnots;i++) 
+          printf("%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);
+      for(k=1e-4*kctog;k<10*kctog; k*=2)
+         printf("%g %g\n",k/kctog,splineval(k));*/
+   }
    return;
 }
 
@@ -758,6 +764,6 @@ double splineval(double k)
     * Try not to do extrapolation. */
    /*FORTRAN ORDER*/
    return SplineCoeffs[i*4]+SplineCoeffs[i*4+1]*(logk-KnotPos[i])
-           +SplineCoeffs[i+4+2]*pow(logk-KnotPos[i],2)/2.0
-           +SplineCoeffs[i+4+3]*pow(logk-KnotPos[i],3)/6.0;
+          +SplineCoeffs[i*4+2]*pow(logk-KnotPos[i],2)/2.0
+          +SplineCoeffs[i*4+3]*pow(logk-KnotPos[i],3)/6.0;
 }
