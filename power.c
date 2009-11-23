@@ -16,7 +16,7 @@ static double kctog;
  * Because we don't know the size of them until we know NumKnots, we 
  * can't just read them in read_param.h, so we read them in as a string
  * in KnotValues and KnotPositions, and then we do some manipulation to turn 
- * them into these arrays in initialise_splines.*/
+ * them into these arrays in initialize_splines.*/
 static double *KnotPos;
 static double *SplineCoeffs;
 /*This is a function to compute the splines*/
@@ -25,6 +25,8 @@ extern void cubspl_(double *, double *, int *, int *, int *);
 double tk_CAMB(double k, int Type);
 /*This prints the value of the spline at k*/
 double splineval(double k);
+/*Initialize the spline coefficients*/
+void initialize_splines(void);
 /*Power spectra*/
 double PowerSpec_CAMB(double k, int Type);
 double PowerSpec_Spline(double k, int Type);
@@ -298,6 +300,8 @@ void initialize_powerspectrum(void)
     read_power_table();
   if(WhichSpectrum > 2)
     read_transfer_table();
+  if(WhichSpectrum == 4)
+    initialize_splines();
 
 #ifdef DIFFERENT_TRANSFER_FUNC
   Type = 1;
@@ -307,14 +311,14 @@ void initialize_powerspectrum(void)
   res = TopHatSigma2(R8);
 
   if(WhichSpectrum < 3){
-  if(ThisTask == 0 && WhichSpectrum == 2)
-    printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
+    if(ThisTask == 0 && WhichSpectrum == 2)
+      printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
 
-  Norm = Sigma8 * Sigma8 / res;
+    Norm = Sigma8 * Sigma8 / res;
 
-  if(ThisTask == 0 && WhichSpectrum == 2)
-    printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-          Dplus = GrowthFactor(InitTime, 1.0);
+    if(ThisTask == 0 && WhichSpectrum == 2)
+      printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
+            Dplus = GrowthFactor(InitTime, 1.0);
   }
   else{
     if(ThisTask == 0)
@@ -428,7 +432,7 @@ double tk_CAMB(double k, int Type)
 	double tkout;
 	if(NPowerTable==0)
 	{
-		fprintf(stderr, "Some kind of error; tables not initialised!\n");
+		fprintf(stderr, "Some kind of error; tables not initialized!\n");
 		FatalError(18);
 	}
 	/*No power outside of our boundaries.*/
@@ -625,7 +629,7 @@ void add_WDM_thermal_speeds(float *vel)
 }
 
 /* Function to get a spline from a set of knots and values.*/
-void initialise_splines(void)
+void initialize_splines(void)
 {
    int i=0,j=0;
    int strindex=0;
