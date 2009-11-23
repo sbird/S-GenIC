@@ -728,6 +728,8 @@ void initialize_splines(void)
    /*Hopefully we now have a spline.*/
    /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
     * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
+	if(ThisTask==0)
+		printf("Initialized %d-knot spline\n",NumKnots);
    return;
 }
 
