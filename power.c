@@ -32,6 +32,7 @@ double PowerSpec_CAMB(double k, int Type);
 double PowerSpec_Spline(double k, int Type);
 static int NPowerTable;
 #define APRIM 2.4e-9
+#define PIVOT_SCALE (0.05*kctog/HubbleParam)
 
 /*Structure for matter power table*/
 static struct pow_table
@@ -383,7 +384,7 @@ double PowerSpec_EH(double k)	/* Eisenstein & Hu */
 
 double PowerSpec_CAMB(double k, int Type)
 {
-	return APRIM*2*M_PI*M_PI*k*pow(k,PrimordialIndex-1.0)*pow(tk_CAMB(k, Type),2);
+	return APRIM*2*M_PI*M_PI*k*pow(k/PIVOT_SCALE,PrimordialIndex-1.0)*pow(tk_CAMB(k, Type),2);
 }
 
 double PowerSpec_Spline(double k,int Type)
