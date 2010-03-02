@@ -223,11 +223,11 @@ void displacement_fields(void)
 			    }
 
 			  p_of_k = PowerSpec(kmag);
-           if(p_of_k < 0)
-           {
-                   fprintf(stderr, "P(k) is negative! Giving up!\n");
-                   FatalError(3);
-           }
+                          if(p_of_k < 0)
+                          {
+                                  fprintf(stderr, "P(k) is %g at %g! Giving up!\n", p_of_k, kmag);
+                                  FatalError(3);
+                          }
 			  p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */

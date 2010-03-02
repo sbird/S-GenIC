@@ -31,7 +31,7 @@ void initialize_splines(void);
 double PowerSpec_CAMB(double k, int Type);
 double PowerSpec_Spline(double k, int Type);
 static int NPowerTable;
-#define APRIM 2.4e-9
+#define APRIM 2.43e-9
 #define PIVOT_SCALE (0.05*kctog/HubbleParam)
 
 /*Structure for matter power table*/
@@ -309,11 +309,12 @@ void initialize_powerspectrum(void)
 #endif
 
   Norm = 1.0;
-  res = TopHatSigma2(R8);
 
   if(WhichSpectrum < 3){
-    if(ThisTask == 0 && WhichSpectrum == 2)
+    res = TopHatSigma2(R8);
+    if(ThisTask == 0 && WhichSpectrum == 2){
       printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
+    }
 
     Norm = Sigma8 * Sigma8 / res;
 
@@ -322,8 +323,8 @@ void initialize_powerspectrum(void)
             Dplus = GrowthFactor(InitTime, 1.0);
   }
   else{
-    if(ThisTask == 0)
-        printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
+/*     if(ThisTask == 0) */
+/*         printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res)); */
   }
 }
 
@@ -729,14 +730,21 @@ void initialize_splines(void)
    /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
     * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
 	if(ThisTask==0){
-/*      double k;
-      int i;*/
-		printf("Initialized %d-knot spline\n",NumKnots);
+             FILE *f;
+/*              double k; */
+             printf("Initialized %d-knot spline\n",NumKnots);
+             if((f=fopen("splinecoeffs.txt", "w")))
+             {
+                 int i;
+                for(i=0;i<NumKnots;i++)
+                        fprintf(f,"%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);
+                fclose(f);
+             }
 /*       for(i=0; i<NumKnots;i++) 
-          printf("%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);
-      for(k=1e-4*kctog;k<10*kctog; k*=2)
-         printf("%g %g\n",k/kctog,splineval(k));*/
-   }
+          printf("%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);*/
+/*       for(k=1e-4*kctog;k<10*kctog; k*=1.1) */
+/*          printf("%g %g\n",k/kctog,splineval(k)); */
+         }
    return;
 }
 
@@ -749,7 +757,11 @@ double splineval(double k)
    if(logk >= KnotPos[0])
    {
       if(logk > KnotPos[ihigh])
+      {
+         printf("Asked to extrapolate P(k), k=%g\n",k/kctog);
+         MPI_Abort(MPI_COMM_WORLD, 44);
          i=ihigh;
+      }
       else
       	while(ihigh-ilow > 1)
    	   {
