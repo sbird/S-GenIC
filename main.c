@@ -228,7 +228,8 @@ void displacement_fields(void)
                                   fprintf(stderr, "P(k) is %g at %g! Giving up!\n", p_of_k, kmag);
                                   FatalError(3);
                           }
-			  p_of_k *= -log(ampl);
+                          if(Seed)
+        			  p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */
            /*If we are using the CAMB P(k), Dplus=1.
