@@ -68,6 +68,12 @@ double PowerSpec(double k)
   {
      return PowerSpec_Spline(k,Type)/pow(2*M_PI,3);
   }
+  /*This uses the total transfer function table 
+   * instead of those for individual species.*/
+  if(WhichSpectrum==5)
+  {
+     return PowerSpec_Spline(k,2)/pow(2*M_PI,3);
+  }
 #endif
   switch (WhichSpectrum)
     {
