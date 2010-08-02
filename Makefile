@@ -36,15 +36,21 @@ OPT	+= -DDOUBLEPRECISION_FFTW
 OPTIONS = $(OPT)
 
 
+#gcc
+#CC       =  mpicc  # sets the C-compiler (default)
+#FC			=  mpif90
+#OPTIMIZE =  -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
+#MPICHLIB = # -lmpich
+#FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
+#FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
+#
 
 CC       =  mpicc  # sets the C-compiler (default)
 FC			=  mpif90
-OPTIMIZE =  -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
+OPTIMIZE =  -O2 -Wall
 MPICHLIB = # -lmpich
-FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
-FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
-
-
+FFTW_INCL=  
+FFTW_LIBS=  
 
 ifeq ($(SYSTYPE),"OPA-Cluster64")
 CC       =   mpiccg   
