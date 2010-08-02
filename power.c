@@ -307,7 +307,7 @@ void initialize_powerspectrum(void)
     read_power_table();
   if(WhichSpectrum > 2)
     read_transfer_table();
-  if(WhichSpectrum == 4)
+  if(WhichSpectrum > 4)
     initialize_splines();
 
 #ifdef DIFFERENT_TRANSFER_FUNC
@@ -760,6 +760,11 @@ double splineval(double k)
    int i=0,ilow=0, ihigh=NumKnots-1;
    /*Find index of this k-value*/
    double logk=log(k);
+   if(!KnotPos)
+   {
+		fprintf(stderr, "Some kind of error; KnotPos not initialized!\n");
+		FatalError(18);
+   }
    if(logk >= KnotPos[0])
    {
       if(logk > KnotPos[ihigh])

@@ -47,7 +47,7 @@ OPTIONS = $(OPT)
 
 CC       =  mpicc  # sets the C-compiler (default)
 FC			=  mpif90
-OPTIMIZE =  -O2 -Wall
+OPTIMIZE =  -O2 -g
 MPICHLIB = # -lmpich
 FFTW_INCL=  
 FFTW_LIBS=  
