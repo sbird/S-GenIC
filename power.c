@@ -307,7 +307,7 @@ void initialize_powerspectrum(void)
     read_power_table();
   if(WhichSpectrum > 2)
     read_transfer_table();
-  if(WhichSpectrum > 4)
+  if(WhichSpectrum > 3)
     initialize_splines();
 
 #ifdef DIFFERENT_TRANSFER_FUNC
