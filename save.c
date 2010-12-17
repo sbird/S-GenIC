@@ -85,7 +85,7 @@ void save_local_data(void)
 
 
 #ifdef MULTICOMPONENTGLASSFILE
-  qsort(P, NumPart, sizeof(struct part_data), compare_type);  /* sort particles by type, because that's how they should be stored in a gadget binary file */
+  qsort(P, NumPart, sizeof(struct part_data), compare_type);	/* sort particles by type, because that's how they should be stored in a gadget binary file */
 
   for(i = 0; i < 3; i++)
     header.npartTotal[i] = header1.npartTotal[i + 1] * GlassTileFac * GlassTileFac * GlassTileFac;
@@ -123,6 +123,11 @@ void save_local_data(void)
 #endif
 #endif
 
+#ifdef NEUTRINO_PAIRS
+  header.npart[2] *= 2;
+  header.npartTotal[2] *= 2;
+  header.mass[2] /= 2;
+#endif
 
   header.time = InitTime;
   header.redshift = 1.0 / InitTime - 1;
@@ -157,7 +162,7 @@ void save_local_data(void)
 
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
     {
-      printf("failed to allocate memory for `block' (%g Mbytes).\n", bytes/(1024.0*1024.0));
+      printf("failed to allocate memory for `block' (%g bytes).\n", (double) bytes);
       FatalError(24);
     }
 
@@ -173,6 +178,11 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
+#ifdef NEUTRINO_PAIRS
+  dummy =
+    sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
+			 header.npart[4] + header.npart[5]);
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -186,7 +196,16 @@ void save_local_data(void)
 
       pc++;
 
-      if(pc == blockmaxlen)
+#ifdef NEUTRINO_PAIRS
+      if(P[i].Type == 2)
+	{
+	  for(k = 0; k < 3; k++)
+	    block[3 * pc + k] = P[i].Pos[k];
+	  pc++;
+	}
+#endif
+
+      if(pc >= (blockmaxlen - 1))
 	{
 	  my_fwrite(block, sizeof(float), 3 * pc, fd);
 	  pc = 0;
@@ -222,6 +241,11 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
+#ifdef NEUTRINO_PAIRS
+  dummy =
+    sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
+			 header.npart[4] + header.npart[5]);
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -231,6 +255,28 @@ void save_local_data(void)
 #ifdef MULTICOMPONENTGLASSFILE
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && P[i].Type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
+#ifdef NEUTRINOS
+
+#ifdef NEUTRINO_PAIRS
+      if(NU_On == 1 && NU_Vtherm_On == 1 && P[i].Type == 2)
+	{
+	  float vtherm[3];
+
+	  for(k = 0; k < 3; k++)
+	    vtherm[k] = 0;
+	  add_NU_thermal_speeds(vtherm);
+	  for(k = 0; k < 3; k++)
+	    block[3 * pc + k] = P[i].Vel[k] + vtherm[k];
+	  pc++;
+	  for(k = 0; k < 3; k++)
+	    block[3 * pc + k] = P[i].Vel[k] - vtherm[k];
+	}
+#else
+      if(NU_On == 1 && NU_Vtherm_On == 1 && P[i].Type == 2)
+	add_NU_thermal_speeds(&block[3 * pc]);
+#endif
+
+#endif
 #else
 #ifndef PRODUCEGAS
       if(WDM_On == 1 && WDM_Vtherm_On == 1)
@@ -240,7 +286,7 @@ void save_local_data(void)
 
       pc++;
 
-      if(pc == blockmaxlen)
+      if(pc >= (blockmaxlen - 1))
 	{
 	  my_fwrite(block, sizeof(float), 3 * pc, fd);
 	  pc = 0;
@@ -280,6 +326,14 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
+#ifdef NEUTRINO_PAIRS
+  dummy =
+    sizeof(int) * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] +
+		   header.npart[5]);
+#ifndef NO64BITID
+  dummy *= 2;
+#endif
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -291,7 +345,23 @@ void save_local_data(void)
 
       pc++;
 
-      if(pc == maxlongidlen)
+#ifdef NEUTRINO_PAIRS
+      if(P[i].Type == 2)
+	{
+#ifdef NO64BITID
+	  blockid[pc] =
+	    P[i].ID + header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
+	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
+#else
+	  blocklongid[pc] =
+	    P[i].ID + header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
+	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
+#endif
+	  pc++;
+	}
+#endif
+
+      if(pc >= (maxlongidlen - 1))
 	{
 #ifdef NO64BITID
 	  my_fwrite(blockid, sizeof(int), pc, fd);

@@ -63,7 +63,7 @@ extern long long IDStart;
 
 extern char     GlassFile[500]; 
 extern char     FileWithInputSpectrum[500];
-
+extern  char     FileWithTransfer[500];
 extern int      GlassTileFac; 
 
 extern double   Box;
@@ -127,6 +127,13 @@ extern double Dplus; /* growth factor */
 extern int Type, MinType, MaxType;
 #endif
 
+extern int    ReNormalizeInputSpectrum;
+
 extern int    WDM_On;
 extern int    WDM_Vtherm_On;
 extern double WDM_PartMass_in_kev;
+
+extern int    NU_On;
+extern int    NU_Vtherm_On;
+extern double NU_PartMass_in_ev;
+

@@ -17,7 +17,7 @@ void read_parameterfile(char *fname)
   int i, j, nt;
   int id[MAXTAGS];
   void *addr[MAXTAGS];
-  char tag[MAXTAGS][50];
+  char *ret, tag[MAXTAGS][50];
   int errorFlag = 0;
 
   /* read parameter file on all processes for simplicty */
@@ -80,6 +80,11 @@ void read_parameterfile(char *fname)
   addr[nt] = FileWithInputSpectrum;
   id[nt++] = STRING;
 
+  strcpy(tag[nt], "FileWithTransfer");
+  addr[nt] = FileWithTransfer;
+  id[nt++] = STRING;
+
+
   strcpy(tag[nt], "GlassTileFac");
   addr[nt] = &GlassTileFac;
   id[nt++] = INT;
@@ -124,6 +129,10 @@ void read_parameterfile(char *fname)
   addr[nt] = &InputSpectrum_UnitLength_in_cm;
   id[nt++] = FLOAT;
 
+  strcpy(tag[nt], "ReNormalizeInputSpectrum");
+  addr[nt] = &ReNormalizeInputSpectrum;
+  id[nt++] = INT;
+
   strcpy(tag[nt], "WDM_On");
   addr[nt] = &WDM_On;
   id[nt++] = INT;
@@ -136,12 +145,24 @@ void read_parameterfile(char *fname)
   addr[nt] = &WDM_PartMass_in_kev;
   id[nt++] = FLOAT;
 
+  strcpy(tag[nt], "NU_On");
+  addr[nt] = &NU_On;
+  id[nt++] = INT;
+
+  strcpy(tag[nt], "NU_Vtherm_On");
+  addr[nt] = &NU_Vtherm_On;
+  id[nt++] = INT;
+
+  strcpy(tag[nt], "NU_PartMass_in_ev");
+  addr[nt] = &NU_PartMass_in_ev;
+  id[nt++] = FLOAT;
+
   if((fd = fopen(fname, "r")))
     {
       while(!feof(fd))
 	{
 	  buf[0] = 0;
-	  fgets(buf, 200, fd);
+	  ret = fgets(buf, 200, fd);
 
 	  if(sscanf(buf, "%s%s%s", buf1, buf2, buf3) < 2)
 	    continue;

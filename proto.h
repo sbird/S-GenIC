@@ -22,7 +22,10 @@ double PowerSpec(double kmag);
 double PowerSpec_Efstathiou(double k);
 double PowerSpec_EH(double k);
 double PowerSpec_Tabulated(double k);
+double PowerSpec_TOTAL(double k);
 double PowerSpec_DM_2ndSpecies(double k);
+double PowerSpec_Tabulated2nd(double k);
+double PowerSpec_Tabulated_b(double k);
 
 void   initialize_powerspectrum(void);
 double GrowthFactor(double astart, double aend);
@@ -52,3 +55,6 @@ void add_WDM_thermal_speeds(float *vel);
 
 int compare_type(const void *a, const void *b);
 
+double get_fermi_dirac_vel_nu(void);
+void fermi_dirac_init_nu(void);
+void add_NU_thermal_speeds(float *vel);

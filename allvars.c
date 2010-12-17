@@ -19,6 +19,7 @@ long long IDStart;
 
 char GlassFile[500];
 char FileWithInputSpectrum[500];
+char FileWithTransfer[500];
 
 int GlassTileFac;
 
@@ -72,6 +73,14 @@ double Dplus;			/* growth factor */
 int Type, MinType, MaxType;
 #endif
 
+int ReNormalizeInputSpectrum;
+
 int WDM_On;
 int WDM_Vtherm_On;
 double WDM_PartMass_in_kev;
+
+
+int NU_On;
+int NU_Vtherm_On;
+double NU_PartMass_in_ev;
+

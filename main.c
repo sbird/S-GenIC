@@ -98,6 +98,8 @@ void displacement_fields(void)
 
   if(ThisTask == 0)
     printf("vel_prefac= %g  hubble_a=%g fom=%g \n", vel_prefac, hubble_a, F_Omega(InitTime));
+     if (ThisTask == 0)
+			     printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   fac = pow(2 * PI / Box, 1.5);
 
@@ -218,7 +220,8 @@ void displacement_fields(void)
 
 			  p_of_k = PowerSpec(kmag);
 
-			  p_of_k *= -log(ampl);
+			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
+			  // p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */
 
@@ -582,6 +585,7 @@ void print_spec(void)
       for(k = kstart; k < kend; k *= 1.025)
 	{
 	  po = PowerSpec(k);
+          //printf(" po k %g %g\n ",k,po);
 	  dl = 4.0 * PI * k * k * k * po;
 
 	  kf = 0.5;
