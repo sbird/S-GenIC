@@ -12,7 +12,7 @@ void write_particle_data(void)
   int nprocgroup, groupTask, masterTask;
 
   if(ThisTask == 0)
-    printf("\nwriting initial conditions... \n");
+    printf("\nWriting IC-file\n");
 
 
   if((NTask < NumFilesWrittenInParallel))
@@ -41,7 +41,7 @@ void write_particle_data(void)
     }
 
   if(ThisTask == 0)
-    printf("done with writing initial conditions.\n");
+    printf("Finished writing IC file.\n");
 }
 
 
@@ -53,6 +53,8 @@ void save_local_data(void)
   size_t bytes;
   float *block;
   int *blockid;
+  int blkheadsize = sizeof(int) + 4 * sizeof(char);
+  int nextblock;
   long long *blocklongid;
   int blockmaxlen, maxidlen, maxlongidlen;
   int4byte dummy;
@@ -88,7 +90,7 @@ void save_local_data(void)
   qsort(P, NumPart, sizeof(struct part_data), compare_type);	/* sort particles by type, because that's how they should be stored in a gadget binary file */
 
   for(i = 0; i < 3; i++)
-    header.npartTotal[i] = header1.npartTotal[i + 1] * GlassTileFac * GlassTileFac * GlassTileFac;
+    header.npartTotal[i] = header1.npartTotal[i] * GlassTileFac * GlassTileFac * GlassTileFac;
 
   for(i = 0; i < NumPart; i++)
     header.npart[P[i].Type]++;
@@ -99,8 +101,7 @@ void save_local_data(void)
 
   if(header.npartTotal[1])
     header.mass[1] =
-      (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box,
-											    3) /
+      (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box,3) /
       (header.npartTotal[1]);
 
   if(header.npartTotal[2])
@@ -150,6 +151,14 @@ void save_local_data(void)
   header.hashtabsize = 0;
 
   dummy = sizeof(header);
+#ifdef FORMAT_TWO
+      /*Write format 2 header header*/
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+      my_fwrite("HEAD", sizeof(char), 4, fd);
+      nextblock = dummy + 2 * sizeof(int);
+      my_fwrite(&nextblock, sizeof(int), 1, fd);
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   my_fwrite(&header, sizeof(header), 1, fd);
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
@@ -183,6 +192,16 @@ void save_local_data(void)
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
 #endif
+#ifdef FORMAT_TWO
+          /*Write position header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("POS ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing position header*/
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -193,7 +212,6 @@ void save_local_data(void)
 	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + shift_gas);
 #endif
 	}
-
       pc++;
 
 #ifdef NEUTRINO_PAIRS
@@ -241,10 +259,22 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
+<<<<<<< HEAD
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
+=======
+#ifdef FORMAT_TWO
+          /*Write velocity header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("VEL ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing velocity header*/
+>>>>>>> master
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -326,6 +356,7 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
+<<<<<<< HEAD
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(int) * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] +
@@ -333,6 +364,17 @@ void save_local_data(void)
 #ifndef NO64BITID
   dummy *= 2;
 #endif
+=======
+#ifdef FORMAT_TWO
+          /*Write ID header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("ID  ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing ID header*/
+>>>>>>> master
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -420,6 +462,16 @@ void save_local_data(void)
   /* write zero temperatures if needed */
 #ifdef  PRODUCEGAS
   dummy = sizeof(float) * NumPart;
+#ifdef FORMAT_TWO
+          /*Write temperature header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("U   ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing temperature header*/
+#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -444,6 +496,16 @@ void save_local_data(void)
   if(header.npart[0])
     {
       dummy = sizeof(float) * header.npart[0];
+#ifdef FORMAT_TWO
+          /*Write temperature header*/
+	  blkheadsize = sizeof(int) + 4 * sizeof(char);
+      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
+      	  my_fwrite("U   ", sizeof(char), 4, fd);
+	  nextblock=dummy+2*sizeof(int);
+	  my_fwrite(&nextblock, sizeof(int), 1, fd);
+	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
+	  /*Done writing temperature header*/
+#endif
       my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
       for(i = 0, pc = 0; i < header.npart[0]; i++)

@@ -1,6 +1,10 @@
 #include <math.h>
 #include <stdlib.h>
-#include <drfftw_mpi.h>
+#ifdef DOUBLEPRECISION_FFTW
+   #include <drfftw_mpi.h>
+#else
+   #include <srfftw_mpi.h>
+#endif
 #include <mpi.h>
 #include <gsl/gsl_rng.h>
 
@@ -47,13 +51,12 @@ int main(int argc, char **argv)
 
   if(ThisTask == 0)
     {
-      printf("\nIC's generated.\n\n");
       printf("Initial scale factor = %g\n", InitTime);
       printf("\n");
     }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  print_spec();
+/*   print_spec(); */
 
   MPI_Finalize();		/* clean up & finalize MPI */
   exit(0);
@@ -77,6 +80,7 @@ void displacement_fields(void)
   double u, v, w;
   double f1, f2, f3, f4, f5, f6, f7, f8;
   double dis, maxdisp, max_disp_glob;
+  double mindisp, min_disp_glob;
   unsigned int *seedtable;
 
 #ifdef CORRECT_CIC
@@ -85,8 +89,7 @@ void displacement_fields(void)
 
   if(ThisTask == 0)
     {
-      printf("\nstart computing displacement fields...\n");
-      fflush(stdout);
+      printf("Starting to compute displacement fields.\n");
     }
 
   hubble_a =
@@ -144,12 +147,15 @@ void displacement_fields(void)
   for(Type = MinType; Type <= MaxType; Type++)
 #endif
     {
+#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+      if(ThisTask==0)
+          fprintf(stderr, "\nStarting type %d\n",Type);
+#endif
       for(axes = 0; axes < 3; axes++)
 	{
 	  if(ThisTask == 0)
 	    {
-	      printf("\nstarting axes=%d...\n", axes);
-	      fflush(stdout);
+	      fprintf(stderr,"Starting axis %d.\n", axes);
 	    }
 
 	  /* first, clean the array */
@@ -224,6 +230,8 @@ void displacement_fields(void)
 			  // p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */
+           /*If we are using the CAMB P(k), Dplus=1.
+            * fac=(2π/Box)^1.5*/
 
 #ifdef CORRECT_CIC
 			  /* do deconvolution of CIC interpolation */
@@ -415,16 +423,27 @@ void displacement_fields(void)
 		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk] * f6 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k] * f7 +
 		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk] * f8;
+                  /*if(isnan(dis)){
+                   fprintf(stderr, "i=%d j=%d k=%d Nmesh=%d f1=%g f2=%g f3=%g f4=%g f5=%g f6=%g f7=%g f8=%g\n",i,j,k,Nmesh,f1,f2,f3,f4,f5,f6,f7,f8);
+                   fprintf(stderr, "%g %g %g %g %g %g %g %g\n",Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k],Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
+		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k], 
+		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
+		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
+		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk]);
+                   FatalError(2);
+                  }*/
 
 		  P[n].Vel[axes] = dis;
-
 		  if(dis > maxdisp)
 		    maxdisp = dis;
+                  if(dis <mindisp)
+                    mindisp=dis;
 		}
 	    }
 	}
     }
-
 
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
   for(n = 0; n < NumPart; n++)
@@ -445,6 +464,13 @@ void displacement_fields(void)
     {
       printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
 	     max_disp_glob, max_disp_glob / (Box / Nmesh));
+    }
+  MPI_Reduce(&mindisp, &min_disp_glob, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  if(ThisTask == 0)
+    {
+      printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
+	     min_disp_glob, min_disp_glob / (Box / Nmesh));
     }
 }
 
@@ -518,7 +544,7 @@ void initialize_ffts(void)
   if(Disp && Workspace)
     {
       if(ThisTask == 0)
-	printf("\nallocated %g Mbyte on Task %d for FFT's\n", bytes / (1024.0 * 1024.0), ThisTask);
+	printf("\nAllocated %g MB on task %d for FFTs\n", bytes / (1024.0 * 1024.0), ThisTask);
     }
   else
     {
@@ -620,7 +646,7 @@ void print_spec(void)
 	      knl = 0;
 	    }
 
-	  fprintf(fd, "%12g %12g    %12g %12g\n", k, dl, knl, dnl);
+	  fprintf(fd, "%12g %12g %12g  %12g %12g\n", k,po, dl, knl, dnl);
 	}
       fclose(fd);
     }

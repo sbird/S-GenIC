@@ -11,9 +11,10 @@ void read_parameterfile(char *fname)
 #define STRING 2
 #define INT 3
 #define MAXTAGS 300
+#define BUFSIZE 400
 
   FILE *fd;
-  char buf[200], buf1[200], buf2[200], buf3[200];
+  char buf[BUFSIZE], buf1[BUFSIZE], buf2[BUFSIZE], buf3[BUFSIZE];
   int i, j, nt;
   int id[MAXTAGS];
   void *addr[MAXTAGS];
@@ -156,13 +157,37 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "NU_PartMass_in_ev");
   addr[nt] = &NU_PartMass_in_ev;
   id[nt++] = FLOAT;
+  strcpy(tag[nt], "NumKnots");
+  addr[nt] = &NumKnots;
+  id[nt++] = INT;
+
+  strcpy(tag[nt], "KnotPositions");
+  addr[nt] = &KnotPositions;
+  id[nt++] = STRING;
+
+  strcpy(tag[nt], "KnotValues");
+  addr[nt] = &KnotValues;
+  id[nt++] = STRING;
 
   if((fd = fopen(fname, "r")))
     {
       while(!feof(fd))
 	{
 	  buf[0] = 0;
-	  ret = fgets(buf, 200, fd);
+	  fgets(buf, BUFSIZE, fd);
+          /*Check to see if the buffer was too small: 
+           * If it is large enough, should have a newline at the end*/
+          for(i=0;i<BUFSIZE;i++)
+          {
+             if(buf[i]=='\r' || buf[i]=='\n')
+                     break;
+          }
+          if(buf[BUFSIZE-1]=='\0' && i==BUFSIZE-1){
+                  fprintf(stderr, "Error! Param line buffer not large enough.\n"
+                                  "Edit read_param.c\n"
+                                  "Read was:%s\n",buf);
+                  FatalError(43);
+          }
 
 	  if(sscanf(buf, "%s%s%s", buf1, buf2, buf3) < 2)
 	    continue;

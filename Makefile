@@ -1,7 +1,19 @@
+SYSTYPE="#SYSTYPE#"
+#SYSTYPE="Regatta"
+#SYSTYPE="JUMP"
+#SYSTYPE="LOUHI"
+#SYSTYPE="MPA"
+#SYSTYPE="Stella"
+#SYSTYPE="RZG_LinuxCluster"
+#SYSTYPE="RZG_LinuxCluster-gcc"
+#SYSTYPE="Solaris"
+#SYSTYPE="OPA-Cluster64"
+
+
 EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
-         nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o
+         nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o cubspl.o
 
 INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
 
@@ -11,44 +23,44 @@ INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
                          # for a single DM species in the input file by interleaved by a half a grid spacing
 
 
-OPT   +=  -DMULTICOMPONENTGLASSFILE  # set this if the initial glass file contains multiple components
+OPT   += -DMULTICOMPONENTGLASSFILE # set this if the initial glass file contains multiple components
 
-OPT   +=  -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on
-                                     # particle type
+OPT   += -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
+OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.												
 
-OPT    +=  -DNO64BITID    # switch this on if you want normal 32-bit IDs
+OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
+OPT	+= -DDOUBLEPRECISION_FFTW
 
 OPT   +=  -DNEUTRINOS  # this will produce a second component as slight neutrinos (needs to be in initial glass)
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 
+OPTIONS = $(OPT)
 
-OPTIONS =  $(OPT)
+#gcc
+#CC       =  mpicc  # sets the C-compiler (default)
+#FC			=  mpif90
+#OPTIMIZE =  -O3 -Wall -Wno-strict-aliasing   # optimization and warning flags (default)
+#MPICHLIB = # -lmpich
+#FFTW_INCL=  -I/data/store/spb41/apps/fftw/include
+#FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
+#
 
-#SYSTYPE="Stella"
-#SYSTYPE="Regatta"
-#SYSTYPE="RZG_LinuxCluster"
-#SYSTYPE="RZG_LinuxCluster-gcc"
-#SYSTYPE="Solaris"
+CC       =  mpicc  # sets the C-compiler (default)
+FC			=  mpif90
+OPTIMIZE =  -O2 -g
+MPICHLIB = # -lmpich
+FFTW_INCL=  
+FFTW_LIBS=  
 
-# module load mvapich2-1.2-sdr-intel/11.0
-#SYSTYPE="OPA-Cluster64-Intel"
-
-# module load mvapich2-1.2-sdr-gnu/4.1.2
-#SYSTYPE="OPA-Cluster64-Gnu"
-
-
-
-#FFTW_INCL = -I/usr/common/pdsoft/include
-#FFTW_LIBS = -L/usr/common/pdsoft/lib
-
-
-CC       =   mpicc        # sets the C-compiler (default)
-OPTIMIZE =   -O2 -w -Wall    # optimization and warning flags (default)
-#MPICHLIB =  -lmpich
-
-
-
+ifeq ($(SYSTYPE),"OPA-Cluster64")
+CC       =   mpiccg   
+OPTIMIZE =  -O2 -Wall -m64
+GSL_INCL =  -I/afs/rzg/bc-b/vrs/opteron64/include
+GSL_LIBS =  -L/afs/rzg/bc-b/vrs/opteron64/lib  -Wl,"-R /afs/rzg/bc-b/vrs/opteron64/lib"
+FFTW_INCL=  -I/afs/rzg/bc-b/vrs/opteron64/include
+FFTW_LIBS=  -L/afs/rzg/bc-b/vrs/opteron64/lib 
+endif
 
 ifeq ($(SYSTYPE),"Stella")
 CC       =  mpicc
@@ -144,17 +156,18 @@ endif
 
 
 
-CFLAGS =   $(OPTIONS)  $(OPTIMIZE)  $(FFTW_INCL) $(GSL_INCL)
+CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL)
 
 $(EXEC): $(OBJS) 
 	$(CC) $(OPTIMIZE) $(OBJS) $(LIBS)   -o  $(EXEC)  
 
-$(OBJS): $(INCL) 
+cubspl.o: cubspl.f
+	$(FC) -c cubspl.f
+
+$(OBJS): $(INCL)
 
 
 .PHONY : clean
 clean:
 	rm -f $(OBJS) $(EXEC)
-
-
 

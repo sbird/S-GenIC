@@ -24,9 +24,6 @@ void read_glass(char *fname)
 
   if(ThisTask == 0)
     {
-      printf("\nreading Lagrangian glass file...\n");
-      fflush(stdout);
-
       numfiles = find_files(fname);
 
       for(num = 0, skip = 0; num < numfiles; num++)
@@ -57,7 +54,7 @@ void read_glass(char *fname)
 	  for(k = 0; k < 6; k++)
 	    nlocal += header1.npart[k];
 
-	  printf("reading '%s' with %d particles\n", fname, nlocal);
+	  printf("Reading pre-IC file '%s'. Nglass=%d.\n", fname, nlocal);
 
 	  if(num == 0)
 	    {
@@ -66,7 +63,6 @@ void read_glass(char *fname)
 	      for(k = 0; k < 6; k++)
 		Nglass += header1.npartTotal[k];
 
-	      printf("\nNglass= %d\n\n", Nglass);
 	      pos = (float *) malloc(sizeof(float) * Nglass * 3);
 
 	      if(!(pos))
@@ -83,7 +79,7 @@ void read_glass(char *fname)
 
 	  if(dummy != sizeof(float) * 3 * nlocal || dummy2 != sizeof(float) * 3 * nlocal)
 	    {
-	      printf("incorrect block structure in positions block!\n");
+	      printf("incorrect block structure in positions block! dummy=%d dummy2=%d\n",dummy,dummy2);
 	      FatalError(3);
 	    }
 	  skip += nlocal;
@@ -121,11 +117,11 @@ void read_glass(char *fname)
   for(type = 0; type < 6; type++)
     if(header1.npartTotal[type])
       {
-	if(MinType > type - 1)
-	  MinType = type - 1;
+	if(MinType > type)
+	  MinType = type;
 
-	if(MaxType < type - 1)
-	  MaxType = type - 1;
+	if(MaxType < type)
+	  MaxType = type;
       }
 #endif
 
@@ -219,7 +215,7 @@ void read_glass(char *fname)
 		      P[count].Pos[1] = y;
 		      P[count].Pos[2] = z;
 #ifdef  MULTICOMPONENTGLASSFILE
-		      P[count].Type = type - 1;
+		      P[count].Type = type;
 #endif
 		      P[count].ID = IDStart;
 
@@ -272,7 +268,7 @@ int find_files(char *fname)
 
       return header.num_files;
     }
-
+   fprintf(stderr,"Error! Glass file not found as %s or %s. Bailing.\n",buf,buf1);
   FatalError(121);
   return 0;
 }

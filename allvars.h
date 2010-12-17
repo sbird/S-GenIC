@@ -1,4 +1,8 @@
-#include <drfftw_mpi.h>
+#ifdef DOUBLEPRECISION_FFTW
+   #include <drfftw_mpi.h>
+#else
+   #include <srfftw_mpi.h>
+#endif
 
 #define  PI          3.14159265358979323846 
 #define  GRAVITY     6.672e-8
@@ -76,6 +80,10 @@ extern int      NumPart;
 extern int      NTaskWithN;
 
 
+/*Parameters for spline knots*/
+extern int NumKnots;
+extern char KnotValues[400];
+extern char KnotPositions[400];
 extern int      *Slab_to_task;
 
 
