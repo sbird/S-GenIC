@@ -46,6 +46,12 @@ static struct pow_table
 }
  *PowerTable;
 
+static struct pow_matter
+{ 
+  double kmat,pmat;
+ }
+*PowerMatter;
+
  /*Structure for transfer table*/
 static struct trans_row{
 	double k;
@@ -455,24 +461,6 @@ void initialize_powerspectrum(void)
   if(WhichSpectrum > 3)
     initialize_splines();
 
-  if(ReNormalizeInputSpectrum == 0 && WhichSpectrum == 2)
-    {
-      Type = 100;
-      Norm = 1.0;
-      /* tabulated file is already at the initial redshift */
-      res = TopHatSigma2(R8);
-      if (ThisTask == 0)
-      printf("\nNormalization of spectrum in file (NO RESCALING):  Sigma8 = %g\n", sqrt(res));
-      Norm = Sigma8 * Sigma8 / res;
-      if (ThisTask == 0)
-	printf("Normalization adjusted to  Sigma8 at initial redshift read in camb=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-      Dplus = 1.0;
-      res2 = TopHatSigma2(R8);
-      if (ThisTask == 0)
-	printf("Sigma8 at initial redshift via camb=%g  q\n\n", sqrt(res2)); 
-    }
-  else
-    {
 #ifdef DIFFERENT_TRANSFER_FUNC
       Type = 100;
 #endif

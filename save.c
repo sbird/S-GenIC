@@ -259,12 +259,11 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
-<<<<<<< HEAD
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
-=======
+#endif
 #ifdef FORMAT_TWO
           /*Write velocity header*/
 	  blkheadsize = sizeof(int) + 4 * sizeof(char);
@@ -274,7 +273,6 @@ void save_local_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing velocity header*/
->>>>>>> master
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
@@ -356,15 +354,11 @@ void save_local_data(void)
 #ifdef  PRODUCEGAS
   dummy *= 2;
 #endif
-<<<<<<< HEAD
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(int) * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] +
 		   header.npart[5]);
-#ifndef NO64BITID
-  dummy *= 2;
 #endif
-=======
 #ifdef FORMAT_TWO
           /*Write ID header*/
 	  blkheadsize = sizeof(int) + 4 * sizeof(char);
@@ -374,7 +368,6 @@ void save_local_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing ID header*/
->>>>>>> master
 #endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
