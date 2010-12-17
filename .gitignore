@@ -1,0 +1,6 @@
+*.o
+.*.swp
+N-GenIC
+html/*
+latex/*
+tags
