@@ -181,7 +181,7 @@ void read_transfer_table(void)
         kctog=UnitLength_in_cm
                 /InputSpectrum_UnitLength_in_cm;
 	/*Open file*/
-	sprintf(buf,FileWithInputSpectrum);
+	sprintf(buf,FileWithTransfer);
 	if(!(trans=fopen(buf,"r")))
 	{
 		fprintf(stderr,"Can't open transfer file %s! You probably forgot to create it!\n",buf);
