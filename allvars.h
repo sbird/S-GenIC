@@ -81,9 +81,11 @@ extern int      NTaskWithN;
 
 
 /*Parameters for spline knots*/
+#ifdef SPLINE
 extern int NumKnots;
 extern char KnotValues[400];
 extern char KnotPositions[400];
+#endif
 extern int      *Slab_to_task;
 
 

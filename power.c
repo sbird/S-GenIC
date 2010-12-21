@@ -12,6 +12,7 @@ static double Norm;
 
 /*This stores the conversion between the tables and the internal units. By default 1e-3*/
 static double kctog;
+#ifdef SPLINE
 /* These are arrays to store the spline parameters.
  * Because we don't know the size of them until we know NumKnots, we 
  * can't just read them in read_param.h, so we read them in as a string
@@ -21,15 +22,18 @@ static double *KnotPos;
 static double *SplineCoeffs;
 /*This is a function to compute the splines*/
 extern void cubspl_(double *, double *, int *, int *, int *);
-/*This prints the CAMB transfer function*/
-double tk_CAMB(double k, int Type);
 /*This prints the value of the spline at k*/
 double splineval(double k);
 /*Initialize the spline coefficients*/
 void initialize_splines(void);
+#endif
+/*This prints the CAMB transfer function*/
+double tk_CAMB(double k, int Type);
 /*Power spectra*/
 double PowerSpec_CAMB(double k, int Type);
+#ifdef SPLINE
 double PowerSpec_Spline(double k, int Type);
+#endif
 static int NPowerTable;
 #define APRIM 2.43e-9
 #define PIVOT_SCALE (0.05*kctog/HubbleParam)
@@ -75,6 +79,7 @@ double PowerSpec(double k)
   {
      return PowerSpec_CAMB(k,Type)/pow(2*M_PI,3);
   }
+#ifdef SPLINE
   if(WhichSpectrum==4)
   {
      return PowerSpec_Spline(k,Type)/pow(2*M_PI,3);
@@ -85,6 +90,7 @@ double PowerSpec(double k)
   {
      return PowerSpec_Spline(k,2)/pow(2*M_PI,3);
   }
+#endif
 #endif
   switch (WhichSpectrum)
     {
@@ -458,8 +464,10 @@ void initialize_powerspectrum(void)
     read_power_table();
   if(WhichSpectrum > 2)
     read_transfer_table();
+#ifdef SPLINE
   if(WhichSpectrum > 3)
     initialize_splines();
+#endif
 
 #ifdef DIFFERENT_TRANSFER_FUNC
       Type = 100;
@@ -694,11 +702,12 @@ double PowerSpec_CAMB(double k, int Type)
 	return APRIM*2*M_PI*M_PI*k*pow(k/PIVOT_SCALE,PrimordialIndex-1.0)*pow(tk_CAMB(k, Type),2);
 }
 
+#ifdef SPLINE
 double PowerSpec_Spline(double k,int Type)
 {
   return APRIM*2*M_PI*M_PI*splineval(k)*k*pow(tk_CAMB(k, Type),2);
 }
-
+#endif
 
 double tk_eh(double k)		/* from Martin White */
 {
@@ -1009,6 +1018,7 @@ void add_NU_thermal_speeds(float *vel)
 
 #endif
 
+#ifdef SPLINE
 /* Function to get a spline from a set of knots and values.*/
 void initialize_splines(void)
 {
@@ -1165,3 +1175,5 @@ double splineval(double k)
           +SplineCoeffs[i*4+2]*pow(logk-KnotPos[i],2)/2.0
           +SplineCoeffs[i*4+3]*pow(logk-KnotPos[i],3)/6.0;
 }
+
+#endif

@@ -157,6 +157,7 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "NU_PartMass_in_ev");
   addr[nt] = &NU_PartMass_in_ev;
   id[nt++] = FLOAT;
+#ifdef SPLINE
   strcpy(tag[nt], "NumKnots");
   addr[nt] = &NumKnots;
   id[nt++] = INT;
@@ -168,7 +169,7 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "KnotValues");
   addr[nt] = &KnotValues;
   id[nt++] = STRING;
-
+#endif
   if((fd = fopen(fname, "r")))
     {
       while(!feof(fd))
