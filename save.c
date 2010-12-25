@@ -113,12 +113,13 @@ void save_local_data(void)
 
   header.npart[1] = NumPart;
   header.npartTotal[1] = TotNumPart;
-  header.npartTotal[2] = (TotNumPart >> 32);
+  header.npartTotalHighWord[1] = (TotNumPart >> 32);
   header.mass[1] = (Omega) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
 
 #ifdef  PRODUCEGAS
   header.npart[0] = NumPart;
   header.npartTotal[0] = TotNumPart;
+  header.npartTotalHighWord[0] = (TotNumPart >> 32);
   header.mass[0] = (OmegaBaryon) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
   header.mass[1] = (Omega - OmegaBaryon) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
 #endif
@@ -148,8 +149,12 @@ void save_local_data(void)
 
   header.flag_stellarage = 0;
   header.flag_metals = 0;
-  header.hashtabsize = 0;
+  header.npartTotalHighWord[6];	/*!< High word of the total number of particles of each type */
+  header.flag_entropy_instead_u=0;	/*!< flags that IC-file contains entropy instead of u */
+  header.flag_doubleprecision=0;	/*!< flags that snapshot contains double-precision instead of single precision */
 
+  header.flag_ic_info=1;             /*!< flag to inform whether IC files are generated with ordinary Zeldovich approximation,*/
+  header.lpt_scalingfactor=1;      /*!< scaling factor for 2lpt initial conditions */
   dummy = sizeof(header);
 #ifdef FORMAT_TWO
       /*Write format 2 header header*/

@@ -45,8 +45,23 @@ extern struct io_header_1
   double HubbleParam;      /*!< little 'h' */
   int4byte flag_stellarage;     /*!< flags whether the age of newly formed stars is recorded and saved */
   int4byte flag_metals;         /*!< flags whether metal enrichment is included */
-  int4byte hashtabsize;         /*!< gives the size of the hashtable belonging to this snapshot file */
-  char fill[84];		/*!< fills to 256 Bytes */
+  unsigned int npartTotalHighWord[6];	/*!< High word of the total number of particles of each type */
+  int flag_entropy_instead_u;	/*!< flags that IC-file contains entropy instead of u */
+  int flag_doubleprecision;	/*!< flags that snapshot contains double-precision instead of single precision */
+
+  int flag_ic_info;             /*!< flag to inform whether IC files are generated with ordinary Zeldovich approximation,
+                                     or whether they contain 2nd order lagrangian perturbation theory initial conditions.
+                                     For snapshots files, the value informs whether the simulation was evolved from
+                                     Zeldoch or 2lpt ICs. Encoding is as follows:
+                                        FLAG_ZELDOVICH_ICS     (1)   - IC file based on Zeldovich
+                                        FLAG_SECOND_ORDER_ICS  (2)   - Special IC-file containing 2lpt masses
+                                        FLAG_EVOLVED_ZELDOVICH (3)   - snapshot evolved from Zeldovich ICs
+                                        FLAG_EVOLVED_2LPT      (4)   - snapshot evolved from 2lpt ICs
+                                        FLAG_NORMALICS_2LPT    (5)   - standard gadget file format with 2lpt ICs
+                                     All other values, including 0 are interpreted as "don't know" for backwards compatability.
+                                 */
+  float lpt_scalingfactor;      /*!< scaling factor for 2lpt initial conditions */
+  char fill[48];		/*!< fills to 256 Bytes */
 }
 header, header1;
 
