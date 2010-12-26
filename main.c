@@ -92,6 +92,9 @@ void displacement_fields(void)
       printf("Starting to compute displacement fields.\n");
     }
 
+#ifdef NEUTRINOS_KS
+  Omega = Omega + OmegaDM_2ndSpecies;
+#endif
   hubble_a =
     Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
 
@@ -100,7 +103,7 @@ void displacement_fields(void)
   vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
 
   if(ThisTask == 0)
-    printf("vel_prefac= %g  hubble_a=%g fom=%g \n", vel_prefac, hubble_a, F_Omega(InitTime));
+    printf("vel_prefac= %g  hubble_a=%g fom=%gOmega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
      if (ThisTask == 0)
 			     printf("Dplus initial redshift =%g  \n\n", Dplus); 
 

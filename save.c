@@ -149,7 +149,6 @@ void save_local_data(void)
 
   header.flag_stellarage = 0;
   header.flag_metals = 0;
-  header.npartTotalHighWord[6];	/*!< High word of the total number of particles of each type */
   header.flag_entropy_instead_u=0;	/*!< flags that IC-file contains entropy instead of u */
   header.flag_doubleprecision=0;	/*!< flags that snapshot contains double-precision instead of single precision */
 
