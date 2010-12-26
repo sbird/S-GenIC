@@ -158,6 +158,7 @@ extern int    WDM_On;
 extern int    WDM_Vtherm_On;
 extern double WDM_PartMass_in_kev;
 
+extern int    neutrinos_ks;
 extern int    NU_On;
 extern int    NU_Vtherm_On;
 extern double NU_PartMass_in_ev;

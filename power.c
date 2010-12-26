@@ -398,28 +398,22 @@ sprintf(buf, FileWithInputSpectrum);
 	      // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
 	    }
 
-#ifdef NEUTRINOS_KS
-	  // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
-	  if (OmegaBaryon == 0  && OmegaDM_2ndSpecies != 0)
-            {
-	      T_cdmnew = (0.05*T_b+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm+OmegaDM_2ndSpecies*T_nu)/(Omega-OmegaDM_2ndSpecies-0.05);
-              delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	      // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
-	    }
-	  // if there are  baryons and a fake nu component fake the cdm to have the nu contribution in as well
-          if (OmegaBaryon != 0  && OmegaDM_2ndSpecies != 0)
-            {
-              T_cdmnew = (OmegaDM_2ndSpecies*T_nu+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm)/(Omega-0.05);
-              delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-              // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
-            }
-#endif
-
-
-
-
-
-
+          if(neutrinos_ks){
+	    // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
+	    if (OmegaBaryon == 0  && OmegaDM_2ndSpecies != 0)
+              {
+	        T_cdmnew = (0.05*T_b+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm+OmegaDM_2ndSpecies*T_nu)/(Omega-OmegaDM_2ndSpecies-0.05);
+                delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
+	        // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
+	      }
+	    // if there are  baryons and a fake nu component fake the cdm to have the nu contribution in as well
+            if (OmegaBaryon != 0  && OmegaDM_2ndSpecies != 0)
+              {
+                T_cdmnew = (OmegaDM_2ndSpecies*T_nu+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm)/(Omega-0.05);
+                delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
+                // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
+              }
+          }
 
 	  PowerTable[NPowerTable].logD = log10(delta_cdm);
 	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
@@ -785,19 +779,19 @@ double tk_CAMB(double k, int Type)
                  * FIXME: Make OmBarLoc be a variable so can use the value fed to CAMB*/
 	        if(OmegaBaryon == 0){
                         OmBarLoc = 0.05;
-                        /*FIXME: Make NEUTRINOS_KS a runtime argument*/
-#ifndef NEUTRINOS_KS
-                	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b)/(Omega-OmegaDM_2ndSpecies);
-                	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b)/(Omega-OmegaDM_2ndSpecies);
-#else
-	        /* if there is a *fake* nu component fake the cdm to have the nu contribution as well*/
-                	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
-                	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
+                        if(!neutrinos_ks){
+                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b)/(Omega-OmegaDM_2ndSpecies);
+                        	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b)/(Omega-OmegaDM_2ndSpecies);
+                        }
+                        else{
+	                /* if there is a *fake* nu component fake the cdm to have the nu contribution as well*/
+                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
+                	        T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
+                        }
 	        }
-                if(OmegaBaryon !=0 && OmegaDM_2ndSpecies != 0){
+                if(neutrinos_ks && OmegaBaryon !=0 && OmegaDM_2ndSpecies != 0){
                 	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/(Omega-OmBarLoc);
                 	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*transfer_tables[lessind+1].T_n)/(Omega-OmBarLoc);
-#endif
                 }
         }
         /* Baryons */
@@ -878,37 +872,23 @@ double GrowthFactor(double astart, double aend)
 
 double growth(double a)
 {
-  double hubble_a, Omegan;
+  double hubble_a, Omegan=Omega;
 
-
-
-  hubble_a = sqrt(Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda);
-
-  return hubble_a * qromb(growth_int, 0, a);
-
-#ifdef NEUTRINOS_KS
-  Omegan = Omega + OmegaDM_2ndSpecies;
-
-  if(ThisTask == 0)
-    printf("\n Omegan \%g\n\n",
-           Omegan);
-
-
-
+  if(neutrinos_ks){
+        Omegan = Omega + OmegaDM_2ndSpecies;
+        if(ThisTask == 0)
+                printf("\n Omegan \%g\n\n",Omegan);
+  }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
-
   return hubble_a * qromb(growth_int, 0, a);
-#endif 
-
 }
 
 
 double growth_int(double a)
 {
   double Omegan=Omega;
-#ifdef NEUTRINOS_KS
-  Omegan += OmegaDM_2ndSpecies;
-#endif
+  if(neutrinos_ks)
+        Omegan +=  OmegaDM_2ndSpecies;
   return pow(a / (Omegan + (1 - Omegan - OmegaLambda) * a + OmegaLambda * a * a * a), 1.5);
 }
 
@@ -916,14 +896,9 @@ double growth_int(double a)
 double F_Omega(double a)
 {
   double omega_a,Omegan=Omega;
-
-#ifdef NEUTRINOS_KS
-  Omegan +=  OmegaDM_2ndSpecies;
-#endif
-
-
+  if(neutrinos_ks)
+        Omegan +=  OmegaDM_2ndSpecies;
   omega_a = Omegan / (Omegan + a * (1 - Omegan - OmegaLambda) + a * a * a * OmegaLambda);
-
   return pow(omega_a, 0.6);
 }
 

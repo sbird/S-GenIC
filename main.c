@@ -91,12 +91,11 @@ void displacement_fields(void)
     {
       printf("Starting to compute displacement fields.\n");
     }
+/*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
+/*  if(neutrinos_ks)
+    Omega = Omega + OmegaDM_2ndSpecies;*/
 
-#ifdef NEUTRINOS_KS
-  Omega = Omega + OmegaDM_2ndSpecies;
-#endif
-  hubble_a =
-    Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
+  hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
 
   vel_prefac = InitTime * hubble_a * F_Omega(InitTime);
 

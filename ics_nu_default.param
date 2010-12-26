@@ -90,7 +90,7 @@ WDM_Vtherm_On        0      % If set to '1', the (warm) dark matter particles wi
 
 WDM_PartMass_in_kev  10.0   % This is the particle mass in keV of the WDM particle
 
-
+NU_KSPACE            0      % Fake neutrinos rather than real ones
 NU_On                1
 NU_Vtherm_On         1
 NU_PartMass_in_ev    0.6

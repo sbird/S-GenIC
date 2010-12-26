@@ -149,6 +149,10 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "NU_On");
   addr[nt] = &NU_On;
   id[nt++] = INT;
+  strcpy(tag[nt], "NU_KSPACE");
+  addr[nt] = &neutrinos_ks;
+  id[nt++] = INT;
+
 
   strcpy(tag[nt], "NU_Vtherm_On");
   addr[nt] = &NU_Vtherm_On;
