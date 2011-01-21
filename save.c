@@ -37,7 +37,6 @@ void write_particle_data(void)
 	save_local_data();
 
       /* wait inside the group */
-      MPI_Barrier(MPI_COMM_WORLD);
     }
 
   if(ThisTask == 0)

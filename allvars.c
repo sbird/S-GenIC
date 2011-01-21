@@ -59,9 +59,9 @@ int Local_nx, Local_x_start;
 
 int IdStart;
 
-rfftwnd_mpi_plan Inverse_plan;
-fftw_real *Disp, *Workspace;
-fftw_complex *Cdata;
+fftwf_plan Inverse_plan;
+float *Disp;
+fftwf_complex *Cdata;
 
 
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;

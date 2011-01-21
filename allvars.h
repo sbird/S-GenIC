@@ -1,8 +1,4 @@
-#ifdef DOUBLEPRECISION_FFTW
-   #include <drfftw_mpi.h>
-#else
-   #include <srfftw_mpi.h>
-#endif
+#include <fftw3.h>
 
 #define  PI          3.14159265358979323846 
 #define  GRAVITY     6.672e-8
@@ -130,9 +126,9 @@ extern int      Local_nx, Local_x_start;
 
 extern int  IdStart;
 
-extern rfftwnd_mpi_plan Inverse_plan;
-extern fftw_real        *Disp, *Workspace;
-extern fftw_complex     *Cdata;
+extern fftwf_plan Inverse_plan;
+extern float        *Disp;
+extern fftwf_complex     *Cdata;
 
 
 extern double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;

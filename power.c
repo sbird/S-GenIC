@@ -877,7 +877,7 @@ double growth(double a)
   if(neutrinos_ks){
         Omegan = Omega + OmegaDM_2ndSpecies;
         if(ThisTask == 0)
-                printf("\n Omegan \%g\n\n",Omegan);
+                printf("\n Omegan %g\n\n",Omegan);
   }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
   return hubble_a * qromb(growth_int, 0, a);
@@ -1200,7 +1200,6 @@ double splineval(double k)
       if(logk > KnotPos[ihigh])
       {
          printf("Asked to extrapolate P(k), k=%g\n",k/kctog);
-         MPI_Abort(MPI_COMM_WORLD, 44);
          i=ihigh;
       }
       else

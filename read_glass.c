@@ -22,8 +22,6 @@ void read_glass(char *fname)
 #define SKIP {my_fread(&dummy, sizeof(int), 1, fd);}
 #define SKIP2 {my_fread(&dummy2, sizeof(int), 1, fd);}
 
-  if(ThisTask == 0)
-    {
       numfiles = find_files(fname);
 
       for(num = 0, skip = 0; num < numfiles; num++)
@@ -86,25 +84,6 @@ void read_glass(char *fname)
 
 	  fclose(fd);
 	}
-    }
-
-  MPI_Bcast(&Nglass, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&header1, sizeof(header1), MPI_BYTE, 0, MPI_COMM_WORLD);
-
-  if(ThisTask != 0)
-    {
-      pos = (float *) malloc(sizeof(float) * Nglass * 3);
-
-      if(!(pos))
-	{
-	  printf("failed to allocate %g Mbyte on Task %d for glass file\n",
-		 sizeof(float) * Nglass * 3.0 / (1024.0 * 1024.0), ThisTask);
-	  FatalError(112);
-	}
-    }
-
-  MPI_Bcast(&pos[0], sizeof(float) * Nglass * 3, MPI_BYTE, 0, MPI_COMM_WORLD);
-
 
   npart_Task = malloc(sizeof(int) * NTask);
 

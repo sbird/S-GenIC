@@ -253,10 +253,7 @@ void read_parameterfile(char *fname)
     }
 
   if(errorFlag)
-    {
-      MPI_Finalize();
       exit(0);
-    }
 
 
 #undef FLOAT

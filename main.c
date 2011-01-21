@@ -1,11 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
-#ifdef DOUBLEPRECISION_FFTW
-   #include <drfftw_mpi.h>
-#else
-   #include <srfftw_mpi.h>
-#endif
-#include <mpi.h>
+#include <fftw3.h>
 #include <gsl/gsl_rng.h>
 
 #include "allvars.h"
@@ -14,18 +9,11 @@
 
 int main(int argc, char **argv)
 {
-  MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &ThisTask);
-  MPI_Comm_size(MPI_COMM_WORLD, &NTask);
 
   if(argc < 2)
     {
-      if(ThisTask == 0)
-	{
 	  fprintf(stdout, "\nParameters are missing.\n");
 	  fprintf(stdout, "Call with <ParameterFile>\n\n");
-	}
-      MPI_Finalize();
       exit(0);
     }
 
@@ -55,10 +43,8 @@ int main(int argc, char **argv)
       printf("\n");
     }
 
-  MPI_Barrier(MPI_COMM_WORLD);
 /*   print_spec(); */
 
-  MPI_Finalize();		/* clean up & finalize MPI */
   exit(0);
 }
 
@@ -68,8 +54,6 @@ int main(int argc, char **argv)
 
 void displacement_fields(void)
 {
-  MPI_Request request;
-  MPI_Status status;
   gsl_rng *random_generator;
   int i, j, k, ii, jj, kk, axes;
   int n;
@@ -165,8 +149,8 @@ void displacement_fields(void)
 	    for(j = 0; j < Nmesh; j++)
 	      for(k = 0; k <= Nmesh / 2; k++)
 		{
-		  Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k].re = 0;
-		  Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k].im = 0;
+		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] = 0;
+		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] = 0;
 		}
 
 	  for(i = 0; i < Nmesh; i++)
@@ -263,9 +247,9 @@ void displacement_fields(void)
 			    {
 			      if(i >= Local_x_start && i < (Local_x_start + Local_nx))
 				{
-				  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].re =
+				  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 				    -kvec[axes] / kmag2 * delta * sin(phase);
-				  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].im =
+				  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
 				    kvec[axes] / kmag2 * delta * cos(phase);
 				}
 			    }
@@ -281,14 +265,14 @@ void displacement_fields(void)
 					{
 					  jj = Nmesh - j;	/* note: j!=0 surely holds at this point */
 
-					  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].re =
+					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].im =
+					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
 
-					  Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k].re =
+					  (Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k].im =
+					  (Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k])[1] =
 					    -kvec[axes] / kmag2 * delta * cos(phase);
 					}
 				    }
@@ -308,18 +292,18 @@ void displacement_fields(void)
 
 				      if(i >= Local_x_start && i < (Local_x_start + Local_nx))
 					{
-					  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].re =
+					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k].im =
+					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
 					}
 
 				      if(ii >= Local_x_start && ii < (Local_x_start + Local_nx))
 					{
-					  Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
-						k].re = -kvec[axes] / kmag2 * delta * sin(phase);
-					  Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
-						k].im = -kvec[axes] / kmag2 * delta * cos(phase);
+					  (Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
+					        k])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+					  (Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
+						k])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
 					}
 				    }
 				}
@@ -330,7 +314,7 @@ void displacement_fields(void)
 	    }
 
 
-	  rfftwnd_mpi(Inverse_plan, 1, Disp, Workspace, FFTW_NORMAL_ORDER);	/** FFT **/
+	  fftwf_execute(Inverse_plan);	/** FFT **/
 
 	  /* now get the plane on the right side from neighbour on the right, 
 	     and send the left plane */
@@ -352,22 +336,6 @@ void displacement_fields(void)
 		sendTask = 0;
 	    }
 	  while(Local_nx_table[sendTask] == 0);
-
-	  /* use non-blocking send */
-
-	  if(Local_nx > 0)
-	    {
-	      MPI_Isend(&Disp[0],
-			sizeof(fftw_real) * Nmesh * (2 * (Nmesh / 2 + 1)),
-			MPI_BYTE, recvTask, 10, MPI_COMM_WORLD, &request);
-
-	      MPI_Recv(&Disp[(Local_nx * Nmesh) * (2 * (Nmesh / 2 + 1))],
-		       sizeof(fftw_real) * Nmesh * (2 * (Nmesh / 2 + 1)),
-		       MPI_BYTE, sendTask, 10, MPI_COMM_WORLD, &status);
-
-	      MPI_Wait(&request, &status);
-	    }
-
 
 	  /* read-out displacements */
 
@@ -460,19 +428,16 @@ void displacement_fields(void)
 
   gsl_rng_free(random_generator);
 
-  MPI_Reduce(&maxdisp, &max_disp_glob, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
   if(ThisTask == 0)
     {
       printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
-	     max_disp_glob, max_disp_glob / (Box / Nmesh));
+	     maxdisp, maxdisp / (Box / Nmesh));
     }
-  MPI_Reduce(&mindisp, &min_disp_glob, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-
   if(ThisTask == 0)
     {
       printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
-	     min_disp_glob, min_disp_glob / (Box / Nmesh));
+	     mindisp, mindisp / (Box / Nmesh));
     }
 }
 
@@ -500,72 +465,34 @@ void set_units(void)		/* ... set some units */
 
 void initialize_ffts(void)
 {
-  int total_size, i, additional;
-  int local_ny_after_transpose, local_y_start_after_transpose;
-  int *slab_to_task_local;
+  int i, additional;
   size_t bytes;
 
-
-  Inverse_plan = rfftw3d_mpi_create_plan(MPI_COMM_WORLD,
-					 Nmesh, Nmesh, Nmesh, FFTW_COMPLEX_TO_REAL, FFTW_ESTIMATE);
-
-  rfftwnd_mpi_local_sizes(Inverse_plan, &Local_nx, &Local_x_start,
-			  &local_ny_after_transpose, &local_y_start_after_transpose, &total_size);
-
-  Local_nx_table = malloc(sizeof(int) * NTask);
-  MPI_Allgather(&Local_nx, 1, MPI_INT, Local_nx_table, 1, MPI_INT, MPI_COMM_WORLD);
-
-  if(ThisTask == 0)
-    {
-      for(i = 0; i < NTask; i++)
-	printf("Task=%d Local_nx=%d\n", i, Local_nx_table[i]);
-      fflush(stdout);
-    }
-
-
-  Slab_to_task = malloc(sizeof(int) * Nmesh);
-  slab_to_task_local = malloc(sizeof(int) * Nmesh);
-
-  for(i = 0; i < Nmesh; i++)
-    slab_to_task_local[i] = 0;
-
-  for(i = 0; i < Local_nx; i++)
-    slab_to_task_local[Local_x_start + i] = ThisTask;
-
-  MPI_Allreduce(slab_to_task_local, Slab_to_task, Nmesh, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-  free(slab_to_task_local);
-
-
-
   additional = (Nmesh) * (2 * (Nmesh / 2 + 1));	/* additional plane on the right side */
-
-  Disp = (fftw_real *) malloc(bytes = sizeof(fftw_real) * (total_size + additional));
-  Workspace = (fftw_real *) malloc(bytes += sizeof(fftw_real) * total_size);
-
-  if(Disp && Workspace)
-    {
-      if(ThisTask == 0)
-	printf("\nAllocated %g MB on task %d for FFTs\n", bytes / (1024.0 * 1024.0), ThisTask);
-    }
-  else
-    {
-      printf("failed to allocate %g Mbyte on Task %d\n", bytes / (1024.0 * 1024.0), ThisTask);
-      printf("bailing out.\n");
+  Disp = (float *) fftwf_malloc(bytes = sizeof(float) * (Nmesh*Nmesh*Nmesh + additional));
+  if(Disp)
+        printf("\nAllocated %g MB for FFTs\n", bytes / (1024.0 * 1024.0));
+  else{
+      fprintf(stderr, "Failed to allocate %g Mbyte\n", bytes / (1024.0 * 1024.0));
       FatalError(1);
-    }
+  }
+  Cdata = (fftwf_complex *) Disp;	/* transformed array */
 
-  Cdata = (fftw_complex *) Disp;	/* transformed array */
+  if(!fftwf_init_threads()){
+  		  fprintf(stderr,"Error initialising fftw threads\n");
+  		  exit(1);
+  }
+  fftwf_plan_with_nthreads(omp_get_num_procs());
+  Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
+  return;
 }
 
 
 
 void free_ffts(void)
 {
-  free(Workspace);
-  free(Disp);
-  free(Slab_to_task);
-  rfftwnd_mpi_destroy_plan(Inverse_plan);
+  fftwf_free(Disp);
+  fftwf_destroy_plan(Inverse_plan);
 }
 
 
@@ -573,7 +500,6 @@ int FatalError(int errnum)
 {
   printf("FatalError called with number=%d\n", errnum);
   fflush(stdout);
-  MPI_Abort(MPI_COMM_WORLD, errnum);
   exit(0);
 }
 

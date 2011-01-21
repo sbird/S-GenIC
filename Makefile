@@ -46,9 +46,9 @@ OPTIONS = $(OPT)
 #FFTW_LIBS=  -L/data/store/spb41/apps/fftw/lib
 #
 
-CC       =  mpicc  # sets the C-compiler (default)
-FC			=  mpif90
-OPTIMIZE =  -O2 -g
+CC       =  icc  # sets the C-compiler (default)
+FC			=  ifort
+OPTIMIZE =  -O2 -g -openmp
 MPICHLIB = # -lmpich
 FFTW_INCL=  
 FFTW_LIBS=  
@@ -146,8 +146,7 @@ endif
 
 
 
-FFTW_LIB =  $(FFTW_LIBS) -ldrfftw_mpi -ldfftw_mpi -ldrfftw -ldfftw
-
+FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread 
 LIBS   =   -lm  $(MPICHLIB)  $(FFTW_LIB)  $(GSL_LIBS)  -lgsl -lgslcblas
 
 ifeq ($(SYSTYPE),"Solaris")
