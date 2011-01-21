@@ -55,8 +55,6 @@ void read_glass(char *fname)
 
   count = 0;
 
-  IDStart = 1;
-
   for(i = 0; i < GlassTileFac; i++)
     for(j = 0; j < GlassTileFac; j++)
       for(k = 0; k < GlassTileFac; k++)
@@ -76,11 +74,7 @@ void read_glass(char *fname)
 #ifdef  MULTICOMPONENTGLASSFILE
 		      P[count].Type = type;
 #endif
-		      P[count].ID = IDStart;
-
 		      count++;
-
-		  IDStart++;
 		}
 	    }
 	}

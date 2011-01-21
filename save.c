@@ -338,9 +338,9 @@ void write_particle_data(void)
   for(i = 0, pc = 0; i < NumPart; i++)
     {
 #ifdef NO64BITID
-      blockid[pc] = P[i].ID;
+      blockid[pc] = i;
 #else
-      blocklongid[pc] = P[i].ID;
+      blocklongid[pc] = i;
 #endif
 
       pc++;
@@ -349,12 +349,10 @@ void write_particle_data(void)
       if(P[i].Type == 2)
 	{
 #ifdef NO64BITID
-	  blockid[pc] =
-	    P[i].ID + header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
+	  blockid[pc] += header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
 	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
 #else
-	  blocklongid[pc] =
-	    P[i].ID + header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
+	  blocklongid[pc] += header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
 	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
 #endif
 	  pc++;
@@ -384,9 +382,9 @@ void write_particle_data(void)
   for(i = 0, pc = 0; i < NumPart; i++)
     {
 #ifdef NO64BITID
-      blockid[pc] = P[i].ID + TotNumPart;
+      blockid[pc] = i + TotNumPart;
 #else
-      blocklongid[pc] = P[i].ID + TotNumPart;
+      blocklongid[pc] = i + TotNumPart;
 #endif
 
       pc++;

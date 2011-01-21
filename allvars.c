@@ -12,10 +12,6 @@ FILE *FdTmp, *FdTmpInput;
 
 int Nmesh, Nsample;
 
-int64_t IDStart;
-
-
-
 char GlassFile[500];
 char FileWithInputSpectrum[500];
 char FileWithTransfer[500];
@@ -44,8 +40,6 @@ char KnotPositions[400];
 
 char OutputDir[1000], FileBase[1000];
 int NumFilesWrittenInParallel;
-
-int IdStart;
 
 fftwf_plan Inverse_plan;
 float *Disp;

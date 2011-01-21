@@ -26,9 +26,6 @@ extern int      Nmesh, Nsample;
 
 extern int      SphereMode;
 
-extern int64_t IDStart;
-
-
 extern char     GlassFile[500]; 
 extern char     FileWithInputSpectrum[500];
 extern  char     FileWithTransfer[500];
@@ -54,7 +51,6 @@ extern struct part_data
 #ifdef  MULTICOMPONENTGLASSFILE                      
   int   Type;
 #endif
-  long long ID;
 } *P;
 
 
@@ -65,8 +61,6 @@ extern double MassTable[6];
 
 extern char OutputDir[1000], FileBase[1000];
 extern int  NumFilesWrittenInParallel;
-
-extern int  IdStart;
 
 extern fftwf_plan Inverse_plan;
 extern float        *Disp;
