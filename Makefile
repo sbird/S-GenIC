@@ -42,7 +42,7 @@ endif
 
 CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL) -I../GadgetReader
 
-CXXFLAGS = -I../GadgetReader
+CXXFLAGS = -I../GadgetReader $(OPTIMIZE)
 
 
 $(EXEC): $(OBJS) 

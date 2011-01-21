@@ -8,11 +8,11 @@
 
 void read_glass(char *fname)
 {
-  int i, j, k, n, m, count, type;
+  int i, j, k, n, m, type;
+  int64_t count;
   float *pos = NULL;
   float x, y, z;
   size_t bytes;
-  int num, numfiles, skip, nlocal;
   GadgetReader::GSnap snap(fname);
   header1=snap.GetHeader();
 
@@ -28,7 +28,7 @@ void read_glass(char *fname)
   if(snap.GetBlock("POS ",pos,Nglass,0,0) != Nglass){
           fprintf(stderr, "Error reading particle data\n");
           free(pos);
-          FatalError(113);
+          exit(113);
   }
 
 #if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
@@ -49,8 +49,8 @@ void read_glass(char *fname)
   printf("\nTotal number of particles  = %ld\n",NumPart);
 
   if(!(P = (struct part_data *) malloc(bytes = sizeof(struct part_data) * NumPart))){
-	printf("Failed to allocate %g Mbyte (%d particles)\n", bytes / (1024.0 * 1024.0),NumPart);
-	FatalError(9891);
+	printf("Failed to allocate %g Mbyte (%ld particles)\n", bytes / (1024.0 * 1024.0),NumPart);
+	exit(9891);
   }
 
   count = 0;
@@ -85,11 +85,10 @@ void read_glass(char *fname)
 	    }
 	}
 
-  if(count != NumPart)
-    {
-      printf("fatal mismatch (%d %d)\n", count, NumPart);
-      FatalError(1);
-    }
+  if(count != NumPart){
+      printf("fatal mismatch (%ld %ld)\n", count, NumPart);
+      exit(1);
+  }
 
   free(pos);
   return;

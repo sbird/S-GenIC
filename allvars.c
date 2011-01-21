@@ -12,7 +12,7 @@ FILE *FdTmp, *FdTmpInput;
 
 int Nmesh, Nsample;
 
-long long IDStart;
+int64_t IDStart;
 
 
 
@@ -25,7 +25,7 @@ int GlassTileFac;
 double Box;
 int Seed;
 
-long long NumPart;
+int64_t NumPart;
 
 struct part_data *P;
 

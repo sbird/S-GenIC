@@ -8,15 +8,10 @@
 #define  HUBBLE      3.2407789e-18   /* in h/sec */
 
 
-#ifdef T3E
-typedef short int int4byte;	/* Note: int has 8 Bytes on the T3E ! */
-typedef unsigned short int uint4byte;	/* Note: int has 8 Bytes on the T3E ! */
-#else
-typedef int int4byte;
-typedef unsigned int uint4byte;
-#endif
-
 #include <gadgetheader.h>
+
+typedef int32_t int4byte;
+typedef uint32_t uint4byte;
 
 extern gadget_header header, header1;
 
@@ -31,7 +26,7 @@ extern int      Nmesh, Nsample;
 
 extern int      SphereMode;
 
-extern long long IDStart;
+extern int64_t IDStart;
 
 
 extern char     GlassFile[500]; 
@@ -42,7 +37,7 @@ extern int      GlassTileFac;
 extern double   Box;
 extern int Seed;
 
-extern long long NumPart;
+extern int64_t NumPart;
 
 /*Parameters for spline knots*/
 #ifdef SPLINE
