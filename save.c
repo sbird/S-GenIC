@@ -12,91 +12,36 @@
 
 void write_particle_data(void)
 {
-    printf("\nWriting IC-file\n");
-    
-#define BUFFER 10
   size_t bytes;
   float *block;
   id_type *blockid;
-  int nextblock,blockmaxlen;
+  int blockmaxlen;
   int64_t maxidlen;
   int4byte dummy;
   FILE *fd;
   char buf[300];
   int64_t i, k, pc;
-
+  gadget_header header;
+    
+  printf("\nWriting IC-file\n");
+    
+  #define BUFFER 10
 
   if(NumPart == 0)
     return;
 
-    sprintf(buf, "%s/%s", OutputDir, FileBase);
+  sprintf(buf, "%s/%s", OutputDir, FileBase);
 
   if(!(fd = fopen(buf, "w"))){
       printf("Error. Can't write in file '%s'\n", buf);
       exit(10);
   }
 
-  for(i = 0; i < 6; i++)
-    {
-      header.npart[i] = 0;
-      header.npartTotal[i] = 0;
-      header.mass[i] = 0;
-    }
-
-  qsort(P, NumPart, sizeof(struct part_data), compare_type);	/* sort particles by type, because that's how they should be stored in a gadget binary file */
-
-  for(i = 0; i < 3; i++)
-    header.npartTotal[i] = header1.npartTotal[i] * GlassTileFac * GlassTileFac * GlassTileFac;
-
-  for(i = 0; i < NumPart; i++)
-    header.npart[P[i].Type]++;
-
-  if(header.npartTotal[0])
-    header.mass[0] =
-      (OmegaBaryon) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / (header.npartTotal[0]);
-
-  if(header.npartTotal[1])
-    header.mass[1] =
-      (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box,3) /
-      (header.npartTotal[1]);
-
-  if(header.npartTotal[2])
-    header.mass[2] =
-      (OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / (header.npartTotal[2]);
-
-
-#ifdef NEUTRINO_PAIRS
-  header.npart[2] *= 2;
-  header.npartTotal[2] *= 2;
-  header.mass[2] /= 2;
-#endif //NEUTRINO_PAIRS
-
-  header.time = InitTime;
-  header.redshift = 1.0 / InitTime - 1;
-
-  header.flag_sfr = 0;
-  header.flag_feedback = 0;
-  header.flag_cooling = 0;
-  header.flag_stellarage = 0;
-  header.flag_metals = 0;
-
-  /*FIXME*/
-  header.num_files = 1;
-
-  header.BoxSize = Box;
-  header.Omega0 = Omega;
-  header.OmegaLambda = OmegaLambda;
-  header.HubbleParam = HubbleParam;
-
-  header.flag_stellarage = 0;
-  header.flag_metals = 0;
-  header.flag_entropy_instead_u=0;	/*!< flags that IC-file contains entropy instead of u */
-  header.flag_doubleprecision=0;	/*!< flags that snapshot contains double-precision instead of single precision */
-
-  header.flag_ic_info=1;             /*!< flag to inform whether IC files are generated with ordinary Zeldovich approximation,*/
-  header.lpt_scalingfactor=1;      /*!< scaling factor for 2lpt initial conditions */
-
+  /* sort particles by type, because that's how they should be stored in a gadget binary file */
+  qsort(P, NumPart, sizeof(struct part_data), compare_type);	
   /*Write header*/
+  /*FIXME: Multiple files*/
+  header = generate_header(0,1);
   write_block(fd, "HEAD", &header,sizeof(header));
 
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
@@ -119,12 +64,9 @@ void write_particle_data(void)
   write_block_header(fd, "POS ",dummy);
 
 
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
+  for(i = 0, pc = 0; i < NumPart; i++){
       for(k = 0; k < 3; k++)
-	{
 	  block[3 * pc + k] = P[i].Pos[k];
-	}
       pc++;
 
 #ifdef NEUTRINO_PAIRS
@@ -141,7 +83,7 @@ void write_particle_data(void)
 	  my_fwrite(block, sizeof(float), 3 * pc, fd);
 	  pc = 0;
 	}
-    }
+  }
   if(pc > 0)
     my_fwrite(block, sizeof(float), 3 * pc, fd);
   /*Done writing POS block*/
@@ -272,6 +214,68 @@ void write_particle_data(void)
   return;
 }
 
+gadget_header generate_header(int file, int num_files)
+{
+  gadget_header header;
+  double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
+  int i;
+  /*Set particle numbers*/
+  for(i = 0; i < N_TYPE; i++){
+    uint64_t npart_t = header1.npartTotal[i] * GlassTileFac * GlassTileFac * GlassTileFac;
+#ifdef NEUTRINO_PAIRS
+    if(i == NEUTRINO_TYPE)
+        npart_t *= 2;
+#endif //NEUTRINO_PAIRS
+    if(npart_t > ((int64_t)1<<32) ) {
+        header.NallHW[i] = ( npart_t >> 32);
+        header.npartTotal[i] = npart_t - ((int64_t)header.NallHW[i] << 32);
+    }
+    /* Note this is the canonical decision as to how many particles each file gets: 
+     * everything else just reads this value.*/
+    header.npart[i]=npart_t/num_files;
+    /* If num_files is not a factor of npartTotal, give 
+     * n extra particles to the final file .*/
+    if(file == num_files -1) 
+            header.npart[i] += npart_t % num_files;
+  }
+  /*Set masses*/
+  for(i = 0; i < N_TYPE; i++)
+      header.mass[i] = 0;
+
+  if(header.npartTotal[BARYON_TYPE])
+    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / (header.npartTotal[BARYON_TYPE]);
+
+  if(header.npartTotal[DM_TYPE])
+    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / (header.npartTotal[DM_TYPE]);
+
+  if(header.npartTotal[NEUTRINO_TYPE]){
+    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / (header.npartTotal[NEUTRINO_TYPE]);
+#ifdef NEUTRINO_PAIRS
+    header.mass[NEUTRINO_TYPE] /= 2;
+#endif //NEUTRINO_PAIRS
+  }
+
+  header.num_files = num_files;
+
+  header.time = InitTime;
+  header.redshift = 1.0 / InitTime - 1;
+
+  header.BoxSize = Box;
+  header.Omega0 = Omega;
+  header.OmegaLambda = OmegaLambda;
+  header.HubbleParam = HubbleParam;
+  /*Various flags; Most set by gadget later*/
+  header.flag_sfr = 0;
+  header.flag_feedback = 0;
+  header.flag_cooling = 0;
+  header.flag_stellarage = 0;
+  header.flag_metals = 0;
+  header.flag_entropy_instead_u=0;
+  header.flag_doubleprecision=0;
+  header.flag_ic_info=1;        
+  header.lpt_scalingfactor=1;  
+  return header;
+}
 
 /* This catches I/O errors occuring for my_fwrite(). In this case we better stop.
  */
@@ -313,10 +317,10 @@ void write_block_header(FILE * fd, char * name, int blocksize)
       int blkheadsize = sizeof(int) + 4 * sizeof(char);
       int nextblock = blocksize + 2 * sizeof(int);
       /*Write format 2 header header*/
-      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+      my_fwrite(&blkheadsize,sizeof(int),1,fd);
       my_fwrite(name, sizeof(char), 4, fd);
       my_fwrite(&nextblock, sizeof(int), 1, fd);
-      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+      my_fwrite(&blkheadsize,sizeof(int),1,fd);
 #endif //FORMAT_TWO
       /*This is the record size, which we want for all files*/
       my_fwrite(&blocksize, sizeof(int), 1, fd);

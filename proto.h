@@ -46,6 +46,7 @@ double tk_eh(double k);
 
 size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream);
 
+gadget_header generate_header(int file, int num_files);
 void write_block_header(FILE * fd, char * name, int blocksize);
 void write_block_footer(FILE * fd, char * name, int blocksize);
 void write_block(FILE * fd, char * name, void * block, int blocksize);
