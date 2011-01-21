@@ -1151,6 +1151,7 @@ void initialize_splines(void)
    /*Hopefully we now have a spline.*/
    /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
     * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
+#if 0
    {          
    FILE *f;
 /*              double k; */
@@ -1166,6 +1167,8 @@ void initialize_splines(void)
           printf("%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);*/
 /*       for(k=1e-4*kctog;k<10*kctog; k*=1.1) */
 /*          printf("%g %g\n",k/kctog,splineval(k)); */
+   }
+#endif
    return;
 }
 
