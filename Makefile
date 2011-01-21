@@ -7,9 +7,6 @@ OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
 
 INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
 
-
-OPT   += -DMULTICOMPONENTGLASSFILE # set this if the initial glass file contains multiple components
-
 OPT   += -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
 OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.												
 

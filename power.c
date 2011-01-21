@@ -115,7 +115,7 @@ double PowerSpec(double k)
       power *= Tf * Tf;
     }
 
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
 
   if(Type == 2)
     {
@@ -758,7 +758,7 @@ double tk_CAMB(double k, int Type)
 		return 0;
 	lessind=find_less(k);
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
         /* CDM*/
         if(Type==1){
         	T1=transfer_tables[lessind].T_CDM;
@@ -798,7 +798,7 @@ double tk_CAMB(double k, int Type)
 #endif
         	T1=transfer_tables[lessind].T_t;
         	T2=transfer_tables[lessind+1].T_t;
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
         }
 #endif
 

@@ -44,7 +44,6 @@ void  write_particle_data(void);
 void  read_parameterfile(char *fname);
 double tk_eh(double k);
 
-size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream);
 size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream);
 
 #ifdef __cplusplus

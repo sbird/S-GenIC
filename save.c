@@ -11,15 +11,19 @@ void write_particle_data(void)
 #define BUFFER 10
   size_t bytes;
   float *block;
-  int *blockid;
+#ifdef NO64BITID
+  int32_t *blockid;
+#else
+  int64_t *blockid;
+#endif
   int blkheadsize = sizeof(int) + 4 * sizeof(char);
   int nextblock;
-  long long *blocklongid;
-  int blockmaxlen, maxidlen, maxlongidlen;
+  int blockmaxlen; 
+  int64_t maxidlen;
   int4byte dummy;
   FILE *fd;
   char buf[300];
-  int i, k, pc;
+  int64_t i, k, pc;
 
 
   if(NumPart == 0)
@@ -27,11 +31,10 @@ void write_particle_data(void)
 
     sprintf(buf, "%s/%s", OutputDir, FileBase);
 
-  if(!(fd = fopen(buf, "w")))
-    {
+  if(!(fd = fopen(buf, "w"))){
       printf("Error. Can't write in file '%s'\n", buf);
       exit(10);
-    }
+  }
 
   for(i = 0; i < 6; i++)
     {
@@ -40,8 +43,6 @@ void write_particle_data(void)
       header.mass[i] = 0;
     }
 
-
-#ifdef MULTICOMPONENTGLASSFILE
   qsort(P, NumPart, sizeof(struct part_data), compare_type);	/* sort particles by type, because that's how they should be stored in a gadget binary file */
 
   for(i = 0; i < 3; i++)
@@ -64,20 +65,11 @@ void write_particle_data(void)
       (OmegaDM_2ndSpecies) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / (header.npartTotal[2]);
 
 
-#else
-
-  header.npart[1] = NumPart;
-  header.npartTotal[1] = TotNumPart;
-  header.npartTotalHighWord[1] = (TotNumPart >> 32);
-  header.mass[1] = (Omega) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
-
-#endif
-
 #ifdef NEUTRINO_PAIRS
   header.npart[2] *= 2;
   header.npartTotal[2] *= 2;
   header.mass[2] /= 2;
-#endif
+#endif //NEUTRINO_PAIRS
 
   header.time = InitTime;
   header.redshift = 1.0 / InitTime - 1;
@@ -111,7 +103,7 @@ void write_particle_data(void)
       nextblock = dummy + 2 * sizeof(int);
       my_fwrite(&nextblock, sizeof(int), 1, fd);
       my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
-#endif
+#endif //FORMAT_TWO
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   my_fwrite(&header, sizeof(header), 1, fd);
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
@@ -126,10 +118,13 @@ void write_particle_data(void)
 
   blockmaxlen = bytes / (3 * sizeof(float));
 
-  blockid = (int *) block;
-  blocklongid = (long long *) block;
-  maxidlen = bytes / (sizeof(int));
-  maxlongidlen = bytes / (sizeof(long long));
+#ifdef NO64BITID
+  blockid = (int32_t *) block;
+  maxidlen = bytes / (sizeof(int32_t));
+#else
+  blockid = (int64_t *) block;
+  maxidlen = bytes / (sizeof(int64_t));
+#endif //NO64BITID
 
   /* write coordinates */
   dummy = sizeof(float) * 3 * NumPart;
@@ -137,7 +132,7 @@ void write_particle_data(void)
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
-#endif
+#endif //NEUTRINO_PAIRS
 #ifdef FORMAT_TWO
           /*Write position header*/
 	  blkheadsize = sizeof(int) + 4 * sizeof(char);
@@ -147,7 +142,7 @@ void write_particle_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing position header*/
-#endif
+#endif //FORMAT_TWO
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
@@ -164,7 +159,7 @@ void write_particle_data(void)
 	    block[3 * pc + k] = P[i].Pos[k];
 	  pc++;
 	}
-#endif
+#endif //NEUTRINO_PAIRS
 
       if(pc >= (blockmaxlen - 1))
 	{
@@ -184,7 +179,7 @@ void write_particle_data(void)
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
-#endif
+#endif //NEUTRINO_PAIRS
 #ifdef FORMAT_TWO
           /*Write velocity header*/
 	  blkheadsize = sizeof(int) + 4 * sizeof(char);
@@ -194,14 +189,13 @@ void write_particle_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing velocity header*/
-#endif
+#endif //FORMAT_TWO
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
       for(k = 0; k < 3; k++)
 	block[3 * pc + k] = P[i].Vel[k];
 
-#ifdef MULTICOMPONENTGLASSFILE
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && P[i].Type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
 #ifdef NEUTRINOS
@@ -223,13 +217,9 @@ void write_particle_data(void)
 #else
       if(NU_On == 1 && NU_Vtherm_On == 1 && P[i].Type == 2)
 	add_NU_thermal_speeds(&block[3 * pc]);
-#endif
+#endif //NEUTRINO_PAIRS
 
-#endif
-#else
-      if(WDM_On == 1 && WDM_Vtherm_On == 1)
-	add_WDM_thermal_speeds(&block[3 * pc]);
-#endif
+#endif //NEUTRINOS
 
       pc++;
 
@@ -246,15 +236,15 @@ void write_particle_data(void)
 
   /* write particle ID */
 #ifdef NO64BITID
-  dummy = sizeof(int) * NumPart;
+  dummy = sizeof(int32_t) * NumPart;
 #else
-  dummy = sizeof(long long) * NumPart;
-#endif
+  dummy = sizeof(int64_t) * NumPart;
+#endif //NO64BITID
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(int) * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] +
 		   header.npart[5]);
-#endif
+#endif //NEUTRINO_PAIRS
 #ifdef FORMAT_TWO
           /*Write ID header*/
 	  blkheadsize = sizeof(int) + 4 * sizeof(char);
@@ -264,55 +254,44 @@ void write_particle_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing ID header*/
-#endif
+#endif //FORMAT_TWO
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
   for(i = 0, pc = 0; i < NumPart; i++)
     {
-#ifdef NO64BITID
       blockid[pc] = i;
-#else
-      blocklongid[pc] = i;
-#endif
-
       pc++;
 
 #ifdef NEUTRINO_PAIRS
       if(P[i].Type == 2)
 	{
-#ifdef NO64BITID
 	  blockid[pc] += header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
 	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
-#else
-	  blocklongid[pc] += header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
-	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
-#endif
 	  pc++;
 	}
-#endif
+#endif //NEUTRINO_PAIRS
 
-      if(pc >= (maxlongidlen - 1))
+      if(pc >= (maxidlen - 1))
 	{
 #ifdef NO64BITID
-	  my_fwrite(blockid, sizeof(int), pc, fd);
-#else
-	  my_fwrite(blocklongid, sizeof(long long), pc, fd);
-#endif
+	  my_fwrite(blockid, sizeof(int32_t), pc, fd);
+#else //NO64BITID
+	  my_fwrite(blockid, sizeof(int64_t), pc, fd);
+#endif //NO64BITID
 	  pc = 0;
 	}
     }
   if(pc > 0)
     {
 #ifdef NO64BITID
-      my_fwrite(blockid, sizeof(int), pc, fd);
-#else
-      my_fwrite(blocklongid, sizeof(long long), pc, fd);
+      my_fwrite(blockid, sizeof(int32_t), pc, fd);
+#else //NO64BITID
+      my_fwrite(blockid, sizeof(int64_t), pc, fd);
 #endif
     }
 
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
   /* write zero temperatures if needed */
-#ifdef  MULTICOMPONENTGLASSFILE
   if(header.npart[0])
     {
       dummy = sizeof(float) * header.npart[0];
@@ -325,7 +304,7 @@ void write_particle_data(void)
 	  my_fwrite(&nextblock, sizeof(int), 1, fd);
 	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
 	  /*Done writing temperature header*/
-#endif
+#endif //FORMAT_TWO
       my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
       for(i = 0, pc = 0; i < header.npart[0]; i++)
@@ -344,9 +323,6 @@ void write_particle_data(void)
 	my_fwrite(block, sizeof(float), pc, fd);
       my_fwrite(&dummy, sizeof(dummy), 1, fd);
     }
-#endif
-
-
 
   free(block);
 
@@ -371,24 +347,6 @@ size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream)
   return nwritten;
 }
 
-
-/* This catches I/O errors occuring for fread(). In this case we better stop.
- */
-size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
-{
-  size_t nread;
-
-  if((nread = fread(ptr, size, nmemb, stream)) != nmemb)
-    {
-      printf("I/O error (fread) has occured.\n");
-      fflush(stdout);
-      exit(778);
-    }
-  return nread;
-}
-
-
-#ifdef MULTICOMPONENTGLASSFILE
 int compare_type(const void *a, const void *b)
 {
   if(((struct part_data *) a)->Type < (((struct part_data *) b)->Type))
@@ -399,4 +357,3 @@ int compare_type(const void *a, const void *b)
 
   return 0;
 }
-#endif

@@ -31,7 +31,7 @@ void read_glass(char *fname)
           exit(113);
   }
 
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
   MinType = 7;
   MaxType = -2;
   for(type = 0; type < 6; type++)
@@ -71,9 +71,7 @@ void read_glass(char *fname)
 		      P[count].Pos[0] = x;
 		      P[count].Pos[1] = y;
 		      P[count].Pos[2] = z;
-#ifdef  MULTICOMPONENTGLASSFILE
 		      P[count].Type = type;
-#endif
 		      count++;
 		}
 	    }

@@ -115,11 +115,11 @@ void displacement_fields(void)
     }
 
 
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
   for(Type = MinType; Type <= MaxType; Type++)
 #endif
     {
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
           fprintf(stderr, "\nStarting type %d\n",Type);
 #endif
       for(axes = 0; axes < 3; axes++)
@@ -285,7 +285,7 @@ void displacement_fields(void)
 
 	  for(n = 0; n < NumPart; n++)
 	    {
-#if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
+#if defined(DIFFERENT_TRANSFER_FUNC)
 	      if(P[n].Type == Type)
 #endif
 		{

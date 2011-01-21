@@ -48,9 +48,7 @@ extern struct part_data
 {
   float Pos[3];
   float Vel[3];
-#ifdef  MULTICOMPONENTGLASSFILE                      
   int   Type;
-#endif
 } *P;
 
 
