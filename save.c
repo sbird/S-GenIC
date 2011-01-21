@@ -4,6 +4,12 @@
 #include "allvars.h"
 #include "proto.h"
 
+#ifdef NO64BITID
+        typedef int32_t id_type;
+#else
+        typedef int64_t id_type;
+#endif //NO64BITID
+
 void write_particle_data(void)
 {
     printf("\nWriting IC-file\n");
@@ -11,14 +17,8 @@ void write_particle_data(void)
 #define BUFFER 10
   size_t bytes;
   float *block;
-#ifdef NO64BITID
-  int32_t *blockid;
-#else
-  int64_t *blockid;
-#endif
-  int blkheadsize = sizeof(int) + 4 * sizeof(char);
-  int nextblock;
-  int blockmaxlen; 
+  id_type *blockid;
+  int nextblock,blockmaxlen;
   int64_t maxidlen;
   int4byte dummy;
   FILE *fd;
@@ -95,20 +95,9 @@ void write_particle_data(void)
 
   header.flag_ic_info=1;             /*!< flag to inform whether IC files are generated with ordinary Zeldovich approximation,*/
   header.lpt_scalingfactor=1;      /*!< scaling factor for 2lpt initial conditions */
-  dummy = sizeof(header);
-#ifdef FORMAT_TWO
-      /*Write format 2 header header*/
-      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
-      my_fwrite("HEAD", sizeof(char), 4, fd);
-      nextblock = dummy + 2 * sizeof(int);
-      my_fwrite(&nextblock, sizeof(int), 1, fd);
-      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
-#endif //FORMAT_TWO
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
-  my_fwrite(&header, sizeof(header), 1, fd);
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
-
+  /*Write header*/
+  write_block(fd, "HEAD", &header,sizeof(header));
 
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
     {
@@ -118,14 +107,6 @@ void write_particle_data(void)
 
   blockmaxlen = bytes / (3 * sizeof(float));
 
-#ifdef NO64BITID
-  blockid = (int32_t *) block;
-  maxidlen = bytes / (sizeof(int32_t));
-#else
-  blockid = (int64_t *) block;
-  maxidlen = bytes / (sizeof(int64_t));
-#endif //NO64BITID
-
   /* write coordinates */
   dummy = sizeof(float) * 3 * NumPart;
 #ifdef NEUTRINO_PAIRS
@@ -133,17 +114,11 @@ void write_particle_data(void)
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
 #endif //NEUTRINO_PAIRS
-#ifdef FORMAT_TWO
-          /*Write position header*/
-	  blkheadsize = sizeof(int) + 4 * sizeof(char);
-      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
-      	  my_fwrite("POS ", sizeof(char), 4, fd);
-	  nextblock=dummy+2*sizeof(int);
-	  my_fwrite(&nextblock, sizeof(int), 1, fd);
-	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
-	  /*Done writing position header*/
-#endif //FORMAT_TWO
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
+
+  /*We are about to write the POS block*/
+  write_block_header(fd, "POS ",dummy);
+
+
   for(i = 0, pc = 0; i < NumPart; i++)
     {
       for(k = 0; k < 3; k++)
@@ -169,7 +144,8 @@ void write_particle_data(void)
     }
   if(pc > 0)
     my_fwrite(block, sizeof(float), 3 * pc, fd);
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
+  /*Done writing POS block*/
+  write_block_footer(fd, "POS ",dummy);
 
 
 
@@ -180,17 +156,9 @@ void write_particle_data(void)
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
 			 header.npart[4] + header.npart[5]);
 #endif //NEUTRINO_PAIRS
-#ifdef FORMAT_TWO
-          /*Write velocity header*/
-	  blkheadsize = sizeof(int) + 4 * sizeof(char);
-      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
-      	  my_fwrite("VEL ", sizeof(char), 4, fd);
-	  nextblock=dummy+2*sizeof(int);
-	  my_fwrite(&nextblock, sizeof(int), 1, fd);
-	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
-	  /*Done writing velocity header*/
-#endif //FORMAT_TWO
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
+
+  write_block_header(fd, "VEL ",dummy);
+
   for(i = 0, pc = 0; i < NumPart; i++)
     {
       for(k = 0; k < 3; k++)
@@ -231,33 +199,23 @@ void write_particle_data(void)
     }
   if(pc > 0)
     my_fwrite(block, sizeof(float), 3 * pc, fd);
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
+
+  write_block_footer(fd, "VEL ",dummy);
 
 
   /* write particle ID */
-#ifdef NO64BITID
-  dummy = sizeof(int32_t) * NumPart;
-#else
-  dummy = sizeof(int64_t) * NumPart;
-#endif //NO64BITID
+
+  blockid = (id_type *) block;
+  maxidlen = bytes / (sizeof(id_type));
+  dummy = sizeof(id_type) * NumPart;
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(int) * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] + header.npart[4] +
 		   header.npart[5]);
 #endif //NEUTRINO_PAIRS
-#ifdef FORMAT_TWO
-          /*Write ID header*/
-	  blkheadsize = sizeof(int) + 4 * sizeof(char);
-      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
-      	  my_fwrite("ID  ", sizeof(char), 4, fd);
-	  nextblock=dummy+2*sizeof(int);
-	  my_fwrite(&nextblock, sizeof(int), 1, fd);
-	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
-	  /*Done writing ID header*/
-#endif //FORMAT_TWO
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
+  write_block_header(fd, "ID  ",dummy);
+
+  for(i = 0, pc = 0; i < NumPart; i++){
       blockid[pc] = i;
       pc++;
 
@@ -270,42 +228,23 @@ void write_particle_data(void)
 	}
 #endif //NEUTRINO_PAIRS
 
-      if(pc >= (maxidlen - 1))
-	{
-#ifdef NO64BITID
-	  my_fwrite(blockid, sizeof(int32_t), pc, fd);
-#else //NO64BITID
-	  my_fwrite(blockid, sizeof(int64_t), pc, fd);
-#endif //NO64BITID
+      if(pc >= (maxidlen - 1)){
+	  my_fwrite(blockid, sizeof(id_type), pc, fd);
 	  pc = 0;
-	}
-    }
+      }
+  }
   if(pc > 0)
-    {
-#ifdef NO64BITID
-      my_fwrite(blockid, sizeof(int32_t), pc, fd);
-#else //NO64BITID
-      my_fwrite(blockid, sizeof(int64_t), pc, fd);
-#endif
-    }
+      my_fwrite(blockid, sizeof(id_type), pc, fd);
 
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
+  write_block_footer(fd, "ID  ",dummy);
+  /*Done writing IDs*/
 
   /* write zero temperatures if needed */
   if(header.npart[0])
     {
       dummy = sizeof(float) * header.npart[0];
-#ifdef FORMAT_TWO
-          /*Write temperature header*/
-	  blkheadsize = sizeof(int) + 4 * sizeof(char);
-      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
-      	  my_fwrite("U   ", sizeof(char), 4, fd);
-	  nextblock=dummy+2*sizeof(int);
-	  my_fwrite(&nextblock, sizeof(int), 1, fd);
-	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
-	  /*Done writing temperature header*/
-#endif //FORMAT_TWO
-      my_fwrite(&dummy, sizeof(dummy), 1, fd);
+
+      write_block_header(fd, "U   ",dummy);
 
       for(i = 0, pc = 0; i < header.npart[0]; i++)
 	{
@@ -321,8 +260,10 @@ void write_particle_data(void)
 	}
       if(pc > 0)
 	my_fwrite(block, sizeof(float), pc, fd);
-      my_fwrite(&dummy, sizeof(dummy), 1, fd);
+
+      write_block_footer(fd, "U   ",dummy);
     }
+  /*Done writing temperatures*/
 
   free(block);
 
@@ -357,3 +298,35 @@ int compare_type(const void *a, const void *b)
 
   return 0;
 }
+
+void write_block(FILE * fd, char * name, void * block, int blocksize)
+{
+  write_block_header(fd, name, blocksize);
+  my_fwrite(block, blocksize, 1, fd);
+  write_block_footer(fd, name, blocksize);
+}
+
+void write_block_header(FILE * fd, char * name, int blocksize)
+{
+#ifdef FORMAT_TWO
+      /*This is the block header record, which we want for format two files*/
+      int blkheadsize = sizeof(int) + 4 * sizeof(char);
+      int nextblock = blocksize + 2 * sizeof(int);
+      /*Write format 2 header header*/
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+      my_fwrite(name, sizeof(char), 4, fd);
+      my_fwrite(&nextblock, sizeof(int), 1, fd);
+      my_fwrite(&blkheadsize,sizeof(dummy),1,fd);
+#endif //FORMAT_TWO
+      /*This is the record size, which we want for all files*/
+      my_fwrite(&blocksize, sizeof(int), 1, fd);
+      return;
+}
+
+void write_block_footer(FILE * fd, char * name, int blocksize)
+{
+      /*This is the record size, which we want for all files*/
+      my_fwrite(&blocksize, sizeof(int), 1, fd);
+      return;
+}
+

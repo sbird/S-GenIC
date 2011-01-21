@@ -46,6 +46,10 @@ double tk_eh(double k);
 
 size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream);
 
+void write_block_header(FILE * fd, char * name, int blocksize);
+void write_block_footer(FILE * fd, char * name, int blocksize);
+void write_block(FILE * fd, char * name, void * block, int blocksize);
+
 #ifdef __cplusplus
 }
 #endif
