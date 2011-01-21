@@ -15,7 +15,6 @@ void read_glass(char *fname)
   float x, y, z;
   FILE *fd = 0;
   size_t bytes;
-  int *npart_Task;
   int num, numfiles, skip, nlocal;
   char buf[500];
 

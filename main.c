@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <omp.h>
 #include <fftw3.h>
 #include <gsl/gsl_rng.h>
 
@@ -51,16 +52,12 @@ int main(int argc, char **argv)
 void displacement_fields(void)
 {
   gsl_rng *random_generator;
-  int i, j, k, ii, jj, kk, axes;
+  int i, j, k, ii, jj, axes;
   int n;
-  int sendTask, recvTask;
   double fac, vel_prefac;
   double kvec[3], kmag, kmag2, p_of_k;
   double delta, phase, ampl, hubble_a;
-  double u, v, w;
-  double f1, f2, f3, f4, f5, f6, f7, f8;
-  double dis, maxdisp, max_disp_glob;
-  double mindisp, min_disp_glob;
+  double mindisp, maxdisp;
   unsigned int *seedtable;
 
 #ifdef CORRECT_CIC
@@ -294,63 +291,39 @@ void displacement_fields(void)
 	      if(P[n].Type == Type)
 #endif
 		{
-		  u = P[n].Pos[0] / Box * Nmesh;
-		  v = P[n].Pos[1] / Box * Nmesh;
-		  w = P[n].Pos[2] / Box * Nmesh;
+                  double dis;
+                  double f1, f2, f3, f4, f5, f6, f7, f8;
+                  double u[3];
+                  int i[3], ii[3];
+                  int q;
+                  for(q=0;q<3;q++){
+        		  u[q] = P[n].Pos[q] / Box * Nmesh;
+                          i[q] = (int) u[q];
+                          if(i[q] == Nmesh)
+                                  i[q]--;
+                          u[q] -= i[q];
+                          ii[q] = i[q]+1;
+        		  if(ii[q] >= Nmesh)
+	        	    ii[q] -= Nmesh;
+                  }
 
-		  i = (int) u;
-		  j = (int) v;
-		  k = (int) w;
-		  if(i == Nmesh)
-		    i = Nmesh - 1;
-		  if(j == Nmesh)
-		    j = Nmesh - 1;
-		  if(k == Nmesh)
-		    k = Nmesh - 1;
+		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
+		  f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
+		  f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
+		  f4 = (1 - u[0]) * (u[1]) * (u[2]);
+		  f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
+		  f6 = (u[0]) * (1 - u[1]) * (u[2]);
+		  f7 = (u[0]) * (u[1]) * (1 - u[2]);
+		  f8 = (u[0]) * (u[1]) * (u[2]);
 
-		  u -= i;
-		  v -= j;
-		  w -= k;
-
-		  ii = i + 1;
-		  jj = j + 1;
-		  kk = k + 1;
-
-		  if(ii >= Nmesh)
-		    ii -= Nmesh;
-		  if(jj >= Nmesh)
-		    jj -= Nmesh;
-		  if(kk >= Nmesh)
-		    kk -= Nmesh;
-
-		  f1 = (1 - u) * (1 - v) * (1 - w);
-		  f2 = (1 - u) * (1 - v) * (w);
-		  f3 = (1 - u) * (v) * (1 - w);
-		  f4 = (1 - u) * (v) * (w);
-		  f5 = (u) * (1 - v) * (1 - w);
-		  f6 = (u) * (1 - v) * (w);
-		  f7 = (u) * (v) * (1 - w);
-		  f8 = (u) * (v) * (w);
-
-		  dis = Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k] * f1 +
-		    Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk] * f2 +
-		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k] * f3 +
-		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk] * f4 +
-		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k] * f5 +
-		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk] * f6 +
-		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k] * f7 +
-		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk] * f8;
-                  /*if(isnan(dis)){
-                   fprintf(stderr, "i=%d j=%d k=%d Nmesh=%d f1=%g f2=%g f3=%g f4=%g f5=%g f6=%g f7=%g f8=%g\n",i,j,k,Nmesh,f1,f2,f3,f4,f5,f6,f7,f8);
-                   fprintf(stderr, "%g %g %g %g %g %g %g %g\n",Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k],Disp[(i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
-		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
-		    Disp[(i * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk],
-		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k], 
-		    Disp[(ii * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + kk],
-		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + k],
-		    Disp[(ii * Nmesh + jj) * (2 * (Nmesh / 2 + 1)) + kk]);
-                   FatalError(2);
-                  }*/
+		  dis = Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
+		    Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
+		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
+		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
+		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
+		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
+		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
+		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
 
 		  P[n].Vel[axes] = dis;
 		  if(dis > maxdisp)

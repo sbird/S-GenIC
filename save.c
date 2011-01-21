@@ -9,8 +9,6 @@
 
 void write_particle_data(void)
 {
-  int nprocgroup, groupTask, masterTask;
-
     printf("\nWriting IC-file\n");
     
     save_local_data();

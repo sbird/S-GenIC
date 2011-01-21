@@ -18,7 +18,7 @@ void read_parameterfile(char *fname)
   int i, j, nt;
   int id[MAXTAGS];
   void *addr[MAXTAGS];
-  char *ret, tag[MAXTAGS][50];
+  char tag[MAXTAGS][50];
   int errorFlag = 0;
 
   /* read parameter file on all processes for simplicty */
