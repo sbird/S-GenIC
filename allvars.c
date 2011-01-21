@@ -1,7 +1,7 @@
 #include "allvars.h"
 
 
-struct io_header_1 header1, header;
+struct gadget_header header1, header;
 
 int WhichSpectrum;
 
@@ -25,9 +25,7 @@ int GlassTileFac;
 double Box;
 int Seed;
 
-long long TotNumPart;
-
-int NumPart;
+long long NumPart;
 
 struct part_data *P;
 

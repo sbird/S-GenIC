@@ -84,7 +84,7 @@ void displacement_fields(void)
 
   gsl_rng_set(random_generator, Seed);
 
-  if(!(seedtable = malloc(Nmesh * Nmesh * sizeof(unsigned int))))
+  if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
     FatalError(4);
 
   for(i = 0; i < Nmesh / 2; i++)

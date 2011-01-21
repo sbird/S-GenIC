@@ -1,16 +1,11 @@
+#ifndef __ALLVARS_H
+#define __ALLVARS_H
+
 #include <fftw3.h>
 
 #define  PI          3.14159265358979323846 
 #define  GRAVITY     6.672e-8
 #define  HUBBLE      3.2407789e-18   /* in h/sec */
-
-
-double PowerSpec(double kmag);
-double GrowthFactor(double astart, double aend);
-double F_Omega(double a);
-int    read_parameter_file(char *fname);
-double PowerSpec_EH(double k);
-double PowerSpec_Efstathiou(double k);
 
 
 #ifdef T3E
@@ -23,7 +18,7 @@ typedef unsigned int uint4byte;
 
 
 
-extern struct io_header_1
+extern struct gadget_header
 {
   uint4byte npart[6];      /*!< npart[1] gives the number of particles in the present file, other particle types are ignored */
   double mass[6];          /*!< mass[1] gives the particle mass */
@@ -48,7 +43,7 @@ extern struct io_header_1
   int flag_ic_info;             /*!< flag to inform whether IC files are generated with ordinary Zeldovich approximation,
                                      or whether they contain 2nd order lagrangian perturbation theory initial conditions.
                                      For snapshots files, the value informs whether the simulation was evolved from
-                                     Zeldoch or 2lpt ICs. Encoding is as follows:
+                                     Zeldovich or 2lpt ICs. Encoding is as follows:
                                         FLAG_ZELDOVICH_ICS     (1)   - IC file based on Zeldovich
                                         FLAG_SECOND_ORDER_ICS  (2)   - Special IC-file containing 2lpt masses
                                         FLAG_EVOLVED_ZELDOVICH (3)   - snapshot evolved from Zeldovich ICs
@@ -83,9 +78,7 @@ extern int      GlassTileFac;
 extern double   Box;
 extern int Seed;
 
-extern long long TotNumPart;
-
-extern int      NumPart;
+extern long long NumPart;
 
 /*Parameters for spline knots*/
 #ifdef SPLINE
@@ -148,4 +141,6 @@ extern int    neutrinos_ks;
 extern int    NU_On;
 extern int    NU_Vtherm_On;
 extern double NU_PartMass_in_ev;
+
+#endif /* __ALLVARS_H*/
 

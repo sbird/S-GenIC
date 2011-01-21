@@ -4,25 +4,10 @@
 #include "allvars.h"
 #include "proto.h"
 
-
-
-
 void write_particle_data(void)
 {
     printf("\nWriting IC-file\n");
     
-    save_local_data();
-
-      /* wait inside the group */
-
-    printf("Finished writing IC file.\n");
-}
-
-
-
-
-void save_local_data(void)
-{
 #define BUFFER 10
   size_t bytes;
   float *block;
@@ -35,7 +20,9 @@ void save_local_data(void)
   FILE *fd;
   char buf[300];
   int i, k, pc;
+#ifdef  PRODUCEGAS
   double meanspacing, shift_gas, shift_dm;
+#endif
 
 
   if(NumPart == 0)
@@ -140,9 +127,11 @@ void save_local_data(void)
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
 
+#ifdef  PRODUCEGAS
   meanspacing = Box / pow(TotNumPart, 1.0 / 3);
   shift_gas = -0.5 * (Omega - OmegaBaryon) / (Omega) * meanspacing;
   shift_dm = +0.5 * OmegaBaryon / (Omega) * meanspacing;
+#endif
 
 
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
@@ -500,6 +489,8 @@ void save_local_data(void)
   free(block);
 
   fclose(fd);
+  printf("Finished writing IC file.\n");
+  return;
 }
 
 
