@@ -204,8 +204,7 @@ void read_transfer_table(void)
 		fprintf(stderr,"Error reading file for the first time: %d",errno);
 		FatalError(21);
 	}
-	if(ThisTask==0)
-		printf("Found %d rows in input CAMB transfer file\n",filelines);
+        printf("Found %d rows in input CAMB transfer file\n",filelines);
 	/*Allocate array with enough space*/
 	transfer_tables=malloc(filelines*sizeof(struct trans_row));
 	if(transfer_tables==NULL)
@@ -258,7 +257,7 @@ void read_power_table(void)
   sprintf(buf, FileWithTransfer);
   if(!(fd = fopen(buf, "r")))
     {
-      printf("can't read input TRANSFER in file '%s' on task %d\n", buf, ThisTask);
+      printf("can't read input TRANSFER in file '%s'\n", buf);
       FatalError(17);
     }
 
@@ -279,11 +278,8 @@ void read_power_table(void)
     }
   while(1);
   fclose(fd);
-  if(ThisTask == 0)
-    {
       printf("found %d rows in input TRANSFER table\n", NPowerTable);
       fflush(stdout);
-    }
 
 
 
@@ -291,7 +287,7 @@ void read_power_table(void)
 sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
-      printf("can't read input SPECTRUM in file '%s' on task %d\n", buf, ThisTask);
+      printf("can't read input SPECTRUM in file '%s'\n", buf);
       FatalError(17);
     }
   NPowerTable = 0;
@@ -309,18 +305,15 @@ sprintf(buf, FileWithInputSpectrum);
   while(1);
   fclose(fd);
 #endif
-  if(ThisTask == 0)
-    {
       printf("found %d rows in input SPECTRUM table\n", NPowerTable);
       fflush(stdout);
-    }
    PowerTable = malloc(NPowerTable * sizeof(struct pow_table));  
    PowerMatter = malloc(NPowerTable * sizeof(struct pow_matter)); 
   /* define matter array */
   sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
-      printf("can't read input SPECTRUM in file '%s' on task %d\n", buf, ThisTask);
+      printf("can't read input SPECTRUM in file '%s'\n", buf);
       FatalError(18);
     }
 
@@ -358,7 +351,7 @@ sprintf(buf, FileWithInputSpectrum);
    sprintf(buf, FileWithTransfer);
    if(!(fd = fopen(buf, "r")))
     {
-      printf("can't read input spectrum in file '%s' on task %d\n", buf, ThisTask);
+      printf("can't read input spectrum in file '%s'\n", buf);
       FatalError(18);
     }
 
@@ -488,19 +481,15 @@ void initialize_powerspectrum(void)
       Norm = 1.0;
   if(WhichSpectrum < 3){
     res = TopHatSigma2(R8);
-    if(ThisTask == 0 && WhichSpectrum == 2){
+    if(WhichSpectrum == 2){
       printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
     }
 
     Norm = Sigma8 * Sigma8 / res;
 
-    if(ThisTask == 0 && WhichSpectrum == 2)
+    if(WhichSpectrum == 2)
       printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
             Dplus = GrowthFactor(InitTime, 1.0);
-  }
-  else{
-/*     if(ThisTask == 0) */
-/*         printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res)); */
   }
 }
 
@@ -876,8 +865,7 @@ double growth(double a)
 
   if(neutrinos_ks){
         Omegan = Omega + OmegaDM_2ndSpecies;
-        if(ThisTask == 0)
-                printf("\n Omegan %g\n\n",Omegan);
+        printf("\n Omegan %g\n\n",Omegan);
   }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
   return hubble_a * qromb(growth_int, 0, a);
@@ -936,7 +924,6 @@ void fermi_dirac_init(void)
 												   WDM_PartMass_in_kev,
 												   4.0 / 3);
 
-  if(ThisTask == 0)
     printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",
 	   3.59714 * WDM_V0);
 
@@ -1014,7 +1001,6 @@ void fermi_dirac_init_nu(void)
 
   NU_V0 = 150.0 * (1.0e5 / UnitVelocity_in_cm_per_s) * (1 + Redshift) * (1.0 / NU_PartMass_in_ev);
 
-  if(ThisTask == 0)
     printf("\n neutrino dark matter rms velocity dispersion at starting redshift = %g internal vel units\n\n",
 	   NU_V0);
 
@@ -1165,8 +1151,8 @@ void initialize_splines(void)
    /*Hopefully we now have a spline.*/
    /*Note that the final (exterior) knot higher order coefficients shouldn't be used, 
     * as at that point we are doing extrapolation, and the code doesn't set them (I think).*/
-	if(ThisTask==0){
-             FILE *f;
+   {          
+   FILE *f;
 /*              double k; */
              printf("Initialized %d-knot spline\n",NumKnots);
              if((f=fopen("splinecoeffs.txt", "w")))
@@ -1180,7 +1166,6 @@ void initialize_splines(void)
           printf("%g %g %g %g %g\n", exp(KnotPos[i])/kctog,SplineCoeffs[i*4], SplineCoeffs[i*4+1],SplineCoeffs[i*4+2],SplineCoeffs[i*4+3]);*/
 /*       for(k=1e-4*kctog;k<10*kctog; k*=1.1) */
 /*          printf("%g %g\n",k/kctog,splineval(k)); */
-         }
    return;
 }
 

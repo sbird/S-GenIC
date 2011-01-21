@@ -37,11 +37,7 @@ int main(int argc, char **argv)
   free_ffts();
 
 
-  if(ThisTask == 0)
-    {
       printf("Initial scale factor = %g\n", InitTime);
-      printf("\n");
-    }
 
 /*   print_spec(); */
 
@@ -71,10 +67,7 @@ void displacement_fields(void)
   double fx, fy, fz, ff, smth;
 #endif
 
-  if(ThisTask == 0)
-    {
       printf("Starting to compute displacement fields.\n");
-    }
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
 /*  if(neutrinos_ks)
     Omega = Omega + OmegaDM_2ndSpecies;*/
@@ -85,10 +78,8 @@ void displacement_fields(void)
 
   vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
 
-  if(ThisTask == 0)
     printf("vel_prefac= %g  hubble_a=%g fom=%gOmega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
-     if (ThisTask == 0)
-			     printf("Dplus initial redshift =%g  \n\n", Dplus); 
+  printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   fac = pow(2 * PI / Box, 1.5);
 
@@ -134,18 +125,14 @@ void displacement_fields(void)
 #endif
     {
 #if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
-      if(ThisTask==0)
           fprintf(stderr, "\nStarting type %d\n",Type);
 #endif
       for(axes = 0; axes < 3; axes++)
 	{
-	  if(ThisTask == 0)
-	    {
 	      fprintf(stderr,"Starting axis %d.\n", axes);
-	    }
 
 	  /* first, clean the array */
-	  for(i = 0; i < Local_nx; i++)
+	  for(i = 0; i < Nmesh; i++)
 	    for(j = 0; j < Nmesh; j++)
 	      for(k = 0; k <= Nmesh / 2; k++)
 		{
@@ -158,9 +145,6 @@ void displacement_fields(void)
 	      ii = Nmesh - i;
 	      if(ii == Nmesh)
 		ii = 0;
-	      if((i >= Local_x_start && i < (Local_x_start + Local_nx)) ||
-		 (ii >= Local_x_start && ii < (Local_x_start + Local_nx)))
-		{
 		  for(j = 0; j < Nmesh; j++)
 		    {
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
@@ -245,13 +229,10 @@ void displacement_fields(void)
 #endif
 			  if(k > 0)
 			    {
-			      if(i >= Local_x_start && i < (Local_x_start + Local_nx))
-				{
-				  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
+				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 				    -kvec[axes] / kmag2 * delta * sin(phase);
-				  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
+				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
 				    kvec[axes] / kmag2 * delta * cos(phase);
-				}
 			    }
 			  else	/* k=0 plane needs special treatment */
 			    {
@@ -261,20 +242,17 @@ void displacement_fields(void)
 				    continue;
 				  else
 				    {
-				      if(i >= Local_x_start && i < (Local_x_start + Local_nx))
-					{
 					  jj = Nmesh - j;	/* note: j!=0 surely holds at this point */
 
-					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
+					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
+					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
 
-					  (Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k])[0] =
+					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[((i - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) + k])[1] =
+					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) + k])[1] =
 					    -kvec[axes] / kmag2 * delta * cos(phase);
-					}
 				    }
 				}
 			      else	/* here comes i!=0 : conjugate can be on other processor! */
@@ -290,52 +268,23 @@ void displacement_fields(void)
 				      if(jj == Nmesh)
 					jj = 0;
 
-				      if(i >= Local_x_start && i < (Local_x_start + Local_nx))
-					{
-					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
+					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1)])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[((i - Local_x_start) * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
+					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1)])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
-					}
-
-				      if(ii >= Local_x_start && ii < (Local_x_start + Local_nx))
-					{
-					  (Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
+					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) +
 					        k])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[((ii - Local_x_start) * Nmesh + jj) * (Nmesh / 2 + 1) +
+					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) +
 						k])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
-					}
 				    }
 				}
 			    }
 			}
 		    }
-		}
 	    }
 
 
 	  fftwf_execute(Inverse_plan);	/** FFT **/
-
-	  /* now get the plane on the right side from neighbour on the right, 
-	     and send the left plane */
-
-	  recvTask = ThisTask;
-	  do
-	    {
-	      recvTask--;
-	      if(recvTask < 0)
-		recvTask = NTask - 1;
-	    }
-	  while(Local_nx_table[recvTask] == 0);
-
-	  sendTask = ThisTask;
-	  do
-	    {
-	      sendTask++;
-	      if(sendTask >= NTask)
-		sendTask = 0;
-	    }
-	  while(Local_nx_table[sendTask] == 0);
 
 	  /* read-out displacements */
 
@@ -353,10 +302,6 @@ void displacement_fields(void)
 		  j = (int) v;
 		  k = (int) w;
 
-		  if(i == (Local_x_start + Local_nx))
-		    i = (Local_x_start + Local_nx) - 1;
-		  if(i < Local_x_start)
-		    i = Local_x_start;
 		  if(j == Nmesh)
 		    j = Nmesh - 1;
 		  if(k == Nmesh)
@@ -366,7 +311,6 @@ void displacement_fields(void)
 		  v -= j;
 		  w -= k;
 
-		  i -= Local_x_start;
 		  ii = i + 1;
 		  jj = j + 1;
 		  kk = k + 1;
@@ -429,16 +373,10 @@ void displacement_fields(void)
   gsl_rng_free(random_generator);
 
 
-  if(ThisTask == 0)
-    {
       printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
 	     maxdisp, maxdisp / (Box / Nmesh));
-    }
-  if(ThisTask == 0)
-    {
       printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
 	     mindisp, mindisp / (Box / Nmesh));
-    }
 }
 
 double periodic_wrap(double x)
@@ -520,8 +458,6 @@ void print_spec(void)
   char buf[1000];
   FILE *fd;
 
-  if(ThisTask == 0)
-    {
       sprintf(buf, "%s/inputspec_%s.txt", OutputDir, FileBase);
 
       fd = fopen(buf, "w");
@@ -577,5 +513,4 @@ void print_spec(void)
 	  fprintf(fd, "%12g %12g %12g  %12g %12g\n", k,po, dl, knl, dnl);
 	}
       fclose(fd);
-    }
 }

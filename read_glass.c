@@ -65,8 +65,8 @@ void read_glass(char *fname)
 
 	      if(!(pos))
 		{
-		  printf("failed to allocate %g Mbyte on Task %d for glass file\n",
-			 sizeof(float) * Nglass * 3.0 / (1024.0 * 1024.0), ThisTask);
+		  printf("failed to allocate %g Mbyte for glass file\n",
+			 sizeof(float) * Nglass * 3.0 / (1024.0 * 1024.0));
 		  FatalError(112);
 		}
 	    }
@@ -84,11 +84,6 @@ void read_glass(char *fname)
 
 	  fclose(fd);
 	}
-
-  npart_Task = malloc(sizeof(int) * NTask);
-
-  for(i = 0; i < NTask; i++)
-    npart_Task[i] = 0;
 
 #if defined(MULTICOMPONENTGLASSFILE) && defined(DIFFERENT_TRANSFER_FUNC)
   MinType = 7;
@@ -120,37 +115,17 @@ void read_glass(char *fname)
 		  if(slab >= Nmesh)
 		    slab = Nmesh - 1;
 
-		  npart_Task[Slab_to_task[slab]] += 1;
+		  NumPart ++;
 		}
 	    }
 	}
 
-  TotNumPart = 0;		/* note: This is a 64 bit integer */
-  NTaskWithN = 0;
-
-  NumPart = npart_Task[ThisTask];
-
-  for(i = 0; i < NTask; i++)
-    {
-      TotNumPart += npart_Task[i];
-      if(npart_Task[i] > 0)
-	NTaskWithN++;
-    }
-
-
-  if(ThisTask == 0)
-    {
-      for(i = 0; i < NTask; i++)
-	printf("%d particles on task=%d  (slabs=%d)\n", npart_Task[i], i, Local_nx_table[i]);
+  TotNumPart = NumPart;		/* note: This is a 64 bit integer */
 
       printf("\nTotal number of particles  = %d%09d\n\n",
 	     (int) (TotNumPart / 1000000000), (int) (TotNumPart % 1000000000));
 
       fflush(stdout);
-    }
-
-
-  free(npart_Task);
 
 
   if(NumPart)
@@ -159,8 +134,8 @@ void read_glass(char *fname)
 
       if(!(P))
 	{
-	  printf("failed to allocate %g Mbyte (%d particles) on Task %d\n", bytes / (1024.0 * 1024.0),
-		 NumPart, ThisTask);
+	  printf("failed to allocate %g Mbyte (%d particles)\n", bytes / (1024.0 * 1024.0),
+		 NumPart);
 	  FatalError(9891);
 	}
     }
@@ -181,12 +156,6 @@ void read_glass(char *fname)
 		{
 		  x = pos[3 * n] / header1.BoxSize * (Box / GlassTileFac) + i * (Box / GlassTileFac);
 
-		  slab = x / Box * Nmesh;
-		  if(slab >= Nmesh)
-		    slab = Nmesh - 1;
-
-		  if(Slab_to_task[slab] == ThisTask)
-		    {
 		      y = pos[3 * n + 1] / header1.BoxSize * (Box / GlassTileFac) + j * (Box / GlassTileFac);
 		      z = pos[3 * n + 2] / header1.BoxSize * (Box / GlassTileFac) + k * (Box / GlassTileFac);
 
@@ -199,7 +168,6 @@ void read_glass(char *fname)
 		      P[count].ID = IDStart;
 
 		      count++;
-		    }
 
 		  IDStart++;
 		}
@@ -208,7 +176,7 @@ void read_glass(char *fname)
 
   if(count != NumPart)
     {
-      printf("fatal mismatch (%d %d) on Task %d\n", count, NumPart, ThisTask);
+      printf("fatal mismatch (%d %d)\n", count, NumPart);
       FatalError(1);
     }
 

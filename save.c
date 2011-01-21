@@ -11,35 +11,12 @@ void write_particle_data(void)
 {
   int nprocgroup, groupTask, masterTask;
 
-  if(ThisTask == 0)
     printf("\nWriting IC-file\n");
-
-
-  if((NTask < NumFilesWrittenInParallel))
-    {
-      printf
-	("Fatal error.\nNumber of processors must be a smaller or equal than `NumFilesWrittenInParallel'.\n");
-      FatalError(24131);
-    }
-
-
-  nprocgroup = NTask / NumFilesWrittenInParallel;
-
-  if((NTask % NumFilesWrittenInParallel))
-    nprocgroup++;
-
-  masterTask = (ThisTask / nprocgroup) * nprocgroup;
-
-
-  for(groupTask = 0; groupTask < nprocgroup; groupTask++)
-    {
-      if(ThisTask == (masterTask + groupTask))	/* ok, it's this processor's turn */
-	save_local_data();
+    
+    save_local_data();
 
       /* wait inside the group */
-    }
 
-  if(ThisTask == 0)
     printf("Finished writing IC file.\n");
 }
 
@@ -66,9 +43,6 @@ void save_local_data(void)
   if(NumPart == 0)
     return;
 
-  if(NTaskWithN > 1)
-    sprintf(buf, "%s/%s.%d", OutputDir, FileBase, ThisTask);
-  else
     sprintf(buf, "%s/%s", OutputDir, FileBase);
 
   if(!(fd = fopen(buf, "w")))
@@ -139,7 +113,8 @@ void save_local_data(void)
   header.flag_stellarage = 0;
   header.flag_metals = 0;
 
-  header.num_files = NTaskWithN;
+  /*FIXME*/
+  header.num_files = 1;
 
   header.BoxSize = Box;
   header.Omega0 = Omega;
@@ -538,7 +513,7 @@ size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
   if((nwritten = fwrite(ptr, size, nmemb, stream)) != nmemb)
     {
-      printf("I/O error (fwrite) on task=%d has occured.\n", ThisTask);
+      printf("I/O error (fwrite) has occured.\n");
       fflush(stdout);
       FatalError(777);
     }
@@ -554,7 +529,7 @@ size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 
   if((nread = fread(ptr, size, nmemb, stream)) != nmemb)
     {
-      printf("I/O error (fread) on task=%d has occured.\n", ThisTask);
+      printf("I/O error (fread) has occured.\n");
       fflush(stdout);
       FatalError(778);
     }

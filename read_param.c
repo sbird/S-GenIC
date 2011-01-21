@@ -225,7 +225,6 @@ void read_parameterfile(char *fname)
 	    }
 	  else
 	    {
-	      if(ThisTask == 0)
 		fprintf(stdout, "Error in file %s:   Tag '%s' not allowed or multiple defined.\n", fname,
 			buf1);
 	      errorFlag = 1;
@@ -236,7 +235,6 @@ void read_parameterfile(char *fname)
     }
   else
     {
-      if(ThisTask == 0)
 	fprintf(stdout, "Parameter file %s not found.\n", fname);
       errorFlag = 1;
     }
@@ -246,7 +244,6 @@ void read_parameterfile(char *fname)
     {
       if(*tag[i])
 	{
-	  if(ThisTask == 0)
 	    fprintf(stdout, "Error. I miss a value for tag '%s' in parameter file '%s'.\n", tag[i], fname);
 	  errorFlag = 1;
 	}

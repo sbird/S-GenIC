@@ -7,7 +7,6 @@ int WhichSpectrum;
 
 
 int SphereMode;
-int *Local_nx_table;
 
 FILE *FdTmp, *FdTmpInput;
 
@@ -30,10 +29,6 @@ long long TotNumPart;
 
 int NumPart;
 
-int *Slab_to_task;
-
-int NTaskWithN;
-
 struct part_data *P;
 
 int Nglass;
@@ -51,11 +46,6 @@ char KnotPositions[400];
 
 char OutputDir[1000], FileBase[1000];
 int NumFilesWrittenInParallel;
-
-
-int ThisTask, NTask;
-
-int Local_nx, Local_x_start;
 
 int IdStart;
 

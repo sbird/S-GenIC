@@ -63,7 +63,6 @@ header, header1;
 
 
 extern int      Nglass;
-extern int      *Local_nx_table;
 extern int      WhichSpectrum;
 
 
@@ -88,16 +87,12 @@ extern long long TotNumPart;
 
 extern int      NumPart;
 
-extern int      NTaskWithN;
-
-
 /*Parameters for spline knots*/
 #ifdef SPLINE
 extern int NumKnots;
 extern char KnotValues[400];
 extern char KnotPositions[400];
 #endif
-extern int      *Slab_to_task;
 
 
 extern struct part_data 
@@ -118,11 +113,6 @@ extern double MassTable[6];
 
 extern char OutputDir[1000], FileBase[1000];
 extern int  NumFilesWrittenInParallel;
-
-
-extern int      ThisTask, NTask;
-
-extern int      Local_nx, Local_x_start;
 
 extern int  IdStart;
 
