@@ -57,7 +57,7 @@ void displacement_fields(void)
   double fac, vel_prefac;
   double kvec[3], kmag, kmag2, p_of_k;
   double delta, phase, ampl, hubble_a;
-  double mindisp, maxdisp;
+  double mindisp=0, maxdisp=0;
   unsigned int *seedtable;
 
 #ifdef CORRECT_CIC
@@ -79,8 +79,6 @@ void displacement_fields(void)
   printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   fac = pow(2 * PI / Box, 1.5);
-
-  maxdisp = 0;
 
   random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 
@@ -252,7 +250,7 @@ void displacement_fields(void)
 					    -kvec[axes] / kmag2 * delta * cos(phase);
 				    }
 				}
-			      else	/* here comes i!=0 : conjugate can be on other processor! */
+			      else	/* here comes i!=0 */
 				{
 				  if(i >= Nmesh / 2)
 				    continue;
