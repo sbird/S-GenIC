@@ -20,9 +20,6 @@ void write_particle_data(void)
   FILE *fd;
   char buf[300];
   int i, k, pc;
-#ifdef  PRODUCEGAS
-  double meanspacing, shift_gas, shift_dm;
-#endif
 
 
   if(NumPart == 0)
@@ -74,13 +71,6 @@ void write_particle_data(void)
   header.npartTotalHighWord[1] = (TotNumPart >> 32);
   header.mass[1] = (Omega) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
 
-#ifdef  PRODUCEGAS
-  header.npart[0] = NumPart;
-  header.npartTotal[0] = TotNumPart;
-  header.npartTotalHighWord[0] = (TotNumPart >> 32);
-  header.mass[0] = (OmegaBaryon) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
-  header.mass[1] = (Omega - OmegaBaryon) * 3 * Hubble * Hubble / (8 * PI * G) * pow(Box, 3) / TotNumPart;
-#endif
 #endif
 
 #ifdef NEUTRINO_PAIRS
@@ -127,12 +117,6 @@ void write_particle_data(void)
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
 
-#ifdef  PRODUCEGAS
-  meanspacing = Box / pow(TotNumPart, 1.0 / 3);
-  shift_gas = -0.5 * (Omega - OmegaBaryon) / (Omega) * meanspacing;
-  shift_dm = +0.5 * OmegaBaryon / (Omega) * meanspacing;
-#endif
-
 
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
     {
@@ -149,9 +133,6 @@ void write_particle_data(void)
 
   /* write coordinates */
   dummy = sizeof(float) * 3 * NumPart;
-#ifdef  PRODUCEGAS
-  dummy *= 2;
-#endif
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
@@ -173,9 +154,6 @@ void write_particle_data(void)
       for(k = 0; k < 3; k++)
 	{
 	  block[3 * pc + k] = P[i].Pos[k];
-#ifdef  PRODUCEGAS
-	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + shift_gas);
-#endif
 	}
       pc++;
 
@@ -196,34 +174,12 @@ void write_particle_data(void)
     }
   if(pc > 0)
     my_fwrite(block, sizeof(float), 3 * pc, fd);
-#ifdef  PRODUCEGAS
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
-      for(k = 0; k < 3; k++)
-	{
-	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + shift_dm);
-	}
-
-      pc++;
-
-      if(pc == blockmaxlen)
-	{
-	  my_fwrite(block, sizeof(float), 3 * pc, fd);
-	  pc = 0;
-	}
-    }
-  if(pc > 0)
-    my_fwrite(block, sizeof(float), 3 * pc, fd);
-#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
 
 
   /* write velocities */
   dummy = sizeof(float) * 3 * NumPart;
-#ifdef  PRODUCEGAS
-  dummy *= 2;
-#endif
 #ifdef NEUTRINO_PAIRS
   dummy =
     sizeof(float) * 3 * (header.npart[0] + header.npart[1] + header.npart[2] + header.npart[3] +
@@ -271,10 +227,8 @@ void write_particle_data(void)
 
 #endif
 #else
-#ifndef PRODUCEGAS
       if(WDM_On == 1 && WDM_Vtherm_On == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
-#endif
 #endif
 
       pc++;
@@ -287,26 +241,6 @@ void write_particle_data(void)
     }
   if(pc > 0)
     my_fwrite(block, sizeof(float), 3 * pc, fd);
-#ifdef PRODUCEGAS
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
-      for(k = 0; k < 3; k++)
-	block[3 * pc + k] = P[i].Vel[k];
-
-      if(WDM_On == 1 && WDM_Vtherm_On == 1)
-	add_WDM_thermal_speeds(&block[3 * pc]);
-
-      pc++;
-
-      if(pc == blockmaxlen)
-	{
-	  my_fwrite(block, sizeof(float), 3 * pc, fd);
-	  pc = 0;
-	}
-    }
-  if(pc > 0)
-    my_fwrite(block, sizeof(float), 3 * pc, fd);
-#endif
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
 
 
@@ -315,9 +249,6 @@ void write_particle_data(void)
   dummy = sizeof(int) * NumPart;
 #else
   dummy = sizeof(long long) * NumPart;
-#endif
-#ifdef  PRODUCEGAS
-  dummy *= 2;
 #endif
 #ifdef NEUTRINO_PAIRS
   dummy =
@@ -378,74 +309,7 @@ void write_particle_data(void)
 #endif
     }
 
-#ifdef PRODUCEGAS
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
-#ifdef NO64BITID
-      blockid[pc] = i + TotNumPart;
-#else
-      blocklongid[pc] = i + TotNumPart;
-#endif
-
-      pc++;
-
-      if(pc == maxlongidlen)
-	{
-#ifdef NO64BITID
-	  my_fwrite(blockid, sizeof(int), pc, fd);
-#else
-	  my_fwrite(blocklongid, sizeof(long long), pc, fd);
-#endif
-	  pc = 0;
-	}
-    }
-  if(pc > 0)
-    {
-#ifdef NO64BITID
-      my_fwrite(blockid, sizeof(int), pc, fd);
-#else
-      my_fwrite(blocklongid, sizeof(long long), pc, fd);
-#endif
-    }
-#endif
-
   my_fwrite(&dummy, sizeof(dummy), 1, fd);
-
-
-
-
-
-  /* write zero temperatures if needed */
-#ifdef  PRODUCEGAS
-  dummy = sizeof(float) * NumPart;
-#ifdef FORMAT_TWO
-          /*Write temperature header*/
-	  blkheadsize = sizeof(int) + 4 * sizeof(char);
-      	  my_fwrite(&blkheadsize,sizeof(int),1,fd);
-      	  my_fwrite("U   ", sizeof(char), 4, fd);
-	  nextblock=dummy+2*sizeof(int);
-	  my_fwrite(&nextblock, sizeof(int), 1, fd);
-	  my_fwrite(&blkheadsize, sizeof(int), 1, fd);
-	  /*Done writing temperature header*/
-#endif
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
-  for(i = 0, pc = 0; i < NumPart; i++)
-    {
-      block[pc] = 0;
-
-      pc++;
-
-      if(pc == blockmaxlen)
-	{
-	  my_fwrite(block, sizeof(float), pc, fd);
-	  pc = 0;
-	}
-    }
-  if(pc > 0)
-    my_fwrite(block, sizeof(float), pc, fd);
-  my_fwrite(&dummy, sizeof(dummy), 1, fd);
-#endif
-
 
   /* write zero temperatures if needed */
 #ifdef  MULTICOMPONENTGLASSFILE
