@@ -301,7 +301,8 @@ void displacement_fields(void)
 		  i = (int) u;
 		  j = (int) v;
 		  k = (int) w;
-
+		  if(i == Nmesh)
+		    i = Nmesh - 1;
 		  if(j == Nmesh)
 		    j = Nmesh - 1;
 		  if(k == Nmesh)
@@ -315,6 +316,8 @@ void displacement_fields(void)
 		  jj = j + 1;
 		  kk = k + 1;
 
+		  if(ii >= Nmesh)
+		    ii -= Nmesh;
 		  if(jj >= Nmesh)
 		    jj -= Nmesh;
 		  if(kk >= Nmesh)
@@ -403,11 +406,9 @@ void set_units(void)		/* ... set some units */
 
 void initialize_ffts(void)
 {
-  int i, additional;
   size_t bytes;
 
-  additional = (Nmesh) * (2 * (Nmesh / 2 + 1));	/* additional plane on the right side */
-  Disp = (float *) fftwf_malloc(bytes = sizeof(float) * (Nmesh*Nmesh*Nmesh + additional));
+  Disp = (float *) fftwf_malloc(bytes = sizeof(float) * (2*Nmesh*Nmesh*(Nmesh/2+1)));
   if(Disp)
         printf("\nAllocated %g MB for FFTs\n", bytes / (1024.0 * 1024.0));
   else{
