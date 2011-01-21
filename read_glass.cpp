@@ -14,7 +14,7 @@ void read_glass(char *fname)
   size_t bytes;
   int num, numfiles, skip, nlocal;
   GadgetReader::GSnap snap(fname);
-  GadgetReader::gadget_header header1=snap.GetHeader();
+  header1=snap.GetHeader();
 
   Nglass = 0;
   for(k = 0; k < 6; k++)

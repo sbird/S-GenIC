@@ -40,7 +40,8 @@ ifeq ($(SYSTYPE),"Solaris")
 LIBS   =   -R/opt/local/lib/sparcv9 -lm  -lmpi   $(GSL_LIBS) -lgsl -lgslcblas  $(FFTW_LIB)
 endif
 
-CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL)
+CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL) -I../GadgetReader
+
 CXXFLAGS = -I../GadgetReader
 
 

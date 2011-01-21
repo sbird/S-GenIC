@@ -1,7 +1,7 @@
 #include "allvars.h"
 
 
-struct gadget_header header1, header;
+gadget_header header1, header;
 
 int WhichSpectrum;
 
