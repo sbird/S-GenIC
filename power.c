@@ -185,13 +185,13 @@ void read_transfer_table(void)
 	if(!(trans=fopen(buf,"r")))
 	{
 		fprintf(stderr,"Can't open transfer file %s! You probably forgot to create it!\n",buf);
-		FatalError(17);
+		exit(17);
 	} 
 	/*Work out how many lines in file*/
 	if(NPowerTable)
 	{
 		fprintf(stderr,"read_CAMB_tables has been called more than once! Failing.");
-		FatalError(19);
+		exit(19);
 	}
 	while(fscanf(trans," %lg %lg %lg %lg %lg %lg %lg\n",&tmp_row.k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)==7)
 	{
@@ -202,7 +202,7 @@ void read_transfer_table(void)
 	if(ferror(trans))
 	{
 		fprintf(stderr,"Error reading file for the first time: %d",errno);
-		FatalError(21);
+		exit(21);
 	}
         printf("Found %d rows in input CAMB transfer file\n",filelines);
 	/*Allocate array with enough space*/
@@ -210,7 +210,7 @@ void read_transfer_table(void)
 	if(transfer_tables==NULL)
 	{
 		fprintf(stderr, "Failed to allocate memory for transfer tables");
-		FatalError(23);
+		exit(23);
 	}
 	/*Read a line, first seeking back to the start of the file.*/
 	rewind(trans);
@@ -230,7 +230,7 @@ void read_transfer_table(void)
 	if(ferror(trans))
 	{
 		fprintf(stderr,"Error reading file for the second time: %d",errno);
-		FatalError(25);
+		exit(25);
 	}
 	fclose(trans);
 	/*The CAMB T_f/k_c is in units of Mpc^2! NOTE NO h!*/
@@ -252,20 +252,20 @@ void read_power_table(void)
 {
   FILE *fd;
   char buf[500];
-  double k, p;
+  double k;
 
   sprintf(buf, FileWithTransfer);
   if(!(fd = fopen(buf, "r")))
     {
       printf("can't read input TRANSFER in file '%s'\n", buf);
-      FatalError(17);
+      exit(17);
     }
 
   NPowerTable = 0;
   do
     {
 #ifdef NEUTRINOS
-      double T_cdm, T_b, dummy, T_nu, T_tot, T_cdmnew;
+      double T_cdm, T_b, dummy, T_nu, T_tot;
 
       /* read transfer function file from CAMB */
       if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
@@ -288,7 +288,7 @@ sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
       printf("can't read input SPECTRUM in file '%s'\n", buf);
-      FatalError(17);
+      exit(17);
     }
   NPowerTable = 0;
   do
@@ -314,7 +314,7 @@ sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
       printf("can't read input SPECTRUM in file '%s'\n", buf);
-      FatalError(18);
+      exit(18);
     }
 
   NPowerTable = 0;
@@ -352,14 +352,13 @@ sprintf(buf, FileWithInputSpectrum);
    if(!(fd = fopen(buf, "r")))
     {
       printf("can't read input spectrum in file '%s'\n", buf);
-      FatalError(18);
+      exit(18);
     }
 
   NPowerTable = 0;
   do
     {
 #ifdef NEUTRINOS
-      double lD, lDNU,r_cdm,r_nu;
       double T_cdmnew, T_b, dummy, T_nu, T_tot, T_cdm;
       double delta_cdm, delta_nu, delta_tot, delta_b;
 
@@ -454,7 +453,7 @@ int compare_logk(const void *a, const void *b)
 
 void initialize_powerspectrum(void)
 {
-  double res,res2;
+  double res;
 
   InitTime = 1 / (1 + Redshift);
 
@@ -523,7 +522,7 @@ double PowerSpec_Tabulated(double k)
   dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
 
   if(dlogk == 0)
-    FatalError(777);
+    exit(777);
 
   u = (logk - PowerTable[binlow].logk) / dlogk;
 
@@ -570,7 +569,7 @@ double PowerSpec_Tabulated_b(double k)
   dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
 
   if(dlogk == 0)
-    FatalError(777);
+    exit(777);
 
   u = (logk - PowerTable[binlow].logk) / dlogk;
 
@@ -616,7 +615,7 @@ double PowerSpec_Tabulated2nd(double k)
   dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
 
   if(dlogk == 0)
-    FatalError(777);
+    exit(777);
 
   u = (logk - PowerTable[binlow].logk) / dlogk;
 
@@ -662,7 +661,7 @@ double PowerSpec_TOTAL(double k)
   dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
 
   if(dlogk == 0)
-    FatalError(777);
+    exit(777);
 
   u = (logk - PowerTable[binlow].logk) / dlogk;
 
@@ -752,7 +751,7 @@ double tk_CAMB(double k, int Type)
 	if(NPowerTable==0)
 	{
 		fprintf(stderr, "Some kind of error; tables not initialized!\n");
-		FatalError(18);
+		exit(18);
 	}
 	/*No power outside of our boundaries.*/
 	if((k>transfer_tables[NPowerTable-1].k) || (k<transfer_tables[0].k))
@@ -1062,7 +1061,7 @@ void initialize_splines(void)
    if(NumKnots<2)
    {
        fprintf(stderr, "Need at least two knots for splines! NumKnots=%d\n",NumKnots);
-       FatalError(5);
+       exit(5);
    }
    KnotPos=malloc(NumKnots*sizeof(double));
    /*Note this is going to have to be stored in FORTRAN ORDER!
@@ -1072,7 +1071,7 @@ void initialize_splines(void)
    if(!KnotPos || !SplineCoeffs)
    {
        fprintf(stderr,"Failed to allocate memory for splines! NumKnots=%d\n", NumKnots);
-       FatalError(5);
+       exit(5);
    }
    /*Now we must parse the strings, C-style!*/
    /*First we split them into NumKnots smaller strings, then we run atof on them*/
@@ -1083,7 +1082,7 @@ void initialize_splines(void)
        {
           fprintf(stderr, "Not enough buffer space (%d) to for knot positions!\n",STRBFSZ);
           fprintf(stderr, "Read so far: %d, %s\n",j,strs[strindex]);
-          FatalError(5);
+          exit(5);
        }
        if(KnotValues[i] == ',')
        {
@@ -1100,7 +1099,7 @@ void initialize_splines(void)
    if(strindex!=NumKnots)
    {
       fprintf(stderr, "Error:Could not read %d knot values. Read %d\n", NumKnots, strindex);
-      FatalError(5);
+      exit(5);
    }
    for(i=0;i<NumKnots*4;i++)
            SplineCoeffs[i]=0;
@@ -1118,7 +1117,7 @@ void initialize_splines(void)
        {
           fprintf(stderr, "Not enough buffer space (%d) to for knot positions!\n",STRBFSZ);
           fprintf(stderr, "Read so far: %d, %s\n",j,strs[strindex]);
-          FatalError(5);
+          exit(5);
        }
        if(KnotPositions[i] == ',')
        {
@@ -1135,7 +1134,7 @@ void initialize_splines(void)
    if(strindex!=NumKnots)
    {
       fprintf(stderr, "Error:Could not read %d knot positions. Read %d\n", NumKnots, strindex);
-      FatalError(5);
+      exit(5);
    }
    for(i=0; i<strindex; i++)
       KnotPos[i]=log(atof(strs[i])*kctog);
@@ -1181,7 +1180,7 @@ double splineval(double k)
    if(!KnotPos)
    {
 		fprintf(stderr, "Some kind of error; KnotPos not initialized!\n");
-		FatalError(18);
+		exit(18);
    }
    if(logk >= KnotPos[0])
    {

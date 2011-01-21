@@ -1,6 +1,5 @@
 #include <math.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include <gadgetreader.hpp>
 #include "allvars.h"
 #include "proto.h"

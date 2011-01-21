@@ -191,7 +191,7 @@ void read_parameterfile(char *fname)
                   fprintf(stderr, "Error! Param line buffer not large enough.\n"
                                   "Edit read_param.c\n"
                                   "Read was:%s\n",buf);
-                  FatalError(43);
+                  exit(43);
           }
 
 	  if(sscanf(buf, "%s%s%s", buf1, buf2, buf3) < 2)

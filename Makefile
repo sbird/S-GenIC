@@ -1,14 +1,4 @@
 SYSTYPE="#SYSTYPE#"
-#SYSTYPE="Regatta"
-#SYSTYPE="JUMP"
-#SYSTYPE="LOUHI"
-#SYSTYPE="MPA"
-#SYSTYPE="Stella"
-#SYSTYPE="RZG_LinuxCluster"
-#SYSTYPE="RZG_LinuxCluster-gcc"
-#SYSTYPE="Solaris"
-#SYSTYPE="OPA-Cluster64"
-
 
 EXEC   = N-GenIC
 
@@ -30,7 +20,6 @@ OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.
 
 OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
-OPT	+= -DDOUBLEPRECISION_FFTW
 
 OPT   +=  -DNEUTRINOS  # this will produce a second component as slight neutrinos (needs to be in initial glass)
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities

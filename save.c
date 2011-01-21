@@ -33,7 +33,7 @@ void write_particle_data(void)
   if(!(fd = fopen(buf, "w")))
     {
       printf("Error. Can't write in file '%s'\n", buf);
-      FatalError(10);
+      exit(10);
     }
 
   for(i = 0; i < 6; i++)
@@ -137,7 +137,7 @@ void write_particle_data(void)
   if(!(block = malloc(bytes = BUFFER * 1024 * 1024)))
     {
       printf("failed to allocate memory for `block' (%g bytes).\n", (double) bytes);
-      FatalError(24);
+      exit(24);
     }
 
   blockmaxlen = bytes / (3 * sizeof(float));
@@ -504,7 +504,7 @@ size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream)
     {
       printf("I/O error (fwrite) has occured.\n");
       fflush(stdout);
-      FatalError(777);
+      exit(777);
     }
   return nwritten;
 }
@@ -520,7 +520,7 @@ size_t my_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
     {
       printf("I/O error (fread) has occured.\n");
       fflush(stdout);
-      FatalError(778);
+      exit(778);
     }
   return nread;
 }
