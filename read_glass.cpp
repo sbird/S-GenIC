@@ -5,7 +5,7 @@
 #include "proto.h"
 
 
-int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data * P)
+int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data *& P)
 {
   int i, j, k, n;
   float *pos = NULL;

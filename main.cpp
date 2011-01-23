@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     }
 
   read_parameterfile(argv[1]);
-
+  NumFiles = 4;
   set_units();
 
   initialize_powerspectrum();
@@ -46,11 +46,9 @@ int main(int argc, char **argv)
 
   for(type=0; type<N_TYPE;type++){
       int64_t NumPart = 0;
-#if defined(DIFFERENT_TRANSFER_FUNC)
-          fprintf(stderr, "\nStarting type %d\n",type);
-#endif
       if(npart[type] == 0)
               continue;
+      printf("Starting type %d\n",type);
       NumPart = read_glass(snap, type, GlassTileFac, P);
       displacement_fields(type, NumPart, P);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
@@ -67,7 +65,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void initialize_rng(gsl_rng * random_generator, unsigned int *seedtable)
+void initialize_rng(gsl_rng * random_generator, unsigned int*& seedtable)
 {
   int i,j;
 
