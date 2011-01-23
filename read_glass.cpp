@@ -14,7 +14,6 @@ int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct
   int64_t Nglass = snap.GetNpart(type);
   double GlassBox=snap.GetHeader().BoxSize;
 
-  printf("Reading pre-IC file '%s'. Nglass=%ld.\n",snap.GetFileName().c_str(), Nglass);
   if(!(pos = (float *) malloc(sizeof(float) * Nglass * 3))){
           fprintf(stderr,"failed to allocate %g Mbyte for glass file\n", sizeof(float) * Nglass * 3.0 / (1024.0 * 1024.0));
 		  FatalError(112);

@@ -29,8 +29,10 @@ int main(int argc, char **argv)
   set_units();
 
   initialize_powerspectrum();
+  printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   initialize_ffts();
+  printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
   /*Set particle numbers*/
   for(type = 0; type < N_TYPE; type++)
@@ -48,7 +50,6 @@ int main(int argc, char **argv)
       int64_t NumPart = 0;
       if(npart[type] == 0)
               continue;
-      printf("Starting type %d\n",type);
       NumPart = read_glass(snap, type, GlassTileFac, P);
       displacement_fields(type, NumPart, P);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
@@ -120,7 +121,6 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
   double fx, fy, fz, ff, smth;
 #endif
 
-      printf("Starting to compute displacement fields.\n");
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
 /*  if(neutrinos_ks)
     Omega = Omega + OmegaDM_2ndSpecies;*/
@@ -131,27 +131,23 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 
   vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
 
-    printf("vel_prefac= %g  hubble_a=%g fom=%gOmega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
-  printf("Dplus initial redshift =%g  \n\n", Dplus); 
+  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
 
   fac = pow(2 * PI / Box, 1.5);
 
 
-      for(axes = 0; axes < 3; axes++)
-	{
-	      fprintf(stderr,"Starting axis %d.\n", axes);
+      for(axes = 0; axes < 3; axes++) {
+	  printf("Starting axis %d.\n", axes);
 
 	  /* first, clean the array */
 	  for(i = 0; i < Nmesh; i++)
 	    for(j = 0; j < Nmesh; j++)
-	      for(k = 0; k <= Nmesh / 2; k++)
-		{
+	      for(k = 0; k <= Nmesh / 2; k++) {
 		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] = 0;
 		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] = 0;
-		}
+	      }
 
-	  for(i = 0; i < Nmesh; i++)
-	    {
+	  for(i = 0; i < Nmesh; i++) {
 	      ii = Nmesh - i;
 	      if(ii == Nmesh)
 		ii = 0;
@@ -293,7 +289,6 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 		    }
 	    }
 
-
 	  fftwf_execute(Inverse_plan);	/** FFT **/
 
 	  /* read-out displacements */
@@ -355,12 +350,11 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 
   gsl_rng_free(random_generator);
 
-
-      printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
-	     maxdisp, maxdisp / (Box / Nmesh));
-      printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
-	     mindisp, mindisp / (Box / Nmesh));
-      return;
+  printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
+         maxdisp, maxdisp / (Box / Nmesh));
+  printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
+         mindisp, mindisp / (Box / Nmesh));
+  return;
 }
 
 double periodic_wrap(double x)
