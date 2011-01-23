@@ -10,7 +10,7 @@ INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
 OPT   += -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
 OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.												
 
-OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
+#OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
 
 OPT   +=  -DNEUTRINOS  # this will produce a second component as slight neutrinos (needs to be in initial glass)
@@ -34,7 +34,7 @@ endif
 
 CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL) -I../GadgetReader
 
-CXXFLAGS = -I../GadgetReader $(OPTIMIZE)
+CXXFLAGS = -I../GadgetReader $(OPTIMIZE) $(OPTIONS)
 
 
 $(EXEC): $(OBJS) 

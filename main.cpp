@@ -7,10 +7,14 @@
 #include "allvars.h"
 #include "proto.h"
 
+#include <gadgetreader.hpp>
+#include <gadgetwriter.hpp>
 
 int main(int argc, char **argv)
 {
   int type;
+  std::valarray<int64_t> npart(N_TYPE);
+  int64_t FirstId=0;
   if(argc < 2)
     {
 	  fprintf(stdout, "\nParameters are missing.\n");
@@ -25,61 +29,44 @@ int main(int argc, char **argv)
   initialize_powerspectrum();
 
   initialize_ffts();
+  GadgetReader::GSnap snap(GlassFile);
+  /*Set particle numbers*/
+  for(type = 0; type < N_TYPE; type++)
+    npart[type] = snap.GetNpart(type) * GlassTileFac * GlassTileFac * GlassTileFac;
+
+#ifdef NEUTRINO_PAIRS
+  npart[NEUTRINO_TYPE] *= 2;
+#endif //NEUTRINO_PAIRS
+
+  GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase), npart,NumFiles, sizeof(id_type));
+  /*Write headers*/
+  osnap.WriteHeaders(generate_header());
+
   for(type=0; type<N_TYPE;type++){
-  read_glass(GlassFile,type);
-  displacement_fields(type);
-  write_particle_data(type);
+#if defined(DIFFERENT_TRANSFER_FUNC)
+          fprintf(stderr, "\nStarting type %d\n",type);
+#endif
+      if(npart[type] == 0)
+              continue;
+      NumPart = read_glass(snap, type, GlassTileFac, P);
+      displacement_fields(type);
+      FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
+      free(P);
   }
 
-  if(NumPart)
-    free(P);
+  fftwf_free(Disp);
+  fftwf_destroy_plan(Inverse_plan);
 
-  free_ffts();
-
-
-      printf("Initial scale factor = %g\n", InitTime);
+  printf("Initial scale factor = %g\n", InitTime);
 
 /*   print_spec(); */
 
-  exit(0);
+  return 0;
 }
 
-
-
-
-
-void displacement_fields(int type)
+void initialize_rng(gsl_rng * random_generator, unsigned int *seedtable)
 {
-  gsl_rng *random_generator;
-  int i, j, k, ii, jj, axes;
-  int n;
-  double fac, vel_prefac;
-  double kvec[3], kmag, kmag2, p_of_k;
-  double delta, phase, ampl, hubble_a;
-  double mindisp=0, maxdisp=0;
-  unsigned int *seedtable;
-
-#ifdef CORRECT_CIC
-  double fx, fy, fz, ff, smth;
-#endif
-
-      printf("Starting to compute displacement fields.\n");
-/*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
-/*  if(neutrinos_ks)
-    Omega = Omega + OmegaDM_2ndSpecies;*/
-
-  hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
-
-  vel_prefac = InitTime * hubble_a * F_Omega(InitTime);
-
-  vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
-
-    printf("vel_prefac= %g  hubble_a=%g fom=%gOmega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
-  printf("Dplus initial redshift =%g  \n\n", Dplus); 
-
-  fac = pow(2 * PI / Box, 1.5);
-
-  random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
+  int i,j;
 
   gsl_rng_set(random_generator, Seed);
 
@@ -114,13 +101,41 @@ void displacement_fields(int type)
     }
 
 
-#if defined(DIFFERENT_TRANSFER_FUNC)
-  for(Type = MinType; Type <= MaxType; Type++)
+}
+
+void displacement_fields(int type)
+{
+  int i, j, k, ii, jj, axes;
+  int n;
+  double fac, vel_prefac;
+  double kvec[3], kmag, kmag2, p_of_k;
+  double delta, phase, ampl, hubble_a;
+  double mindisp=0, maxdisp=0;
+  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
+  unsigned int *seedtable=NULL;
+  initialize_rng(random_generator, seedtable);
+
+#ifdef CORRECT_CIC
+  double fx, fy, fz, ff, smth;
 #endif
-    {
-#if defined(DIFFERENT_TRANSFER_FUNC)
-          fprintf(stderr, "\nStarting type %d\n",Type);
-#endif
+
+      printf("Starting to compute displacement fields.\n");
+/*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
+/*  if(neutrinos_ks)
+    Omega = Omega + OmegaDM_2ndSpecies;*/
+
+  hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
+
+  vel_prefac = InitTime * hubble_a * F_Omega(InitTime);
+
+  vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
+
+    printf("vel_prefac= %g  hubble_a=%g fom=%gOmega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
+  printf("Dplus initial redshift =%g  \n\n", Dplus); 
+
+  fac = pow(2 * PI / Box, 1.5);
+
+
       for(axes = 0; axes < 3; axes++)
 	{
 	      fprintf(stderr,"Starting axis %d.\n", axes);
@@ -188,7 +203,7 @@ void displacement_fields(int type)
 				continue;
 			    }
 
-			  p_of_k = PowerSpec(kmag);
+			  p_of_k = PowerSpec(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
 			  // p_of_k *= -log(ampl);
@@ -284,10 +299,6 @@ void displacement_fields(int type)
 
 	  for(n = 0; n < NumPart; n++)
 	    {
-#if defined(DIFFERENT_TRANSFER_FUNC)
-	      if(P[n].Type == Type)
-#endif
-		{
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
                   double u[3];
@@ -327,10 +338,8 @@ void displacement_fields(int type)
 		    maxdisp = dis;
                   if(dis <mindisp)
                     mindisp=dis;
-		}
 	    }
 	}
-    }
 
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
   for(n = 0; n < NumPart; n++)
@@ -350,6 +359,7 @@ void displacement_fields(int type)
 	     maxdisp, maxdisp / (Box / Nmesh));
       printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
 	     mindisp, mindisp / (Box / Nmesh));
+      return;
 }
 
 double periodic_wrap(double x)
@@ -397,22 +407,12 @@ void initialize_ffts(void)
 }
 
 
-
-void free_ffts(void)
-{
-  fftwf_free(Disp);
-  fftwf_destroy_plan(Inverse_plan);
-}
-
-
 int FatalError(int errnum)
 {
   printf("FatalError called with number=%d\n", errnum);
   fflush(stdout);
   exit(0);
 }
-
-
 
 
 static double A, B, alpha, beta, V, gf;
@@ -423,7 +423,7 @@ double fnl(double x)		/* Peacock & Dodds formula */
 		 (1 + pow(pow(A * x, alpha) * gf * gf * gf / (V * sqrt(x)), beta)), 1 / beta);
 }
 
-void print_spec(void)
+void print_spec(int type)
 {
   double k, knl, po, dl, dnl, neff, kf, kstart, kend, po2, po1, DDD;
   char buf[1000];
@@ -445,14 +445,14 @@ void print_spec(void)
 
       for(k = kstart; k < kend; k *= 1.025)
 	{
-	  po = PowerSpec(k);
+	  po = PowerSpec(k, type);
           //printf(" po k %g %g\n ",k,po);
 	  dl = 4.0 * PI * k * k * k * po;
 
 	  kf = 0.5;
 
-	  po2 = PowerSpec(1.001 * k * kf);
-	  po1 = PowerSpec(k * kf);
+	  po2 = PowerSpec(1.001 * k * kf, type);
+	  po1 = PowerSpec(k * kf, type);
 
 	  if(po != 0 && po1 != 0 && po2 != 0)
 	    {
@@ -485,3 +485,45 @@ void print_spec(void)
 	}
       fclose(fd);
 }
+
+gadget_header generate_header()
+{
+  gadget_header header;
+  double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
+  /*Set masses*/
+  for(int i = 0; i < N_TYPE; i++)
+      header.mass[i] = 0;
+
+  if(header1.npartTotal[BARYON_TYPE])
+    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / (header.npartTotal[BARYON_TYPE]);
+
+  if(header1.npartTotal[DM_TYPE])
+    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / (header.npartTotal[DM_TYPE]);
+
+  if(header1.npartTotal[NEUTRINO_TYPE]){
+    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / (header.npartTotal[NEUTRINO_TYPE]);
+#ifdef NEUTRINO_PAIRS
+    header.mass[NEUTRINO_TYPE] /= 2;
+#endif //NEUTRINO_PAIRS
+  }
+
+  header.time = InitTime;
+  header.redshift = 1.0 / InitTime - 1;
+
+  header.BoxSize = Box;
+  header.Omega0 = Omega;
+  header.OmegaLambda = OmegaLambda;
+  header.HubbleParam = HubbleParam;
+  /*Various flags; Most set by gadget later*/
+  header.flag_sfr = 0;
+  header.flag_feedback = 0;
+  header.flag_cooling = 0;
+  header.flag_stellarage = 0;
+  header.flag_metals = 0;
+  header.flag_entropy_instead_u=0;
+  header.flag_doubleprecision=0;
+  header.flag_ic_info=1;        
+  header.lpt_scalingfactor=1;  
+  return header;
+}
+

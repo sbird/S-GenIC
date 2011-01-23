@@ -13,15 +13,11 @@
 typedef int32_t int4byte;
 typedef uint32_t uint4byte;
 
-extern gadget_header header, header1;
+extern gadget_header header1;
 
-
-extern int      Nglass;
 extern int      WhichSpectrum;
 
 extern int NumFiles;
-
-extern FILE     *FdTmp, *FdTmpInput;
 
 extern int      Nmesh, Nsample;
 
@@ -49,7 +45,6 @@ extern struct part_data
 {
   float Pos[3];
   float Vel[3];
-  int   Type;
 } *P;
 
 
@@ -78,10 +73,11 @@ extern double ShapeGamma;
 
 extern double Dplus; /* growth factor */
 
-
-#ifdef DIFFERENT_TRANSFER_FUNC
-extern int Type, MinType, MaxType;
-#endif
+#ifdef NO64BITID
+        typedef int32_t id_type;
+#else
+        typedef int64_t id_type;
+#endif //NO64BITID
 
 extern int    ReNormalizeInputSpectrum;
 

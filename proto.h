@@ -1,7 +1,13 @@
+#ifndef __PROTO_H
+#define __PROTO_H
 
 #include <gsl/gsl_rng.h>
 
-void   print_spec(void);
+#ifdef __cplusplus
+#include <gadgetreader.hpp>
+#include <gadgetwriter.hpp>
+
+void   print_spec(int type);
 int    FatalError(int errnum);
 void   displacement_fields(int type);
 void   initialize_ffts(void);
@@ -13,19 +19,18 @@ double fnl(double x);
 void   assemble_grid(void);
 double periodic_wrap(double x);
 
-void  read_glass(char *fname,int type);
+int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data * P);
+int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId);
 
-void  write_particle_data(int type);
 gadget_header generate_header();
 
 
-#ifdef __cplusplus
 extern "C" {
 #endif
 
 void   read_power_table(void);
 int    compare_logk(const void *a, const void *b);
-double PowerSpec(double kmag);
+double PowerSpec(double kmag, int Type);
 double PowerSpec_Efstathiou(double k);
 double PowerSpec_EH(double k);
 double PowerSpec_Tabulated(double k);
@@ -54,3 +59,5 @@ void fermi_dirac_init_nu(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif //__PROTO_H

@@ -1,14 +1,11 @@
 #include "allvars.h"
 
 
-gadget_header header1, header;
+gadget_header header1;
 
 int WhichSpectrum;
 
-
 int SphereMode;
-
-FILE *FdTmp, *FdTmpInput;
 
 int Nmesh, Nsample;
 
@@ -24,8 +21,6 @@ int Seed;
 int64_t NumPart;
 
 struct part_data *P;
-
-int Nglass;
 
 int NumFiles;
 
@@ -58,10 +53,6 @@ double OmegaBaryon, HubbleParam;
 double ShapeGamma;
 double PrimordialIndex;
 double Dplus;			/* growth factor */
-
-#ifdef DIFFERENT_TRANSFER_FUNC
-int Type, MinType, MaxType;
-#endif
 
 int ReNormalizeInputSpectrum;
 

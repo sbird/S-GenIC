@@ -5,37 +5,18 @@
 using namespace GadgetWriter;
 using namespace std;
 
-#ifdef NO64BITID
-        typedef int32_t id_type;
-#else
-        typedef int64_t id_type;
-#endif //NO64BITID
+#define BUFFER 10
 
-void write_particle_data(int type)
+int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId)
 {
   size_t bytes;
   float *block;
   id_type *blockid;
   int blockmaxlen;
   int64_t maxidlen,written=0;
-  std::valarray<int64_t> npart(N_TYPE);
   int i,k,pc;
     
   printf("\nWriting IC-file\n");
-  
-  #define BUFFER 10
-  /*Set particle numbers*/
-  for(i = 0; i < N_TYPE; i++)
-    npart[i] = header1.npartTotal[i] * GlassTileFac * GlassTileFac * GlassTileFac;
-
-#ifdef NEUTRINO_PAIRS
-  npart[NEUTRINO_TYPE] *= 2;
-#endif //NEUTRINO_PAIRS
-
-  GWriteSnap snap(string(OutputDir)+string("/")+string(FileBase), npart,NumFiles, sizeof(id_type));
-
-  /*Write header*/
-  snap.WriteHeaders(generate_header());
 
   if(!(block = (float *) malloc(bytes = BUFFER * 1024 * 1024)))
     {
@@ -116,14 +97,12 @@ void write_particle_data(int type)
   maxidlen = bytes / (sizeof(id_type));
   
   for(i = 0, pc = 0; i < NumPart; i++){
-      blockid[pc] = i;
+      blockid[pc] = i+FirstId;
       pc++;
 
-#ifdef NEUTRINO_PAIRS /* Extra neutrinos get an ID after all other particles*/
-      if(type == 2)
-	{
-	  blockid[pc] += header.npartTotal[0] + header.npartTotal[1] + header.npartTotal[2] +
-	    header.npartTotal[3] + header.npartTotal[4] + header.npartTotal[5];
+#ifdef NEUTRINO_PAIRS 
+      if(type == 2) {
+	  blockid[pc] = i+FirstId+NumPart;
 	  pc++;
 	}
 #endif //NEUTRINO_PAIRS
@@ -140,10 +119,10 @@ void write_particle_data(int type)
   /*Done writing IDs*/
 
   /* write zero temperatures if needed */
-  if(npart[0]) {
+  if(type== 0) {
           written=0;
 
-      for(i = 0, pc = 0; i < npart[0]; i++){
+      for(i = 0, pc = 0; i < NumPart; i++){
 	  block[pc] = 0;
 	  pc++;
           if(pc > blockmaxlen){
@@ -159,47 +138,11 @@ void write_particle_data(int type)
 
   free(block);
   printf("Finished writing IC file.\n");
-  return;
-}
-
-gadget_header generate_header()
-{
-  gadget_header header;
-  double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
-  /*Set masses*/
-  for(int i = 0; i < N_TYPE; i++)
-      header.mass[i] = 0;
-
-  if(header1.npartTotal[BARYON_TYPE])
-    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / (header.npartTotal[BARYON_TYPE]);
-
-  if(header1.npartTotal[DM_TYPE])
-    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / (header.npartTotal[DM_TYPE]);
-
-  if(header1.npartTotal[NEUTRINO_TYPE]){
-    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / (header.npartTotal[NEUTRINO_TYPE]);
+  FirstId+=NumPart;
 #ifdef NEUTRINO_PAIRS
-    header.mass[NEUTRINO_TYPE] /= 2;
-#endif //NEUTRINO_PAIRS
-  }
-
-  header.time = InitTime;
-  header.redshift = 1.0 / InitTime - 1;
-
-  header.BoxSize = Box;
-  header.Omega0 = Omega;
-  header.OmegaLambda = OmegaLambda;
-  header.HubbleParam = HubbleParam;
-  /*Various flags; Most set by gadget later*/
-  header.flag_sfr = 0;
-  header.flag_feedback = 0;
-  header.flag_cooling = 0;
-  header.flag_stellarage = 0;
-  header.flag_metals = 0;
-  header.flag_entropy_instead_u=0;
-  header.flag_doubleprecision=0;
-  header.flag_ic_info=1;        
-  header.lpt_scalingfactor=1;  
-  return header;
+  if(type==2)
+          FirstId+=NumPart;
+#endif
+  return FirstId;
 }
 

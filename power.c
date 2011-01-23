@@ -70,7 +70,7 @@ static struct trans_row{
 /*Search function*/
 int find_less(double k);
 
-double PowerSpec(double k)
+double PowerSpec(double k, int Type)
 {
   double power, alpha, Tf;
   /*ADD THE FACTOR OF (2π)^3 to convert from CAMB conventions to GADGET conventions!!*/
@@ -473,10 +473,6 @@ void initialize_powerspectrum(void)
   if(WhichSpectrum > 3)
     initialize_splines();
 #endif
-
-#ifdef DIFFERENT_TRANSFER_FUNC
-      Type = 100;
-#endif
       Norm = 1.0;
   if(WhichSpectrum < 3){
     res = TopHatSigma2(R8);
@@ -846,7 +842,7 @@ double sigma2_int(double k)
     return 0;
 
   w = 3 * (sin(kr) / kr3 - cos(kr) / kr2);
-  x = 4 * PI * k * k * w * w * PowerSpec(k);
+  x = 4 * PI * k * k * w * w * PowerSpec(k,1);
 
   return x;
 }
