@@ -22,7 +22,6 @@ int NumFiles;
 
 double InitTime;
 double Redshift;
-double MassTable[6];
 
 /*Parameters for spline knots*/
 #ifdef SPLINE
@@ -42,7 +41,6 @@ fftwf_complex *Cdata;
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 double InputSpectrum_UnitLength_in_cm;
 double G, Hubble;
-double RhoCrit;
 
 double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
 double OmegaBaryon, HubbleParam;

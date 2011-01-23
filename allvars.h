@@ -48,8 +48,6 @@ struct part_data
 
 extern double InitTime;
 extern double Redshift;
-extern double MassTable[6];
-
 
 extern char OutputDir[1000], FileBase[1000];
 extern int  NumFilesWrittenInParallel;
