@@ -31,8 +31,6 @@ extern int      GlassTileFac;
 extern double   Box;
 extern int Seed;
 
-extern int64_t NumPart;
-
 /*Parameters for spline knots*/
 #ifdef SPLINE
 extern int NumKnots;
@@ -41,11 +39,11 @@ extern char KnotPositions[400];
 #endif
 
 
-extern struct part_data 
+struct part_data 
 {
   float Pos[3];
   float Vel[3];
-} *P;
+};
 
 
 extern double InitTime;

@@ -9,14 +9,12 @@
 
 void   print_spec(int type);
 int    FatalError(int errnum);
-void   displacement_fields(int type);
+void displacement_fields(int type, int64_t NumPart, struct part_data* P);
 void   initialize_ffts(void);
+void initialize_rng(gsl_rng * random_generator, unsigned int *seedtable);
 void   set_units(void);
-void   assemble_particles(void);
-void   free_ffts(void);
 double fnl(double x);
 
-void   assemble_grid(void);
 double periodic_wrap(double x);
 
 int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data * P);

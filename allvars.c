@@ -18,10 +18,6 @@ int GlassTileFac;
 double Box;
 int Seed;
 
-int64_t NumPart;
-
-struct part_data *P;
-
 int NumFiles;
 
 double InitTime;

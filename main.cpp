@@ -15,6 +15,8 @@ int main(int argc, char **argv)
   int type;
   std::valarray<int64_t> npart(N_TYPE);
   int64_t FirstId=0;
+  struct part_data *P=NULL;
+
   if(argc < 2)
     {
 	  fprintf(stdout, "\nParameters are missing.\n");
@@ -43,13 +45,14 @@ int main(int argc, char **argv)
   osnap.WriteHeaders(generate_header());
 
   for(type=0; type<N_TYPE;type++){
+      int64_t NumPart = 0;
 #if defined(DIFFERENT_TRANSFER_FUNC)
           fprintf(stderr, "\nStarting type %d\n",type);
 #endif
       if(npart[type] == 0)
               continue;
       NumPart = read_glass(snap, type, GlassTileFac, P);
-      displacement_fields(type);
+      displacement_fields(type, NumPart, P);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
       free(P);
   }
@@ -103,7 +106,7 @@ void initialize_rng(gsl_rng * random_generator, unsigned int *seedtable)
 
 }
 
-void displacement_fields(int type)
+void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 {
   int i, j, k, ii, jj, axes;
   int n;
