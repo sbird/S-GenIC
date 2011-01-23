@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv)
 {
-
+  int type;
   if(argc < 2)
     {
 	  fprintf(stdout, "\nParameters are missing.\n");
@@ -25,12 +25,11 @@ int main(int argc, char **argv)
   initialize_powerspectrum();
 
   initialize_ffts();
-
-  read_glass(GlassFile);
-
-  displacement_fields();
-
-  write_particle_data();
+  for(type=0; type<N_TYPE;type++){
+  read_glass(GlassFile,type);
+  displacement_fields(type);
+  write_particle_data(type);
+  }
 
   if(NumPart)
     free(P);
@@ -49,7 +48,7 @@ int main(int argc, char **argv)
 
 
 
-void displacement_fields(void)
+void displacement_fields(int type)
 {
   gsl_rng *random_generator;
   int i, j, k, ii, jj, axes;

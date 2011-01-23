@@ -3,7 +3,7 @@
 
 void   print_spec(void);
 int    FatalError(int errnum);
-void   displacement_fields(void);
+void   displacement_fields(int type);
 void   initialize_ffts(void);
 void   set_units(void);
 void   assemble_particles(void);
@@ -13,7 +13,10 @@ double fnl(double x);
 void   assemble_grid(void);
 double periodic_wrap(double x);
 
-void   combine_particle_data(void);
+void  read_glass(char *fname,int type);
+
+void  write_particle_data(int type);
+gadget_header generate_header();
 
 
 #ifdef __cplusplus
@@ -40,27 +43,14 @@ double sigma2_int(double k);
 double TopHatSigma2(double R);
 double F_Omega(double a);
 
-void  write_particle_data(void);
 void  read_parameterfile(char *fname);
 double tk_eh(double k);
 
-size_t my_fwrite(void *ptr, size_t size, size_t nmemb, FILE * stream);
 
-gadget_header generate_header(int file, int num_files);
-void write_block_header(FILE * fd, char * name, int blocksize);
-void write_block_footer(FILE * fd, char * name, int blocksize);
-void write_block(FILE * fd, char * name, void * block, int blocksize);
-
+void add_WDM_thermal_speeds(float *vel);
+void add_NU_thermal_speeds(float *vel);
+double get_fermi_dirac_vel_nu(void);
+void fermi_dirac_init_nu(void);
 #ifdef __cplusplus
 }
 #endif
-void  read_glass(char *fname);
-
-
-void add_WDM_thermal_speeds(float *vel);
-
-int compare_type(const void *a, const void *b);
-
-double get_fermi_dirac_vel_nu(void);
-void fermi_dirac_init_nu(void);
-void add_NU_thermal_speeds(float *vel);

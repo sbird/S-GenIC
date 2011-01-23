@@ -27,6 +27,8 @@ struct part_data *P;
 
 int Nglass;
 
+int NumFiles;
+
 double InitTime;
 double Redshift;
 double MassTable[6];

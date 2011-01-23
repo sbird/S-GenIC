@@ -26,7 +26,7 @@ FFTW_INCL=
 FFTW_LIBS=  
 
 FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread -lgomp 
-LIBS   =   -lm   $(FFTW_LIB)  $(GSL_LIBS)  -lgsl -lgslcblas -L../GadgetReader -lrgad
+LIBS   =   -lm   $(FFTW_LIB)  $(GSL_LIBS)  -lgsl -lgslcblas -L../GadgetReader -lrgad -lwgad
 
 ifeq ($(SYSTYPE),"Solaris")
 LIBS   =   -R/opt/local/lib/sparcv9 -lm  -lmpi   $(GSL_LIBS) -lgsl -lgslcblas  $(FFTW_LIB)

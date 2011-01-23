@@ -6,9 +6,9 @@
 
 
 
-void read_glass(char *fname)
+void read_glass(char *fname, int type)
 {
-  int i, j, k, n, m, type;
+  int i, j, k, n, m;
   int64_t count;
   float *pos = NULL;
   float x, y, z;

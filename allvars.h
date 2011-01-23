@@ -19,6 +19,7 @@ extern gadget_header header, header1;
 extern int      Nglass;
 extern int      WhichSpectrum;
 
+extern int NumFiles;
 
 extern FILE     *FdTmp, *FdTmpInput;
 
