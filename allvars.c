@@ -1,8 +1,6 @@
 #include "allvars.h"
 
 
-gadget_header header1;
-
 int WhichSpectrum;
 
 int SphereMode;

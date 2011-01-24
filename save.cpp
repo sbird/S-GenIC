@@ -5,7 +5,7 @@
 using namespace GadgetWriter;
 using namespace std;
 
-#define BUFFER 10
+#define BUFFER 48
 
 int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId)
 {
@@ -42,13 +42,15 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
 #endif //NEUTRINO_PAIRS
 
       if(pc > blockmaxlen){
-	  snap.WriteBlocks(string("POS "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("POS "),type, block, pc,written) != pc)
+                  FatalError(2);
           written+=pc;
 	  pc = 0;
 	}
   }
   if(pc > 0)
-	  snap.WriteBlocks(string("POS "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("POS "),type, block, pc,written) != pc)
+                  FatalError(2);
   /*Done writing POS block*/
   written=0;
 
@@ -83,13 +85,15 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
       pc++;
 
       if(pc > blockmaxlen){
-	  snap.WriteBlocks(string("VEL "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("VEL "),type, block, pc,written) != pc)
+                  FatalError(2);
           written+=pc;
 	  pc = 0;
 	}
     }
   if(pc > 0)
-	  snap.WriteBlocks(string("VEL "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("VEL "),type, block, pc,written) != pc)
+                  FatalError(2);
 
   /* write particle ID */
   written=0;
@@ -108,13 +112,15 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
 #endif //NEUTRINO_PAIRS
 
       if(pc > blockmaxlen){
-	  snap.WriteBlocks(string("ID  "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("ID  "),type, block, pc,written) != pc)
+                  FatalError(2);
           written+=pc;
 	  pc = 0;
       }
   }
   if(pc > 0)
-	  snap.WriteBlocks(string("ID  "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("ID  "),type, block, pc,written) != pc)
+                  FatalError(2);
 
   /*Done writing IDs*/
 
@@ -126,13 +132,15 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
 	  block[pc] = 0;
 	  pc++;
           if(pc > blockmaxlen){
-              snap.WriteBlocks(string("U   "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("U   "),type, block, pc,written) != pc)
+                  FatalError(2);
               written+=pc;
               pc = 0;
           }
       }
       if(pc > 0)
-	  snap.WriteBlocks(string("U   "),type, block, pc,written);
+	  if(snap.WriteBlocks(string("U   "),type, block, pc,written) != pc)
+                  FatalError(2);
   }
   /*Done writing temperatures*/
 

@@ -13,8 +13,6 @@
 typedef int32_t int4byte;
 typedef uint32_t uint4byte;
 
-extern gadget_header header1;
-
 extern int      WhichSpectrum;
 
 extern int NumFiles;
@@ -38,7 +36,6 @@ extern char KnotValues[400];
 extern char KnotPositions[400];
 #endif
 
-
 struct part_data 
 {
   float Pos[3];
@@ -60,7 +57,6 @@ extern fftwf_complex     *Cdata;
 extern double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 extern double InputSpectrum_UnitLength_in_cm;
 extern double G, Hubble;
-extern double RhoCrit;
 
 extern double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
 extern double OmegaBaryon, HubbleParam;

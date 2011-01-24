@@ -11,7 +11,7 @@ void   print_spec(int type);
 int    FatalError(int errnum);
 void displacement_fields(int type, int64_t NumPart, struct part_data* P);
 void   initialize_ffts(void);
-void initialize_rng(gsl_rng * random_generator, unsigned int*& seedtable);
+unsigned int * initialize_rng(int Seed);
 void   set_units(void);
 double fnl(double x);
 
@@ -20,7 +20,7 @@ double periodic_wrap(double x);
 int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data *& P);
 int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId);
 
-gadget_header generate_header();
+gadget_header generate_header(std::valarray<int64_t> & npart);
 
 
 extern "C" {

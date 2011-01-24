@@ -23,13 +23,16 @@ int main(int argc, char **argv)
 	  fprintf(stdout, "Call with <ParameterFile>\n\n");
       exit(0);
     }
-
+  /*Make sure stdout is line buffered even when not 
+   * printing to a terminal but, eg, perl*/
+  setlinebuf(stdout);
   read_parameterfile(argv[1]);
   NumFiles = 4;
   set_units();
 
   initialize_powerspectrum();
-  printf("Dplus initial redshift =%g  \n\n", Dplus); 
+  if(WhichSpectrum < 3)
+          printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
@@ -41,10 +44,10 @@ int main(int argc, char **argv)
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
-
   GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase), npart,NumFiles, sizeof(id_type));
   /*Write headers*/
-  osnap.WriteHeaders(generate_header());
+  if(osnap.WriteHeaders(generate_header(npart)))
+          FatalError(23);
 
   for(type=0; type<N_TYPE;type++){
       int64_t NumPart = 0;
@@ -66,11 +69,13 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void initialize_rng(gsl_rng * random_generator, unsigned int*& seedtable)
+unsigned int * initialize_rng(int Seed)
 {
   int i,j;
 
+  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
   gsl_rng_set(random_generator, Seed);
+  unsigned int * seedtable;
 
   if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
     FatalError(4);
@@ -102,6 +107,8 @@ void initialize_rng(gsl_rng * random_generator, unsigned int*& seedtable)
 	seedtable[(Nmesh - 1 - j) * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
     }
 
+  gsl_rng_free(random_generator);
+  return seedtable;
 
 }
 
@@ -113,9 +120,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
   double kvec[3], kmag, kmag2, p_of_k;
   double delta, phase, ampl, hubble_a;
   double mindisp=0, maxdisp=0;
-  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
-  unsigned int *seedtable=NULL;
-  initialize_rng(random_generator, seedtable);
+  unsigned int *seedtable = initialize_rng(Seed);
 
 #ifdef CORRECT_CIC
   double fx, fy, fz, ff, smth;
@@ -140,12 +145,8 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 	  printf("Starting axis %d.\n", axes);
 
 	  /* first, clean the array */
-	  for(i = 0; i < Nmesh; i++)
-	    for(j = 0; j < Nmesh; j++)
-	      for(k = 0; k <= Nmesh / 2; k++) {
-		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] = 0;
-		  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] = 0;
-	      }
+	  for(i = 0; i < 2*Nmesh*Nmesh*(Nmesh/2+1); i++)
+		  Disp[i] = 0;
 
 	  for(i = 0; i < Nmesh; i++) {
 	      ii = Nmesh - i;
@@ -153,6 +154,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 		ii = 0;
 		  for(j = 0; j < Nmesh; j++)
 		    {
+                      gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
 
 		      for(k = 0; k < Nmesh / 2; k++)
@@ -286,6 +288,8 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 				}
 			    }
 			}
+
+                        gsl_rng_free(random_generator);
 		    }
 	    }
 
@@ -348,7 +352,6 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 	}
     }
 
-  gsl_rng_free(random_generator);
 
   printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
@@ -481,7 +484,7 @@ void print_spec(int type)
       fclose(fd);
 }
 
-gadget_header generate_header()
+gadget_header generate_header(std::valarray<int64_t> & npart)
 {
   gadget_header header;
   double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
@@ -489,14 +492,14 @@ gadget_header generate_header()
   for(int i = 0; i < N_TYPE; i++)
       header.mass[i] = 0;
 
-  if(header1.npartTotal[BARYON_TYPE])
-    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / (header.npartTotal[BARYON_TYPE]);
+  if(npart[BARYON_TYPE])
+    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / npart[BARYON_TYPE];
 
-  if(header1.npartTotal[DM_TYPE])
-    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / (header.npartTotal[DM_TYPE]);
+  if(npart[DM_TYPE])
+    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / npart[DM_TYPE];
 
-  if(header1.npartTotal[NEUTRINO_TYPE]){
-    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / (header.npartTotal[NEUTRINO_TYPE]);
+  if(npart[NEUTRINO_TYPE]){
+    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / npart[NEUTRINO_TYPE];
 #ifdef NEUTRINO_PAIRS
     header.mass[NEUTRINO_TYPE] /= 2;
 #endif //NEUTRINO_PAIRS
