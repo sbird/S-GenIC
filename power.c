@@ -73,33 +73,38 @@ int find_less(double k);
 double PowerSpec(double k, int Type)
 {
   double power, alpha, Tf;
-  /*ADD THE FACTOR OF (2π)^3 to convert from CAMB conventions to GADGET conventions!!*/
-#ifdef DIFFERENT_TRANSFER_FUNC
-  if(WhichSpectrum == 3)
-  {
-     return PowerSpec_CAMB(k,Type)/pow(2*M_PI,3);
-  }
-#ifdef SPLINE
-  if(WhichSpectrum==4)
-  {
-     return PowerSpec_Spline(k,Type)/pow(2*M_PI,3);
-  }
-  /*This uses the total transfer function table 
-   * instead of those for individual species.*/
-  if(WhichSpectrum==5)
-  {
-     return PowerSpec_Spline(k,2)/pow(2*M_PI,3);
-  }
-#endif
-#endif
   switch (WhichSpectrum)
     {
     case 1:
       power = PowerSpec_EH(k);
       break;
     case 2:
-      power = PowerSpec_Tabulated(k);
+      if(Type != 2)
+        power = PowerSpec_Tabulated(k);
+      else
+#ifdef NEUTRINOS
+        power = PowerSpec_Tabulated2nd(k);
+#else
+        power = PowerSpec_DM_2ndSpecies(k);
+#endif
       break;
+#ifdef DIFFERENT_TRANSFER_FUNC
+    case 3:
+      /*This is my reimplementation of Spectrum 2. */
+  /*ADD THE FACTOR OF (2π)^3 to convert from CAMB conventions to GADGET conventions!!*/
+      power = PowerSpec_CAMB(k,Type)/pow(2*M_PI,3);
+      break;
+#ifdef SPLINE
+    case 4:
+      power = PowerSpec_Spline(k,Type)/pow(2*M_PI,3);
+      break;
+    case 5:
+  /*This uses the total transfer function table 
+   * instead of those for individual species.*/
+      power = PowerSpec_Spline(k,7)/pow(2*M_PI,3);
+      break;
+#endif
+#endif
     default:
       power = PowerSpec_Efstathiou(k);
       break;
@@ -116,37 +121,14 @@ double PowerSpec(double k, int Type)
     }
 
 #if defined(DIFFERENT_TRANSFER_FUNC)
-
-  if(Type == 2)
-    {
 #ifdef NEUTRINOS
-      if(WhichSpectrum == 2)
-	power = PowerSpec_Tabulated2nd(k);
-      else
-	{
-	  if(WhichSpectrum == 1)
-	    power = PowerSpec_EH(k);
-	  else
-	    power = PowerSpec_Efstathiou(k);	
-	}
-#else
-      fprintf(stderr,"type 2! SECOND VARIETY!\n");
-      power = PowerSpec_DM_2ndSpecies(k);
-#endif
-    }
-
-  if(Type == 100) /* Type 100 is just to recompute normalization over the total matter p(k) */
-    {
-#ifdef NEUTRINOS
-      if(WhichSpectrum == 2)
+/* Type 100 recomputes normalization over the total matter p(k) */
+  if(Type == 100 && WhichSpectrum ==2) 
 	power = PowerSpec_TOTAL(k);
-	
-#endif
-    }
-
-#endif
-
-  power *= pow(k, PrimordialIndex - 1.0);
+#endif //NEUTRINOS
+#endif 
+  if(WhichSpectrum < 3)
+    power *= pow(k, PrimordialIndex - 1.0);
 
   return power;
 }
@@ -842,7 +824,7 @@ double sigma2_int(double k)
     return 0;
 
   w = 3 * (sin(kr) / kr3 - cos(kr) / kr2);
-  x = 4 * PI * k * k * w * w * PowerSpec(k,1);
+  x = 4 * PI * k * k * w * w * PowerSpec(k,100);
 
   return x;
 }
