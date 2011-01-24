@@ -31,8 +31,6 @@ int main(int argc, char **argv)
   set_units();
 
   initialize_powerspectrum();
-  if(WhichSpectrum < 3)
-          printf("Dplus initial redshift =%g  \n\n", Dplus); 
 
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
@@ -117,23 +115,19 @@ unsigned int * initialize_rng(int Seed)
 
 void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 {
-  double vel_prefac;
   const double fac = pow(2 * M_PI / Box, 1.5);
-  double mindisp=0, maxdisp=0;
+  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const unsigned int *seedtable = initialize_rng(Seed);
+  const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
+  double mindisp=0, maxdisp=0;
 
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
 /*  if(neutrinos_ks)
     Omega = Omega + OmegaDM_2ndSpecies;*/
 
-  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
-
-  vel_prefac = InitTime * hubble_a * F_Omega(InitTime);
-
-  vel_prefac /= sqrt(InitTime);	/* converts to Gadget velocity */
+  /* the final term converts to Gadget velocity */
 
   printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
-
 
       for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting axis %d.\n", axes);
@@ -187,7 +181,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
 			  // p_of_k *= -log(ampl);
 
-			  delta = fac * sqrt(p_of_k) / Dplus;
+			  delta = fac * sqrt(p_of_k) ;
                           /* scale back to starting redshift */
                           /*If we are using the CAMB P(k), Dplus=1.
                             * fac=(2π/Box)^1.5*/

@@ -130,7 +130,7 @@ double PowerSpec(double k, int Type)
   if(WhichSpectrum < 3)
     power *= pow(k, PrimordialIndex - 1.0);
 
-  return power;
+  return power/ (Dplus*Dplus);
 }
 
 
@@ -466,7 +466,8 @@ void initialize_powerspectrum(void)
 
     if(WhichSpectrum == 2)
       printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-            Dplus = GrowthFactor(InitTime, 1.0);
+      Dplus = GrowthFactor(InitTime, 1.0);
+      printf("Dplus initial redshift =%g  \n\n", Dplus); 
   }
 }
 
@@ -517,7 +518,6 @@ double PowerSpec_Tabulated(double k)
 
 #ifdef NEUTRINOS
 
-
 double PowerSpec_Tabulated_b(double k)
 {
   double logk, logD, P, kold, u, dlogk, Delta2;
@@ -559,8 +559,6 @@ double PowerSpec_Tabulated_b(double k)
 
 return P;
 }
-
-
 
 
 
@@ -653,21 +651,10 @@ double PowerSpec_TOTAL(double k)
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
- double PowerSpec_Efstathiou(double k)
+double PowerSpec_Efstathiou(double k)
 {
   return Norm * k / pow(1 + pow(AA * k + pow(BB * k, 1.5) + CC * CC * k * k, nu), 2 / nu);
 }
-
 
 
 double PowerSpec_EH(double k)	/* Eisenstein & Hu */
