@@ -3,6 +3,7 @@ SYSTYPE="#SYSTYPE#"
 EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
+	 initialise.o print_spec.o \
          nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o #cubspl.o
 
 INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile

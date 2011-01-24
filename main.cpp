@@ -1,6 +1,5 @@
 #include <math.h>
 #include <stdlib.h>
-#include <omp.h>
 #include <fftw3.h>
 #include <gsl/gsl_rng.h>
 
@@ -67,49 +66,6 @@ int main(int argc, char **argv)
   return 0;
 }
 
-unsigned int * initialize_rng(int Seed)
-{
-  int i,j;
-
-  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
-  gsl_rng_set(random_generator, Seed);
-  unsigned int * seedtable;
-
-  if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
-    FatalError(4);
-
-  for(i = 0; i < Nmesh / 2; i++)
-    {
-      for(j = 0; j < i; j++)
-	seedtable[i * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[j * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[(Nmesh - 1 - i) * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[(Nmesh - 1 - j) * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[i * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[j * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[(Nmesh - 1 - i) * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[(Nmesh - 1 - j) * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-    }
-
-  gsl_rng_free(random_generator);
-  return seedtable;
-
-}
-
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
 
@@ -144,7 +100,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 		      for(int k = 0; k < Nmesh / 2; k++) {
                           double kvec[3], kmag, kmag2, p_of_k;
                           double delta, phase, ampl;
-			  phase = gsl_rng_uniform(random_generator) * 2 * PI;
+			  phase = gsl_rng_uniform(random_generator) * 2 * M_PI;
 			  do
 			    ampl = gsl_rng_uniform(random_generator);
 			  while(ampl == 0);
@@ -163,16 +119,16 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 
                           /* select a sphere in k-space */
 			  if(SphereMode == 1){
-			      if(kmag * Box / (2 * PI) > Nsample / 2)
+			      if(kmag * Box / (2 * M_PI) > Nsample / 2)
                                       continue;
                           }
                           /*Or a box*/
 			  else {
-			      if(fabs(kvec[0]) * Box / (2 * PI) > Nsample / 2)
+			      if(fabs(kvec[0]) * Box / (2 * M_PI) > Nsample / 2)
 				continue;
-			      if(fabs(kvec[1]) * Box / (2 * PI) > Nsample / 2)
+			      if(fabs(kvec[1]) * Box / (2 * M_PI) > Nsample / 2)
 				continue;
-			      if(fabs(kvec[2]) * Box / (2 * PI) > Nsample / 2)
+			      if(fabs(kvec[2]) * Box / (2 * M_PI) > Nsample / 2)
 				continue;
 			  }
 
@@ -320,39 +276,6 @@ double periodic_wrap(double x)
 }
 
 
-void set_units(void)		/* ... set some units */
-{
-  UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
-
-  G = GRAVITY / pow(UnitLength_in_cm, 3) * UnitMass_in_g * pow(UnitTime_in_s, 2);
-  Hubble = HUBBLE * UnitTime_in_s;
-}
-
-
-
-void initialize_ffts(void)
-{
-  size_t bytes;
-
-  Disp = (float *) fftwf_malloc(bytes = sizeof(float) * (2*Nmesh*Nmesh*(Nmesh/2+1)));
-  if(Disp)
-        printf("\nAllocated %g MB for FFTs\n", bytes / (1024.0 * 1024.0));
-  else{
-      fprintf(stderr, "Failed to allocate %g Mbyte\n", bytes / (1024.0 * 1024.0));
-      FatalError(1);
-  }
-  Cdata = (fftwf_complex *) Disp;	/* transformed array */
-
-  if(!fftwf_init_threads()){
-  		  fprintf(stderr,"Error initialising fftw threads\n");
-  		  exit(1);
-  }
-  fftwf_plan_with_nthreads(omp_get_num_procs());
-  Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
-  return;
-}
-
-
 int FatalError(int errnum)
 {
   printf("FatalError called with number=%d\n", errnum);
@@ -360,118 +283,6 @@ int FatalError(int errnum)
   exit(0);
 }
 
-
-static double A, B, alpha, beta, V, gf;
-
-double fnl(double x)		/* Peacock & Dodds formula */
-{
-  return x * pow((1 + B * beta * x + pow(A * x, alpha * beta)) /
-		 (1 + pow(pow(A * x, alpha) * gf * gf * gf / (V * sqrt(x)), beta)), 1 / beta);
-}
-
-void print_spec(int type)
-{
-  double k, knl, po, dl, dnl, neff, kf, kstart, kend, po2, po1, DDD;
-  char buf[1000];
-  FILE *fd;
-
-      sprintf(buf, "%s/inputspec_%s.txt", OutputDir, FileBase);
-
-      fd = fopen(buf, "w");
-
-      gf = GrowthFactor(0.001, 1.0) / (1.0 / 0.001);
-
-      DDD = GrowthFactor(1.0 / (Redshift + 1), 1.0);
-
-      fprintf(fd, "%12g %12g\n", Redshift, DDD);	/* print actual starting redshift and 
-							   linear growth factor for this cosmology */
-
-      kstart = 2 * PI / (1000.0 * (3.085678e24 / UnitLength_in_cm));	/* 1000 Mpc/h */
-      kend = 2 * PI / (0.001 * (3.085678e24 / UnitLength_in_cm));	/* 0.001 Mpc/h */
-
-      for(k = kstart; k < kend; k *= 1.025)
-	{
-	  po = PowerSpec(k, type);
-          //printf(" po k %g %g\n ",k,po);
-	  dl = 4.0 * PI * k * k * k * po;
-
-	  kf = 0.5;
-
-	  po2 = PowerSpec(1.001 * k * kf, type);
-	  po1 = PowerSpec(k * kf, type);
-
-	  if(po != 0 && po1 != 0 && po2 != 0)
-	    {
-	      neff = (log(po2) - log(po1)) / (log(1.001 * k * kf) - log(k * kf));
-
-	      if(1 + neff / 3 > 0)
-		{
-		  A = 0.482 * pow(1 + neff / 3, -0.947);
-		  B = 0.226 * pow(1 + neff / 3, -1.778);
-		  alpha = 3.310 * pow(1 + neff / 3, -0.244);
-		  beta = 0.862 * pow(1 + neff / 3, -0.287);
-		  V = 11.55 * pow(1 + neff / 3, -0.423) * 1.2;
-
-		  dnl = fnl(dl);
-		  knl = k * pow(1 + dnl, 1.0 / 3);
-		}
-	      else
-		{
-		  dnl = 0;
-		  knl = 0;
-		}
-	    }
-	  else
-	    {
-	      dnl = 0;
-	      knl = 0;
-	    }
-
-	  fprintf(fd, "%12g %12g %12g  %12g %12g\n", k,po, dl, knl, dnl);
-	}
-      fclose(fd);
-}
-
-gadget_header generate_header(std::valarray<int64_t> & npart)
-{
-  gadget_header header;
-  double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
-  /*Set masses*/
-  for(int i = 0; i < N_TYPE; i++)
-      header.mass[i] = 0;
-
-  if(npart[BARYON_TYPE])
-    header.mass[BARYON_TYPE] = (OmegaBaryon) * scale / npart[BARYON_TYPE];
-
-  if(npart[DM_TYPE])
-    header.mass[DM_TYPE] = (Omega - OmegaBaryon - OmegaDM_2ndSpecies) * scale / npart[DM_TYPE];
-
-  if(npart[NEUTRINO_TYPE]){
-    header.mass[NEUTRINO_TYPE] = (OmegaDM_2ndSpecies) * scale / npart[NEUTRINO_TYPE];
-#ifdef NEUTRINO_PAIRS
-    header.mass[NEUTRINO_TYPE] /= 2;
-#endif //NEUTRINO_PAIRS
-  }
-
-  header.time = InitTime;
-  header.redshift = 1.0 / InitTime - 1;
-
-  header.BoxSize = Box;
-  header.Omega0 = Omega;
-  header.OmegaLambda = OmegaLambda;
-  header.HubbleParam = HubbleParam;
-  /*Various flags; Most set by gadget later*/
-  header.flag_sfr = 0;
-  header.flag_feedback = 0;
-  header.flag_cooling = 0;
-  header.flag_stellarage = 0;
-  header.flag_metals = 0;
-  header.flag_entropy_instead_u=0;
-  header.flag_doubleprecision=0;
-  header.flag_ic_info=1;        
-  header.lpt_scalingfactor=1;  
-  return header;
-}
 
 #ifdef CORRECT_CIC
 /* do deconvolution of CIC interpolation */
