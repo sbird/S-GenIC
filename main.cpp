@@ -112,25 +112,21 @@ unsigned int * initialize_rng(int Seed)
 
 }
 
+/**Little macro to work the storage order of the FFT.*/
+#define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
+
 void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 {
-  int i, j, k, ii, jj, axes;
-  int n;
-  double fac, vel_prefac;
-  double kvec[3], kmag, kmag2, p_of_k;
-  double delta, phase, ampl, hubble_a;
+  double vel_prefac;
+  const double fac = pow(2 * M_PI / Box, 1.5);
   double mindisp=0, maxdisp=0;
-  unsigned int *seedtable = initialize_rng(Seed);
-
-#ifdef CORRECT_CIC
-  double fx, fy, fz, ff, smth;
-#endif
+  const unsigned int *seedtable = initialize_rng(Seed);
 
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
 /*  if(neutrinos_ks)
     Omega = Omega + OmegaDM_2ndSpecies;*/
 
-  hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
+  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
 
   vel_prefac = InitTime * hubble_a * F_Omega(InitTime);
 
@@ -138,27 +134,22 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 
   printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
 
-  fac = pow(2 * PI / Box, 1.5);
 
-
-      for(axes = 0; axes < 3; axes++) {
+      for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting axis %d.\n", axes);
 
 	  /* first, clean the array */
-	  for(i = 0; i < 2*Nmesh*Nmesh*(Nmesh/2+1); i++)
+	  for(int i = 0; i < 2*Nmesh*Nmesh*(Nmesh/2+1); i++)
 		  Disp[i] = 0;
 
-	  for(i = 0; i < Nmesh; i++) {
-	      ii = Nmesh - i;
-	      if(ii == Nmesh)
-		ii = 0;
-		  for(j = 0; j < Nmesh; j++)
-		    {
+	  for(int i = 0; i < Nmesh; i++) {
+		  for(int j = 0; j < Nmesh; j++) {
                       gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
 
-		      for(k = 0; k < Nmesh / 2; k++)
-			{
+		      for(int k = 0; k < Nmesh / 2; k++) {
+                          double kvec[3], kmag, kmag2, p_of_k;
+                          double delta, phase, ampl;
 			  phase = gsl_rng_uniform(random_generator) * 2 * PI;
 			  do
 			    ampl = gsl_rng_uniform(random_generator);
@@ -169,74 +160,42 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 			  if(i == 0 && j == 0 && k == 0)
 			    continue;
 
-			  if(i < Nmesh / 2)
-			    kvec[0] = i * 2 * PI / Box;
-			  else
-			    kvec[0] = -(Nmesh - i) * 2 * PI / Box;
-
-			  if(j < Nmesh / 2)
-			    kvec[1] = j * 2 * PI / Box;
-			  else
-			    kvec[1] = -(Nmesh - j) * 2 * PI / Box;
-
-			  if(k < Nmesh / 2)
-			    kvec[2] = k * 2 * PI / Box;
-			  else
-			    kvec[2] = -(Nmesh - k) * 2 * PI / Box;
+			  kvec[0] = KVAL(i) * 2 * M_PI / Box;
+			  kvec[1] = KVAL(j) * 2 * M_PI / Box;
+			  kvec[2] = KVAL(k) * 2 * M_PI / Box;
 
 			  kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
 			  kmag = sqrt(kmag2);
 
-			  if(SphereMode == 1)
-			    {
-			      if(kmag * Box / (2 * PI) > Nsample / 2)	/* select a sphere in k-space */
-				continue;
-			    }
-			  else
-			    {
+                          /* select a sphere in k-space */
+			  if(SphereMode == 1){
+			      if(kmag * Box / (2 * PI) > Nsample / 2)
+                                      continue;
+                          }
+                          /*Or a box*/
+			  else {
 			      if(fabs(kvec[0]) * Box / (2 * PI) > Nsample / 2)
 				continue;
 			      if(fabs(kvec[1]) * Box / (2 * PI) > Nsample / 2)
 				continue;
 			      if(fabs(kvec[2]) * Box / (2 * PI) > Nsample / 2)
 				continue;
-			    }
+			  }
 
 			  p_of_k = PowerSpec(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
 			  // p_of_k *= -log(ampl);
 
-			  delta = fac * sqrt(p_of_k) / Dplus;	/* scale back to starting redshift */
-           /*If we are using the CAMB P(k), Dplus=1.
-            * fac=(2π/Box)^1.5*/
-
+			  delta = fac * sqrt(p_of_k) / Dplus;
+                          /* scale back to starting redshift */
+                          /*If we are using the CAMB P(k), Dplus=1.
+                            * fac=(2π/Box)^1.5*/
 #ifdef CORRECT_CIC
 			  /* do deconvolution of CIC interpolation */
-			  fx = fy = fz = 1;
-			  if(kvec[0] != 0)
-			    {
-			      fx = (kvec[0] * Box / 2) / Nmesh;
-			      fx = sin(fx) / fx;
-			    }
-			  if(kvec[1] != 0)
-			    {
-			      fy = (kvec[1] * Box / 2) / Nmesh;
-			      fy = sin(fy) / fy;
-			    }
-			  if(kvec[2] != 0)
-			    {
-			      fz = (kvec[2] * Box / 2) / Nmesh;
-			      fz = sin(fz) / fz;
-			    }
-			  ff = 1 / (fx * fy * fz);
-			  smth = ff * ff;
-
-			  delta *= smth;
-			  /* end deconvolution */
+			  delta *= invwindow(i,j,k,Nmesh);
 #endif
-			  if(k > 0)
-			    {
+			  if(k > 0) {
 				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 				    -kvec[axes] / kmag2 * delta * sin(phase);
 				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
@@ -250,7 +209,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 				    continue;
 				  else
 				    {
-					  jj = Nmesh - j;	/* note: j!=0 surely holds at this point */
+					  int jj = Nmesh - j;	/* note: i=k=0 => j!=0 */
 
 					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
@@ -269,12 +228,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 				    continue;
 				  else
 				    {
-				      ii = Nmesh - i;
-				      if(ii == Nmesh)
-					ii = 0;
-				      jj = Nmesh - j;
-				      if(jj == Nmesh)
-					jj = 0;
+				      int jj = (Nmesh - j) % Nmesh;
 
 					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1)])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
@@ -297,7 +251,7 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 
 	  /* read-out displacements */
 
-	  for(n = 0; n < NumPart; n++)
+	  for(int n = 0; n < NumPart; n++)
 	    {
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
@@ -342,9 +296,9 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 	}
 
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
-  for(n = 0; n < NumPart; n++)
+  for(int n = 0; n < NumPart; n++)
     {
-      for(axes = 0; axes < 3; axes++)
+      for(int axes = 0; axes < 3; axes++)
 	{
 	  P[n].Pos[axes] += P[n].Vel[axes];
 	  P[n].Vel[axes] *= vel_prefac;
@@ -524,4 +478,27 @@ gadget_header generate_header(std::valarray<int64_t> & npart)
   header.lpt_scalingfactor=1;  
   return header;
 }
+
+#ifdef CORRECT_CIC
+/* do deconvolution of CIC interpolation */
+double invwindow(int kx,int ky,int kz,int n)
+{
+	double iwx,iwy,iwz;
+        if(!n)
+                return 0;
+	if(!kx)
+		iwx=1.0;
+	else
+		iwx=M_PI*kx/(n*sin(M_PI*kx/(float)n));
+	if(!ky)
+		iwy=1.0;
+	else
+		iwy=M_PI*ky/(n*sin(M_PI*ky/(float)n));
+	if(!kz)
+		iwz=1.0;
+	else
+		iwz=M_PI*kz/(n*sin(M_PI*kz/(float)n));
+	return pow(iwx*iwy*iwz,2);
+}
+#endif
 
