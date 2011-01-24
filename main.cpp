@@ -51,7 +51,7 @@ int main(int argc, char **argv)
       if(npart[type] == 0)
               continue;
       NumPart = read_glass(snap, type, GlassTileFac, P);
-      displacement_fields(type, NumPart, P);
+      displacement_fields(type, NumPart, P, Nmesh);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
       free(P);
   }
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
 
-void displacement_fields(int type, int64_t NumPart, struct part_data* P)
+void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
@@ -88,13 +88,17 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
       for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting axis %d.\n", axes);
 
+          #pragma omp parallel
+	  {
+          gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 	  /* first, clean the array */
+	  #pragma omp for schedule(static)
 	  for(int i = 0; i < 2*Nmesh*Nmesh*(Nmesh/2+1); i++)
 		  Disp[i] = 0;
 
+	  #pragma omp for schedule(static)
 	  for(int i = 0; i < Nmesh; i++) {
 		  for(int j = 0; j < Nmesh; j++) {
-                      gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
 
 		      for(int k = 0; k < Nmesh / 2; k++) {
@@ -193,14 +197,18 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
 			    }
 			}
 
-                        gsl_rng_free(random_generator);
 		    }
 	    }
 
+          gsl_rng_free(random_generator);
+          #pragma omp barrier
+          } //omp_parallel
 	  fftwf_execute(Inverse_plan);	/** FFT **/
 
 	  /* read-out displacements */
-
+        #pragma omp parallel 
+          {
+	  #pragma omp for schedule(static)
 	  for(int n = 0; n < NumPart; n++)
 	    {
                   double dis;
@@ -243,18 +251,21 @@ void displacement_fields(int type, int64_t NumPart, struct part_data* P)
                   if(dis <mindisp)
                     mindisp=dis;
 	    }
+        } //end omp_parallel
 	}
-
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
+  #pragma omp parallel 
+  {
+  #pragma omp for schedule(static)
   for(int n = 0; n < NumPart; n++)
     {
       for(int axes = 0; axes < 3; axes++)
 	{
-	  P[n].Pos[axes] += P[n].Vel[axes];
+	  P[n].Pos[axes] = periodic_wrap(P[n].Pos[axes] + P[n].Vel[axes]);
 	  P[n].Vel[axes] *= vel_prefac;
-	  P[n].Pos[axes] = periodic_wrap(P[n].Pos[axes]);
 	}
     }
+  }
 
 
   printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",

@@ -9,7 +9,7 @@
 
 void   print_spec(int type);
 int    FatalError(int errnum);
-void displacement_fields(int type, int64_t NumPart, struct part_data* P);
+void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh);
 void   initialize_ffts(void);
 unsigned int * initialize_rng(int Seed);
 void   set_units(void);
