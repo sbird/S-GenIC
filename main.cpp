@@ -26,7 +26,6 @@ int main(int argc, char **argv)
    * printing to a terminal but, eg, perl*/
   setlinebuf(stdout);
   read_parameterfile(argv[1]);
-  NumFiles = 4;
   set_units();
 
   initialize_powerspectrum();

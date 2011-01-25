@@ -72,6 +72,10 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "Nsample");
   addr[nt] = &Nsample;
   id[nt++] = INT;
+  
+  strcpy(tag[nt], "NumFiles");
+  addr[nt] = &NumFiles;
+  id[nt++] = INT;
 
   strcpy(tag[nt], "GlassFile");
   addr[nt] = GlassFile;
