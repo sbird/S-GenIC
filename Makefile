@@ -19,16 +19,19 @@ OPT   +=  -DNEUTRINOS  # this will produce a second component as light neutrinos
 
 OPTIONS = $(OPT)
 
-CC       =  gcc  # sets the C-compiler (default)
-FC			=  gfortran
-OPTIMIZE =  -O2 -g -fopenmp -Wall
+CC       =  icc  # sets the C-compiler (default)
+CXX 	 = icpc
+FC			=  ifort
+#OPTIMIZE =  -O2 -g -fopenmp -Wall
+OPTIMIZE =  -O2 -g -openmp -w1
 MPICHLIB = 
 FFTW_INCL=  
 FFTW_LIBS=  
 
 GREAD= ../GadgetReader
 
-FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread -lgomp 
+#FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread -lgomp 
+FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread
 LIBS   =   -lm   $(FFTW_LIB)  $(GSL_LIBS)  -lgsl -lgslcblas -L$(GREAD) -lrgad -lwgad -Wl,-rpath,$(GREAD)
 
 
