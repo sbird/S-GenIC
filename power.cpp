@@ -1,7 +1,7 @@
 #include <math.h>
 #include "allvars.h"
 #include "proto.h"
-
+#include <map>
 
 static double R8;
 static double r_tophat;
@@ -57,18 +57,16 @@ static struct pow_matter
 *PowerMatter;
 
  /*Structure for transfer table*/
-static struct trans_row{
-	double k;
+struct trans_row{
 	double T_CDM;
 	double T_b;
 	double T_g;
 	double T_r;
 	double T_n;
 	double T_t;
-} *transfer_tables;
+};
 
-/*Search function*/
-int find_less(double k);
+static std::map<double, struct trans_row> transfer_tables;
 
 double PowerSpec(double k, int Type)
 {
@@ -157,75 +155,48 @@ void read_transfer_table(void)
    *     CDM, baryon,photon,massless neutrino, massive neutrinos, and total (massive)*/
 	FILE *trans;
 	char buf[200];
-	int index;
-	int filelines=0;
 	struct trans_row tmp_row;
-        kctog=UnitLength_in_cm
-                /InputSpectrum_UnitLength_in_cm;
+        double tmp_k;
+        kctog=UnitLength_in_cm/InputSpectrum_UnitLength_in_cm;
 	/*Open file*/
 	sprintf(buf,FileWithTransfer);
-	if(!(trans=fopen(buf,"r")))
-	{
+	if(!(trans=fopen(buf,"r"))) {
 		fprintf(stderr,"Can't open transfer file %s! You probably forgot to create it!\n",buf);
 		exit(17);
 	} 
 	/*Work out how many lines in file*/
-	if(NPowerTable)
-	{
+	if(!transfer_tables.empty()) {
 		fprintf(stderr,"read_CAMB_tables has been called more than once! Failing.");
 		exit(19);
 	}
-	while(fscanf(trans," %lg %lg %lg %lg %lg %lg %lg\n",&tmp_row.k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)==7)
+	/*Read line by line.*/
+	while(fscanf(trans," %lg %lg %lg %lg %lg %lg %lg\n",&tmp_k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)==7)
 	{
-		filelines++;
-		if(feof(trans))
-			break;
-	}
-	if(ferror(trans))
-	{
-		fprintf(stderr,"Error reading file for the first time: %d",errno);
-		exit(21);
-	}
-        printf("Found %d rows in input CAMB transfer file\n",filelines);
-	/*Allocate array with enough space*/
-	transfer_tables=malloc(filelines*sizeof(struct trans_row));
-	if(transfer_tables==NULL)
-	{
-		fprintf(stderr, "Failed to allocate memory for transfer tables");
-		exit(23);
-	}
-	/*Read a line, first seeking back to the start of the file.*/
-	rewind(trans);
-	for(index=0;index < filelines; index++)
-	{
-		if(fscanf(trans,"  %lg  %lg  %lg  %lg  %lg  %lg  %lg",&tmp_row.k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)!=7)
-			break;
 		/* k needs to go from (h/Mpc) units to internal Gadget units (h/kpc) by default.
                  * kctog is by default 1e-3 */
-		tmp_row.k *= kctog;
+		tmp_k *= kctog;
 		/*Append line to table.*/
-		transfer_tables[index]=tmp_row;
-		NPowerTable++;
+		transfer_tables[tmp_k]=tmp_row;
 		if(feof(trans))
 			break;
 	}
-	if(ferror(trans))
-	{
-		fprintf(stderr,"Error reading file for the second time: %d",errno);
-		exit(25);
+	if(ferror(trans)) {
+		fprintf(stderr,"Error reading transfer file: %d",errno);
+		exit(21);
 	}
+        printf("Found %d rows in input CAMB transfer file\n",(int)transfer_tables.size());
 	fclose(trans);
 	/*The CAMB T_f/k_c is in units of Mpc^2! NOTE NO h!*/
 	double tctog=(HubbleParam*HubbleParam)/(kctog*kctog);
-	for(index=0; index<NPowerTable; index++)
-	{
+        std::map<double, struct trans_row>::iterator it;
+	for(it=transfer_tables.begin(); it != transfer_tables.end(); ++it) {
 	/*The transfer function should be normalized to about 1 on large scales.*/
-		transfer_tables[index].T_CDM *= tctog;
-		transfer_tables[index].T_g *= tctog;
-		transfer_tables[index].T_b *= tctog;
-		transfer_tables[index].T_r *= tctog;
-		transfer_tables[index].T_n *= tctog;
-		transfer_tables[index].T_t *= tctog;
+		((*it).second).T_CDM *= tctog;
+		((*it).second).T_g *= tctog;
+		((*it).second).T_b *= tctog;
+		((*it).second).T_r *= tctog;
+		((*it).second).T_n *= tctog;
+		((*it).second).T_t *= tctog;
 	}
 	return;
 }
@@ -289,8 +260,8 @@ sprintf(buf, FileWithInputSpectrum);
 #endif
       printf("found %d rows in input SPECTRUM table\n", NPowerTable);
       fflush(stdout);
-   PowerTable = malloc(NPowerTable * sizeof(struct pow_table));  
-   PowerMatter = malloc(NPowerTable * sizeof(struct pow_matter)); 
+   PowerTable = (pow_table *) malloc(NPowerTable * sizeof(struct pow_table));  
+   PowerMatter = (pow_matter *) malloc(NPowerTable * sizeof(struct pow_matter)); 
   /* define matter array */
   sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
@@ -709,85 +680,76 @@ double tk_eh(double k)		/* from Martin White */
 /*Return interpolated value of transfer function from table*/
 double tk_CAMB(double k, int Type)
 {
-	int lessind;
+        std::map<double, struct trans_row>::iterator lit, uit;
+        struct trans_row * lrow, * urow;
 	double T1,T2,k1,k2;
 	double tkout;
         double OmBarLoc=OmegaBaryon;
-	if(NPowerTable==0)
+	if(transfer_tables.empty())
 	{
 		fprintf(stderr, "Some kind of error; tables not initialized!\n");
 		exit(18);
 	}
+	uit=transfer_tables.upper_bound(k);
+
 	/*No power outside of our boundaries.*/
-	if((k>transfer_tables[NPowerTable-1].k) || (k<transfer_tables[0].k))
+	if(uit == transfer_tables.end() || uit == transfer_tables.begin())
 		return 0;
-	lessind=find_less(k);
+        lit = uit;
+        --lit;
+        lrow=&((*lit).second);
+        urow=&((*uit).second);
+
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
 #if defined(DIFFERENT_TRANSFER_FUNC)
         /* CDM*/
         if(Type==1){
-        	T1=transfer_tables[lessind].T_CDM;
-        	T2=transfer_tables[lessind+1].T_CDM;
+        	T1=(*lrow).T_CDM;
+        	T2=(*urow).T_CDM;
                 /* If we have no baryons, fake the contribution into the CDM component*
                  * FIXME: Make OmBarLoc be a variable so can use the value fed to CAMB*/
 	        if(OmegaBaryon == 0){
                         OmBarLoc = 0.05;
                         if(!neutrinos_ks){
-                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b)/(Omega-OmegaDM_2ndSpecies);
-                        	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b)/(Omega-OmegaDM_2ndSpecies);
+                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*lrow).T_b)/(Omega-OmegaDM_2ndSpecies);
+                        	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*urow).T_b)/(Omega-OmegaDM_2ndSpecies);
                         }
                         else{
 	                /* if there is a *fake* nu component fake the cdm to have the nu contribution as well*/
-                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
-                	        T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*transfer_tables[lessind+1].T_b+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/Omega;
+                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*lrow).T_b+OmegaDM_2ndSpecies*(*lrow).T_n)/Omega;
+                	        T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*urow).T_b+OmegaDM_2ndSpecies*(*urow).T_n)/Omega;
                         }
 	        }
                 if(neutrinos_ks && OmegaBaryon !=0 && OmegaDM_2ndSpecies != 0){
-                	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*transfer_tables[lessind].T_n)/(Omega-OmBarLoc);
-                	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*transfer_tables[lessind+1].T_n)/(Omega-OmBarLoc);
+                	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*(*lrow).T_n)/(Omega-OmBarLoc);
+                	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*(*urow).T_n)/(Omega-OmBarLoc);
                 }
         }
         /* Baryons */
         else if(Type==0){
-        	T1=transfer_tables[lessind].T_b;
-        	T2=transfer_tables[lessind+1].T_b;
+        	T1=(*lrow).T_b;
+        	T2=(*urow).T_b;
         }
 #ifdef NEUTRINOS
         /* This loads the massive neutrino type*/
         else if(Type == 2){
-        	T1=transfer_tables[lessind].T_n;
-        	T2=transfer_tables[lessind+1].T_n;
+        	T1=(*lrow).T_n;
+        	T2=(*urow).T_n;
         }
 #endif
         else{
 #endif
-        	T1=transfer_tables[lessind].T_t;
-        	T2=transfer_tables[lessind+1].T_t;
+        	T1=(*lrow).T_t;
+        	T2=(*urow).T_t;
 #if defined(DIFFERENT_TRANSFER_FUNC)
         }
 #endif
 
-	k1=transfer_tables[lessind].k;
-	k2=transfer_tables[lessind+1].k;
+	k1=(*lit).first;
+	k2=(*uit).first;
 	//Do it in log space!
 	tkout=exp((log(T2)*(log(k)-log(k1))+log(T1)*(log(k2)-log(k)))/(log(k2)-log(k1)));
 	return tkout;
-}
-
-/*Binary search*/
-int find_less(double k)
-{
-	int j,jlow=0,jhigh=NPowerTable-1;
-	/*What I need here is an "associative array", but better keep C compat for now.*/
-	while(jhigh-jlow > 1)
-	{
-		j=floor((jhigh+jlow)/2);
-		if(transfer_tables[j].k>k )
-			jhigh=j;
-		else
-			jlow=j;
-	}
-	return jlow;
 }
 
 double TopHatSigma2(double R)
