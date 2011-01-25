@@ -46,7 +46,7 @@ WhichSpectrum    2         % "1" selects Eisenstein & Hu spectrum,
                            % the file 'FileWithInputSpectrum'
                            % otherwise, Efstathiou parametrization is used
 
-
+NumFiles         4
 FileWithInputSpectrum   ./TABLES/pk_DM_NU0.6_z=7.dat  % filename of tabulated MATTER powerspectrum from CAMB
                                            
 FileWithTransfer        ./TABLES/tf_DM_NU0.6_z=7.dat  % filename of transfer functions from CAMB
