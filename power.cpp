@@ -927,8 +927,7 @@ void fermi_dirac_init_nu(void)
 
   NU_V0 = 150.0 * (1.0e5 / UnitVelocity_in_cm_per_s) * (1 + Redshift) * (1.0 / NU_PartMass_in_ev);
 
-    printf("\n neutrino dark matter rms velocity dispersion at starting redshift = %g internal vel units\n\n",
-	   NU_V0);
+  printf("\nNeutrino rms vel. dispersion %g (int vel units)\n\n",NU_V0);
 
   /* convert from peculiar velocity to gadget's cosmological velocity */
   NU_V0 *= sqrt(1 + Redshift);
