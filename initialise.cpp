@@ -55,13 +55,12 @@ void set_units(void)		/* ... set some units */
 
 void initialize_ffts(void)
 {
-  size_t bytes;
-
-  Disp = (float *) fftwf_malloc(bytes = sizeof(float) * (2*Nmesh*Nmesh*(Nmesh/2+1)));
+  size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
+  Disp = (float *) fftwf_malloc(bytes);
   if(Disp)
-        printf("\nAllocated %g MB for FFTs\n", bytes / (1024.0 * 1024.0));
+        printf("Nmesh = %d. Allocated %ld MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
   else{
-      fprintf(stderr, "Failed to allocate %g Mbyte\n", bytes / (1024.0 * 1024.0));
+      fprintf(stderr, "Nmesh = %d. Failed to allocate %ld MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
       FatalError(1);
   }
   Cdata = (fftwf_complex *) Disp;	/* transformed array */

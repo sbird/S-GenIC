@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   set_units();
 
   initialize_powerspectrum();
-
+  printf("Nmesh = %d Nsample = %d\n",Nmesh,Nsample);
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
@@ -91,11 +91,11 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 	  {
           gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 	  /* first, clean the array */
-	  #pragma omp for schedule(static)
-	  for(int i = 0; i < 2*Nmesh*Nmesh*(Nmesh/2+1); i++)
+	  #pragma omp for 
+	  for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
 		  Disp[i] = 0;
 
-	  #pragma omp for schedule(static)
+	  #pragma omp for 
 	  for(int i = 0; i < Nmesh; i++) {
 		  for(int j = 0; j < Nmesh; j++) {
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
@@ -149,9 +149,10 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 			  delta *= invwindow(i,j,k,Nmesh);
 #endif
 			  if(k > 0) {
-				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
+                                  size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+				  (Cdata[index])[0] =
 				    -kvec[axes] / kmag2 * delta * sin(phase);
-				  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
+				  (Cdata[index])[1] =
 				    kvec[axes] / kmag2 * delta * cos(phase);
 			    }
 			  else	/* k=0 plane needs special treatment */
@@ -163,15 +164,16 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 				  else
 				    {
 					  int jj = Nmesh - j;	/* note: i=k=0 => j!=0 */
-
-					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[0] =
+                                          size_t index = j * (Nmesh / 2 + 1);
+					  (Cdata[index])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1) + k])[1] =
+					  (Cdata[index])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
 
-					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) + k])[0] =
+                                          index = jj * (Nmesh / 2 + 1);
+					  (Cdata[index])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) + k])[1] =
+					  (Cdata[index])[1] =
 					    -kvec[axes] / kmag2 * delta * cos(phase);
 				    }
 				}
@@ -182,15 +184,14 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 				  else
 				    {
 				      int jj = (Nmesh - j) % Nmesh;
-
-					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1)])[0] =
+                                      size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1);
+					  (Cdata[index])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[(i * Nmesh + j) * (Nmesh / 2 + 1)])[1] =
+					  (Cdata[index])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
-					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) +
-					        k])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[(i * Nmesh + jj) * (Nmesh / 2 + 1) +
-						k])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
+                                      index = (i * Nmesh + jj) * (Nmesh / 2 + 1);
+					  (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+					  (Cdata[index])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
 				    }
 				}
 			    }
@@ -207,17 +208,17 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 	  /* read-out displacements */
         #pragma omp parallel 
           {
-	  #pragma omp for schedule(static)
+	  #pragma omp for 
 	  for(int n = 0; n < NumPart; n++)
 	    {
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
                   double u[3];
-                  int i[3], ii[3];
+                  size_t i[3], ii[3];
                   int q;
                   for(q=0;q<3;q++){
         		  u[q] = P[n].Pos[q] / Box * Nmesh;
-                          i[q] = (int) u[q];
+                          i[q] = (size_t) u[q];
                           if(i[q] == Nmesh)
                                   i[q]--;
                           u[q] -= i[q];
@@ -255,8 +256,8 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
   /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
   #pragma omp parallel 
   {
-  #pragma omp for schedule(static)
-  for(int n = 0; n < NumPart; n++)
+  #pragma omp for 
+  for(size_t n = 0; n < NumPart; n++)
     {
       for(int axes = 0; axes < 3; axes++)
 	{

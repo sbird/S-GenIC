@@ -16,7 +16,7 @@ int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct
   const int G3Tile = G2Tile*GlassTileFac;
 
   if(!(pos = (float *) malloc(sizeof(float) * Nglass * 3))){
-          fprintf(stderr,"failed to allocate %g Mbyte for glass file\n", sizeof(float) * Nglass * 3.0 / (1024.0 * 1024.0));
+          fprintf(stderr,"failed to allocate %ld Mbyte for glass file\n", sizeof(float) * Nglass * 3 / (1024 * 1024));
 		  FatalError(112);
   }
   /*Read all POS data for this type*/
@@ -27,11 +27,13 @@ int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct
   }
 
   NumPart = Nglass*G3Tile;
-
-  if(!(P = (struct part_data *) malloc(bytes = sizeof(struct part_data) * NumPart))){
-	printf("Failed to allocate %g Mbyte (%ld particles)\n", bytes / (1024.0 * 1024.0),NumPart);
+  bytes = sizeof(struct part_data) * NumPart;
+  if(!(P = (struct part_data *) malloc(bytes))){
+	printf("Failed to allocate %ld Mbyte (%ld particles)\n", bytes / (1024 * 1024),NumPart);
 	exit(9891);
   }
+  else
+          printf("Type %d allocated %ld MB for %ld particles\n",type,bytes/1024/1024, NumPart);
   
 #pragma omp parallel
   {
@@ -41,7 +43,7 @@ int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct
     for(int j = 0; j < GlassTileFac; j++)
       for(int k = 0; k < GlassTileFac; k++){
         for(int n = 0; n < Nglass; n++){
-            int64_t index = n+k*Nglass+j*Nglass*GlassTileFac+i*G2Tile*Nglass;
+            size_t index = n+k*Nglass+j*Nglass*GlassTileFac+i*G2Tile*Nglass;
             P[index].Pos[0] = pos[3 * n] / GlassBox * (Box / GlassTileFac) + i * (Box / GlassTileFac);
             P[index].Pos[1]= pos[3 * n + 1] / GlassBox * (Box / GlassTileFac) + j * (Box / GlassTileFac);
             P[index].Pos[2]  = pos[3 * n + 2] / GlassBox * (Box / GlassTileFac) + k * (Box / GlassTileFac);
@@ -50,7 +52,6 @@ int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct
   }
 
   free(pos);
-  printf("Type %d has %ld particles\n",type,NumPart);
   return NumPart;
 }
 
