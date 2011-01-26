@@ -28,7 +28,7 @@ MPICHLIB =
 FFTW_INCL=  
 FFTW_LIBS=  
 
-GREAD= ../GadgetReader
+GREAD= $(CURDIR)/../GadgetReader
 
 #FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread -lgomp 
 FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread
