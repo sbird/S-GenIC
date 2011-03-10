@@ -214,11 +214,10 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
                   double u[3];
-                  size_t i[3], ii[3];
-                  int q;
-                  for(q=0;q<3;q++){
+                  int64_t i[3], ii[3];
+                  for(int q=0;q<3;q++){
         		  u[q] = P[n].Pos[q] / Box * Nmesh;
-                          i[q] = (size_t) u[q];
+                          i[q] = (int64_t) u[q];
                           if(i[q] == Nmesh)
                                   i[q]--;
                           u[q] -= i[q];
@@ -257,7 +256,7 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
   #pragma omp parallel 
   {
   #pragma omp for 
-  for(size_t n = 0; n < NumPart; n++)
+  for(int64_t n = 0; n < NumPart; n++)
     {
       for(int axes = 0; axes < 3; axes++)
 	{
