@@ -684,7 +684,6 @@ double tk_CAMB(double k, int Type)
         struct trans_row * lrow, * urow;
 	double T1,T2,k1,k2;
 	double tkout;
-        double OmBarLoc=OmegaBaryon;
 	if(transfer_tables.empty())
 	{
 		fprintf(stderr, "Some kind of error; tables not initialized!\n");
@@ -702,27 +701,39 @@ double tk_CAMB(double k, int Type)
 
 	/*Linear interpolation. Different transfer functions used for baryons and DM*/
 #if defined(DIFFERENT_TRANSFER_FUNC)
-        /* CDM*/
+        /* CDM: The dark matter may incorporate other particle types as well, eg,
+         * fake neutrinos, or baryons.
+         * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)
+         * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
+         * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
+         * so instead of summing the transfer functions, use the total transfer function and
+         * optionally subtract the baryons.*/
         if(Type==1){
-        	T1=(*lrow).T_CDM;
-        	T2=(*urow).T_CDM;
-                /* If we have no baryons, fake the contribution into the CDM component*
-                 * FIXME: Make OmBarLoc be a variable so can use the value fed to CAMB*/
-	        if(OmegaBaryon == 0){
-                        OmBarLoc = 0.05;
-                        if(!neutrinos_ks){
-                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*lrow).T_b)/(Omega-OmegaDM_2ndSpecies);
-                        	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*urow).T_b)/(Omega-OmegaDM_2ndSpecies);
+                /* If we have fake neutrinos, use the total matter power spectrum. */
+                if(neutrinos_ks){
+                        T1 = lrow->T_t;
+                        T2 = urow->T_t;
+                        /*If we have separate gas particles, subtract
+                         * the baryon transfer function */
+                        if(!no_gas){
+                                T1-=lrow->T_b*OmegaBaryon/Omega;
+                                T2-=urow->T_b*OmegaBaryon/Omega;
                         }
-                        else{
-	                /* if there is a *fake* nu component fake the cdm to have the nu contribution as well*/
-                        	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*lrow).T_b+OmegaDM_2ndSpecies*(*lrow).T_n)/Omega;
-                	        T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmBarLoc*(*urow).T_b+OmegaDM_2ndSpecies*(*urow).T_n)/Omega;
+                }
+                /*No fake neutrinos*/
+                else{
+                        const double OmegaCDM = Omega -OmegaDM_2ndSpecies -OmegaBaryon;
+                        double Omega_t = OmegaCDM;
+                        T1=lrow->T_CDM*OmegaCDM;
+                        T2=urow->T_CDM*OmegaCDM;
+                        /* If we have no gas, add T_b M_b to the CDM */
+                        if(no_gas){
+                                T1 += lrow->T_b*OmegaBaryon;
+                                T2 += urow->T_b*OmegaBaryon;
+                                Omega_t +=OmegaBaryon;
                         }
-	        }
-                if(neutrinos_ks && OmegaBaryon !=0 && OmegaDM_2ndSpecies != 0){
-                	T1=(T1*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*(*lrow).T_n)/(Omega-OmBarLoc);
-                	T2=(T2*(Omega-OmegaDM_2ndSpecies-OmBarLoc)+OmegaDM_2ndSpecies*(*urow).T_n)/(Omega-OmBarLoc);
+                        T1/=Omega_t;
+                        T2/=Omega_t;
                 }
         }
         /* Baryons */
@@ -736,9 +747,9 @@ double tk_CAMB(double k, int Type)
         	T1=(*lrow).T_n;
         	T2=(*urow).T_n;
         }
-#endif
+#endif //NEUTRINOS
         else{
-#endif
+#endif //DIFFERENT_TRANSFER_FUNCTION
         	T1=(*lrow).T_t;
         	T2=(*urow).T_t;
 #if defined(DIFFERENT_TRANSFER_FUNC)
