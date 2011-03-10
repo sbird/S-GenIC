@@ -78,6 +78,9 @@ extern int    WDM_Vtherm_On;
 extern double WDM_PartMass_in_kev;
 
 extern int    neutrinos_ks;
+/* no_gas is set to true if there are no gas particles in the glass file.
+ * This is so we can set OmegaBaryon to always be the value fed to CAMB*/
+extern int    no_gas;
 extern int    NU_On;
 extern int    NU_Vtherm_On;
 extern double NU_PartMass_in_ev;

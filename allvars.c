@@ -55,6 +55,7 @@ double WDM_PartMass_in_kev;
 
 int NU_On;
 int neutrinos_ks;
+int no_gas;
 int NU_Vtherm_On;
 double NU_PartMass_in_ev;
 
