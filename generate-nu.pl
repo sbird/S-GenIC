@@ -255,6 +255,8 @@ sub gen_ngen_file{
         my $NGenParams=shift;
         my $Directory = shift;
         my $TransferFile=shift;
+        my $MatterFile = $TransferFile;
+        $MatterFile=~ s/_transfer_/_matterpow_/;
         my $ICFile = shift;
         my $GlassFile= shift;
         my $GlassPart = shift;
@@ -279,6 +281,7 @@ sub gen_ngen_file{
                 s/^\s*Nmesh\s+[0-9]*/Nmesh $nmesh/i;
                 s!^\s*OutputDir\s+[/\w\.=-]*! OutputDir  $Directory!i;
                 s!^\s*FileWithTransfer\s+[/\.\w=]*! FileWithTransfer  $Directory/$TransferFile!i;
+                s!^\s*FileWithInputSpectrum\s+[/\.\w=]*! FileWithInputSpectrum  $Directory/$MatterFile!i;
                 s!^\s*FileBase\s+[/\w]*! FileBase  $ICFile!i;
                 s!^\s*GlassFile\s+[/\w\.=]*! GlassFile  $GlassFile!i;
                 s!^\s*GlassTileFac\s+[/\w]*! GlassTileFac  $GlassTileFac!i;
@@ -286,12 +289,14 @@ sub gen_ngen_file{
                 s!^\s*Omega\s+[/\w\.]*! Omega  $Omega_M!i;
                 s!^\s*OmegaDM_2ndSpecies\s+[/\w\.]*! OmegaDM_2ndSpecies  $O_nu!i;
                 s!^\s*OmegaBaryon\s+[/\w\.]*! OmegaBaryon  $Omega_B!i;
-                s!^\s*WhichSpectrum\s+[/\w]*! WhichSpectrum 3!i;
+                s!^\s*WhichSpectrum\s+[/\w]*! WhichSpectrum 2!i;
                 s!^\s*OmegaLambda\s+[/\w\.]*! OmegaLambda  $Omega_L!i;
                 s!^\s*NumFiles\s+[/\w\.]*! NumFiles  $NumFiles!i;
                 s!^\s*Redshift\s+[/\w\.]*! Redshift  $red!i;
                 s!^\s*HubbleParam\s+[/\w\.]*! HubbleParam  $hub!i;
                 s!^\s*NU_On\s+[/\w]*! NU_On  $nu!i;
+                #Do not renormalise the input spectrum
+                s!^\s*ReNormalizeInputSpectrum\s+[/\w]*!ReNormalizeInputSpectrum 0!i;
                 s!^\s*NU_KSPACE\s+[/\w]*! NU_KSPACE  $kspace!i;
                 s!^\s*NU_Vtherm_On\s+[/\w]*! NU_Vtherm_On  1!i;
                 s!^\s*NU_PartMass_in_ev\s+[/\w\.]*! NU_PartMass_in_ev  $nu_mass!i;
