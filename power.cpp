@@ -277,32 +277,32 @@ sprintf(buf, FileWithInputSpectrum);
 	  /* delta_nu =  k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	     delta_cdm =  k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); */
 	  // if there are no baryons and no neutrinos then delta_cdm=delta_tot
-	  if (OmegaBaryon == 0  && OmegaDM_2ndSpecies == 0)
+	  if (no_gas  && OmegaDM_2ndSpecies == 0)
             {
 	      delta_cdm = delta_tot;
 
 	      }  
 
 	  // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
-	  if (OmegaBaryon == 0  && OmegaDM_2ndSpecies != 0)
+	  if (no_gas  && OmegaDM_2ndSpecies != 0)
             {
-	      T_cdmnew = (0.05*T_b+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm)/(Omega-OmegaDM_2ndSpecies);
+	      T_cdmnew = (OmegaBaryon*T_b+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm)/(Omega-OmegaDM_2ndSpecies);
               delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	      // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
 	    }
 
           if(neutrinos_ks){
 	    // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
-	    if (OmegaBaryon == 0  && OmegaDM_2ndSpecies != 0)
+	    if (no_gas  && OmegaDM_2ndSpecies != 0)
               {
-	        T_cdmnew = (0.05*T_b+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm+OmegaDM_2ndSpecies*T_nu)/(Omega-OmegaDM_2ndSpecies-0.05);
+	        T_cdmnew = (OmegaBaryon*T_b+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm+OmegaDM_2ndSpecies*T_nu)/(Omega-OmegaDM_2ndSpecies-OmegaBaryon);
                 delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	        // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
 	      }
 	    // if there are  baryons and a fake nu component fake the cdm to have the nu contribution in as well
-            if (OmegaBaryon != 0  && OmegaDM_2ndSpecies != 0)
+            if (!no_gas  && OmegaDM_2ndSpecies != 0)
               {
-                T_cdmnew = (OmegaDM_2ndSpecies*T_nu+(Omega-0.05-OmegaDM_2ndSpecies)*T_cdm)/(Omega-0.05);
+                T_cdmnew = (OmegaDM_2ndSpecies*T_nu+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm)/(Omega-OmegaBaryon);
                 delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
                 // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
               }
