@@ -10,15 +10,7 @@ static double AA, BB, CC;
 static double nu;
 static double Norm;
 
-/*This stores the conversion between the tables and the internal units. By default 1e-3*/
-static double kctog;
-/*This prints the CAMB transfer function*/
-double tk_CAMB(double k, int Type);
-/*Power spectra*/
-double PowerSpec_CAMB(double k, int Type);
 static int NPowerTable;
-#define APRIM 2.43e-9
-#define PIVOT_SCALE (0.05*kctog/HubbleParam)
 
 /*Structure for matter power table*/
 static struct pow_table
@@ -34,18 +26,6 @@ static struct pow_matter
   double kmat,pmat;
  }
 *PowerMatter;
-
- /*Structure for transfer table*/
-struct trans_row{
-	double T_CDM;
-	double T_b;
-	double T_g;
-	double T_r;
-	double T_n;
-	double T_t;
-};
-
-static std::map<double, struct trans_row> transfer_tables;
 
 double PowerSpec(double k, int Type)
 {
@@ -67,13 +47,6 @@ double PowerSpec(double k, int Type)
       else
           power = PowerSpec_Tabulated(k);
       break;
-#ifdef DIFFERENT_TRANSFER_FUNC
-    case 3:
-      /*This is my reimplementation of Spectrum 2. */
-  /*ADD THE FACTOR OF (2π)^3 to convert from CAMB conventions to GADGET conventions!!*/
-      power = PowerSpec_CAMB(k,Type)/pow(2*M_PI,3);
-      break;
-#endif
     default:
       power = PowerSpec_Efstathiou(k);
       break;
@@ -113,61 +86,6 @@ double PowerSpec_DM_2ndSpecies(double k)
   power = Norm * k * pow(tk_eh(k), 2);
 
   return power;
-}
-
-
-/*Read the transfer tables from CAMB*/
-void read_transfer_table(void)
-{
-  /* Transfer file format:  
-   * k/h Delta_CDM/k2 Delta_b/k2 Delta_g/k2 Delata_r/k2 Delta_nu/k2 Delta_tot/k2
-   *     CDM, baryon,photon,massless neutrino, massive neutrinos, and total (massive)*/
-	FILE *trans;
-	char buf[200];
-	struct trans_row tmp_row;
-        double tmp_k;
-        kctog=UnitLength_in_cm/InputSpectrum_UnitLength_in_cm;
-	/*Open file*/
-	sprintf(buf,FileWithTransfer);
-	if(!(trans=fopen(buf,"r"))) {
-		fprintf(stderr,"Can't open transfer file %s! You probably forgot to create it!\n",buf);
-		exit(17);
-	} 
-	/*Work out how many lines in file*/
-	if(!transfer_tables.empty()) {
-		fprintf(stderr,"read_CAMB_tables has been called more than once! Failing.");
-		exit(19);
-	}
-	/*Read line by line.*/
-	while(fscanf(trans," %lg %lg %lg %lg %lg %lg %lg\n",&tmp_k,&tmp_row.T_CDM,&tmp_row.T_b, &tmp_row.T_g,&tmp_row.T_r,&tmp_row.T_n,&tmp_row.T_t)==7)
-	{
-		/* k needs to go from (h/Mpc) units to internal Gadget units (h/kpc) by default.
-                 * kctog is by default 1e-3 */
-		tmp_k *= kctog;
-		/*Append line to table.*/
-		transfer_tables[tmp_k]=tmp_row;
-		if(feof(trans))
-			break;
-	}
-	if(ferror(trans)) {
-		fprintf(stderr,"Error reading transfer file: %d",errno);
-		exit(21);
-	}
-        printf("Found %d rows in input CAMB transfer file\n",(int)transfer_tables.size());
-	fclose(trans);
-	/*The CAMB T_f/k_c is in units of Mpc^2! NOTE NO h!*/
-	double tctog=(HubbleParam*HubbleParam)/(kctog*kctog);
-        std::map<double, struct trans_row>::iterator it;
-	for(it=transfer_tables.begin(); it != transfer_tables.end(); ++it) {
-	/*The transfer function should be normalized to about 1 on large scales.*/
-		((*it).second).T_CDM *= tctog;
-		((*it).second).T_g *= tctog;
-		((*it).second).T_b *= tctog;
-		((*it).second).T_r *= tctog;
-		((*it).second).T_n *= tctog;
-		((*it).second).T_t *= tctog;
-	}
-	return;
 }
 
 void read_power_table(void)
@@ -323,7 +241,6 @@ sprintf(buf, FileWithInputSpectrum);
 
 
 
-
 int compare_logk(const void *a, const void *b)
 {
   if(((struct pow_table *) a)->logk < (((struct pow_table *) b)->logk))
@@ -352,8 +269,6 @@ void initialize_powerspectrum(void)
 
   if(WhichSpectrum == 2)
     read_power_table();
-  if(WhichSpectrum > 2)
-    read_transfer_table();
   if(ReNormalizeInputSpectrum){
     res = TopHatSigma2(R8);
     if(WhichSpectrum == 2){
@@ -558,11 +473,6 @@ double PowerSpec_EH(double k)	/* Eisenstein & Hu */
 }
 
 
-double PowerSpec_CAMB(double k, int Type)
-{
-	return APRIM*2*M_PI*M_PI*k*pow(k/PIVOT_SCALE,PrimordialIndex-1.0)*pow(tk_CAMB(k, Type),2);
-}
-
 double tk_eh(double k)		/* from Martin White */
 {
   double q, theta, ommh2, a, s, gamma, L0, C0;
@@ -593,92 +503,6 @@ double tk_eh(double k)		/* from Martin White */
   tmp = L0 / (L0 + C0 * q * q);
   return (tmp);
 } 
-
-/*Return interpolated value of transfer function from table*/
-double tk_CAMB(double k, int Type)
-{
-        std::map<double, struct trans_row>::iterator lit, uit;
-        struct trans_row * lrow, * urow;
-	double T1,T2,k1,k2;
-	double tkout;
-	if(transfer_tables.empty())
-	{
-		fprintf(stderr, "Some kind of error; tables not initialized!\n");
-		exit(18);
-	}
-	uit=transfer_tables.upper_bound(k);
-
-	/*No power outside of our boundaries.*/
-	if(uit == transfer_tables.end() || uit == transfer_tables.begin())
-		return 0;
-        lit = uit;
-        --lit;
-        lrow=&((*lit).second);
-        urow=&((*uit).second);
-
-	/*Linear interpolation. Different transfer functions used for baryons and DM*/
-#if defined(DIFFERENT_TRANSFER_FUNC)
-        /* CDM: The dark matter may incorporate other particle types as well, eg,
-         * fake neutrinos, or baryons.
-         * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)
-         * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
-         * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
-         * so instead of summing the transfer functions, use the total transfer function and
-         * optionally subtract the baryons.*/
-        if(Type==1){
-                /* If we have fake neutrinos, use the total matter power spectrum. */
-                if(neutrinos_ks){
-                        T1 = lrow->T_t;
-                        T2 = urow->T_t;
-                        /*If we have separate gas particles, subtract
-                         * the baryon transfer function */
-                        if(!no_gas){
-                                T1-=lrow->T_b*OmegaBaryon/Omega;
-                                T2-=urow->T_b*OmegaBaryon/Omega;
-                        }
-                }
-                /*No fake neutrinos*/
-                else{
-                        const double OmegaCDM = Omega -OmegaDM_2ndSpecies -OmegaBaryon;
-                        double Omega_t = OmegaCDM;
-                        T1=lrow->T_CDM*OmegaCDM;
-                        T2=urow->T_CDM*OmegaCDM;
-                        /* If we have no gas, add T_b M_b to the CDM */
-                        if(no_gas){
-                                T1 += lrow->T_b*OmegaBaryon;
-                                T2 += urow->T_b*OmegaBaryon;
-                                Omega_t +=OmegaBaryon;
-                        }
-                        T1/=Omega_t;
-                        T2/=Omega_t;
-                }
-        }
-        /* Baryons */
-        else if(Type==0){
-        	T1=(*lrow).T_b;
-        	T2=(*urow).T_b;
-        }
-#ifdef NEUTRINOS
-        /* This loads the massive neutrino type*/
-        else if(Type == 2){
-        	T1=(*lrow).T_n;
-        	T2=(*urow).T_n;
-        }
-#endif //NEUTRINOS
-        else{
-#endif //DIFFERENT_TRANSFER_FUNCTION
-        	T1=(*lrow).T_t;
-        	T2=(*urow).T_t;
-#if defined(DIFFERENT_TRANSFER_FUNC)
-        }
-#endif
-
-	k1=(*lit).first;
-	k2=(*uit).first;
-	//Do it in log space!
-	tkout=exp((log(T2)*(log(k)-log(k1))+log(T1)*(log(k2)-log(k)))/(log(k2)-log(k1)));
-	return tkout;
-}
 
 double TopHatSigma2(double R)
 {
