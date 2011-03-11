@@ -352,14 +352,14 @@ void initialize_powerspectrum(void)
   nu = 1.13;
 
   R8 = 8 * (3.085678e24 / UnitLength_in_cm);	/* 8 Mpc/h */
+  Norm = 1.0;
   Dplus=1.0;
 
   if(WhichSpectrum == 2)
     read_power_table();
   if(WhichSpectrum > 2)
     read_transfer_table();
-      Norm = 1.0;
-  if(WhichSpectrum < 3){
+  if(ReNormalizeInputSpectrum){
     res = TopHatSigma2(R8);
     if(WhichSpectrum == 2){
       printf("\nNormalization of spectrum in file:  Sigma8 = %g\n", sqrt(res));
