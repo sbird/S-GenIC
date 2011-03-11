@@ -31,11 +31,8 @@ int    compare_logk(const void *a, const void *b);
 double PowerSpec(double kmag, int Type);
 double PowerSpec_Efstathiou(double k);
 double PowerSpec_EH(double k);
-double PowerSpec_Tabulated(double k);
-double PowerSpec_TOTAL(double k);
+double PowerSpec_Tabulated(double k,int Type);
 double PowerSpec_DM_2ndSpecies(double k);
-double PowerSpec_Tabulated2nd(double k);
-double PowerSpec_Tabulated_b(double k);
 
 void   initialize_powerspectrum(void);
 double GrowthFactor(double astart, double aend);

@@ -36,16 +36,11 @@ double PowerSpec(double k, int Type)
       power = PowerSpec_EH(k);
       break;
     case 2:
+#ifndef NEUTRINOS
       if (Type == 2)
-#ifdef NEUTRINOS
-        power = PowerSpec_Tabulated2nd(k);
-#else
         power = PowerSpec_DM_2ndSpecies(k);
 #endif
-      else if(Type == 0)
-          power = PowerSpec_Tabulated_b(k);
-      else
-          power = PowerSpec_Tabulated(k);
+      power = PowerSpec_Tabulated(k,Type);
       break;
     default:
       power = PowerSpec_Efstathiou(k);
@@ -62,11 +57,6 @@ double PowerSpec(double k, int Type)
       power *= Tf * Tf;
     }
 
-#if defined(DIFFERENT_TRANSFER_FUNC)
-/* Type 100 recomputes normalization over the total matter p(k) */
-  if(Type == 100 && WhichSpectrum ==2) 
-	power = PowerSpec_TOTAL(k);
-#endif 
   if(WhichSpectrum < 2)
     power *= pow(k, PrimordialIndex - 1.0);
 
@@ -284,7 +274,7 @@ void initialize_powerspectrum(void)
 }
 
 
-double PowerSpec_Tabulated(double k)
+double PowerSpec_Tabulated(double k, int Type)
 {
   double logk, logD, P, kold, u, dlogk, Delta2;
   int binlow, binhigh, binmid;
@@ -316,8 +306,21 @@ double PowerSpec_Tabulated(double k)
     exit(777);
 
   u = (logk - PowerTable[binlow].logk) / dlogk;
-
-  logD = (1 - u) * PowerTable[binlow].logD + u * PowerTable[binhigh].logD;
+  
+  /*Choose which value to return based on Type*/
+  switch (Type){
+          case 0:
+                logD = (1 - u) * PowerTable[binlow].logDb + u * PowerTable[binhigh].logDb;
+                break;
+          case 1:
+                logD = (1 - u) * PowerTable[binlow].logD + u * PowerTable[binhigh].logD;
+                break;
+          case 2:
+                logD = (1 - u) * PowerTable[binlow].logD2nd + u * PowerTable[binhigh].logD2nd;
+                break;
+          default:
+                logD = (1 - u) * PowerTable[binlow].logDtot + u * PowerTable[binhigh].logDtot;
+  }
 
   Delta2 = pow(10.0, logD);
 
@@ -327,139 +330,6 @@ double PowerSpec_Tabulated(double k)
   return P;
 }
 
-
-double PowerSpec_Tabulated_b(double k)
-{
-  double logk, logD, P, kold, u, dlogk, Delta2;
-  int binlow, binhigh, binmid;
-
-  kold = k;
-
-  k *= (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);     /* convert to h/Mpc */
-
-  logk = log10(k);
-
-  if(logk < PowerTable[0].logk || logk > PowerTable[NPowerTable - 1].logk)
-    return 0;
-
-  binlow = 0;
-  binhigh = NPowerTable - 1;
-
-  while(binhigh - binlow > 1)
-    {
-      binmid = (binhigh + binlow) / 2;
-      if(logk < PowerTable[binmid].logk)
-        binhigh = binmid;
-      else
-        binlow = binmid;
-    }
-
-  dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
-
-  if(dlogk == 0)
-    exit(777);
-
-  u = (logk - PowerTable[binlow].logk) / dlogk;
-
-  logD = (1 - u) * PowerTable[binlow].logDb + u * PowerTable[binhigh].logDb;
-
-  Delta2 = pow(10.0, logD);
-
-  P = Norm * Delta2 / (4 * M_PI * kold * kold * kold);
-
-return P;
-}
-
-
-
-#ifdef NEUTRINOS
-
-double PowerSpec_Tabulated2nd(double k)
-{
-  double logk, logD, P, kold, u, dlogk, Delta2;
-  int binlow, binhigh, binmid;
-
-  kold = k;
-
-  k *= (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);	/* convert to h/Mpc */
-
-  logk = log10(k);
-
-  if(logk < PowerTable[0].logk || logk > PowerTable[NPowerTable - 1].logk)
-    return 0;
-
-  binlow = 0;
-  binhigh = NPowerTable - 1;
-
-  while(binhigh - binlow > 1)
-    {
-      binmid = (binhigh + binlow) / 2;
-      if(logk < PowerTable[binmid].logk)
-	binhigh = binmid;
-      else
-	binlow = binmid;
-    }
-
-  dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
-
-  if(dlogk == 0)
-    exit(777);
-
-  u = (logk - PowerTable[binlow].logk) / dlogk;
-
-  logD = (1 - u) * PowerTable[binlow].logD2nd + u * PowerTable[binhigh].logD2nd;
-
-  Delta2 = pow(10.0, logD);
-
-  P = Norm * Delta2 / (4 * M_PI * kold * kold * kold);
-
-  return P;
-}
-#endif
-
-
-
-double PowerSpec_TOTAL(double k)
-{
-  double logk, logD, P, kold, u, dlogk, Delta2;
-  int binlow, binhigh, binmid;
-
-  kold = k;
-
-  k *= (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);	/* convert to h/Mpc */
-
-  logk = log10(k);
-
-  if(logk < PowerTable[0].logk || logk > PowerTable[NPowerTable - 1].logk)
-    return 0;
-
-  binlow = 0;
-  binhigh = NPowerTable - 1;
-
-  while(binhigh - binlow > 1)
-    {
-      binmid = (binhigh + binlow) / 2;
-      if(logk < PowerTable[binmid].logk)
-	binhigh = binmid;
-      else
-	binlow = binmid;
-    }
-
-  dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
-
-  if(dlogk == 0)
-    exit(777);
-
-  u = (logk - PowerTable[binlow].logk) / dlogk;
-
-  logD = (1 - u) * PowerTable[binlow].logDtot + u * PowerTable[binhigh].logDtot;
-
-  Delta2 = pow(10.0, logD);
-
-  P = Norm * Delta2 / (4 * M_PI * kold * kold * kold);
-
-  return P;
-}
 
 double PowerSpec_Efstathiou(double k)
 {
