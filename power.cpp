@@ -265,6 +265,11 @@ sprintf(buf, FileWithInputSpectrum);
 
       if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
 	{
+          if(fabs(PowerMatter[NPowerTable].kmat - k) > 0.01 *k){
+                  fprintf(stderr, "Error: Input spectrum row %d has k=%g, transfer has k=%g.\n",NPowerTable,PowerMatter[NPowerTable].kmat,k);
+                  fprintf(stderr, "Remember you need transfer_k_interp_matterpower = F in CAMB\n");
+                  exit(47);
+          }
 	  PowerTable[NPowerTable].logk = log10(k);
 
           /* The dark matter may incorporate other particle types as well, eg,
@@ -298,7 +303,7 @@ sprintf(buf, FileWithInputSpectrum);
 	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
 	  delta_tot = k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 
-	  PowerTable[NPowerTable].logD = log10(delta_cdm);
+          PowerTable[NPowerTable].logD = log10(delta_cdm);
 	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
 	  PowerTable[NPowerTable].logD2nd = log10(delta_nu);
           PowerTable[NPowerTable].logDtot = log10(delta_tot);
