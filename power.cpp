@@ -267,46 +267,36 @@ sprintf(buf, FileWithInputSpectrum);
 	{
 	  PowerTable[NPowerTable].logk = log10(k);
 
+          /* The dark matter may incorporate other particle types as well, eg,
+           * fake neutrinos, or baryons.
+           * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)
+           * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
+           * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
+           * so instead of summing the transfer functions, use the total transfer function and
+           * optionally subtract the baryons.*/
+          if(neutrinos_ks){
+                T_cdm = T_tot;
+                /*If we have separate gas particles, subtract
+                 * the baryon transfer function */
+                if(!no_gas){
+                    T_cdm -=T_b*OmegaBaryon/Omega;
+                }
+          }
+          /*Add baryons to the CDM if there are no gas particles*/
+          else if(no_gas){
+                T_cdm = (T_cdm*(Omega-OmegaDM_2ndSpecies - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaDM_2ndSpecies);
+          }
+          /*This should be equivalent to the above in almost all cases,
+           * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/
+          if(no_gas && OmegaDM_2ndSpecies == 0){
+                  T_cdm = T_tot;
+          }
 	  /* obtain P(k) from transfer function ratios like suggested by JL*/
 	  /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
 	  delta_b   = k * k * k * pow(T_b/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
 	  delta_tot = k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-
-	  /* delta_nu =  k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	     delta_cdm =  k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); */
-	  // if there are no baryons and no neutrinos then delta_cdm=delta_tot
-	  if (no_gas  && OmegaDM_2ndSpecies == 0)
-            {
-	      delta_cdm = delta_tot;
-
-	      }  
-
-	  // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
-	  if (no_gas  && OmegaDM_2ndSpecies != 0)
-            {
-	      T_cdmnew = (OmegaBaryon*T_b+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm)/(Omega-OmegaDM_2ndSpecies);
-              delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	      // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
-	    }
-
-          if(neutrinos_ks){
-	    // if there are no baryons but there is a nu component fake the cdm to have the baryon contribution as well
-	    if (no_gas  && OmegaDM_2ndSpecies != 0)
-              {
-	        T_cdmnew = (OmegaBaryon*T_b+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm+OmegaDM_2ndSpecies*T_nu)/(Omega-OmegaDM_2ndSpecies-OmegaBaryon);
-                delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	        // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
-	      }
-	    // if there are  baryons and a fake nu component fake the cdm to have the nu contribution in as well
-            if (!no_gas  && OmegaDM_2ndSpecies != 0)
-              {
-                T_cdmnew = (OmegaDM_2ndSpecies*T_nu+(Omega-OmegaBaryon-OmegaDM_2ndSpecies)*T_cdm)/(Omega-OmegaBaryon);
-                delta_cdm = k * k * k * pow(T_cdmnew/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-                // printf(" check table %g %g %g \n",T_cdm,T_cdmnew,delta_cdm);
-              }
-          }
 
 	  PowerTable[NPowerTable].logD = log10(delta_cdm);
 	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
