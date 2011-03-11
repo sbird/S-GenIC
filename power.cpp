@@ -268,7 +268,7 @@ sprintf(buf, FileWithInputSpectrum);
 	  PowerTable[NPowerTable].logk = log10(k);
 
 	  /* obtain P(k) from transfer function ratios like suggested by JL*/
-	  
+	  /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
 	  delta_b   = k * k * k * pow(T_b/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
@@ -367,10 +367,9 @@ void initialize_powerspectrum(void)
 
     Norm = Sigma8 * Sigma8 / res;
 
-    if(WhichSpectrum == 2)
-      printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-      Dplus = GrowthFactor(InitTime, 1.0);
-      printf("Dplus initial redshift =%g  \n\n", Dplus); 
+    printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
+    Dplus = GrowthFactor(InitTime, 1.0);
+    printf("Dplus initial redshift =%g  \n\n", Dplus);
   }
 }
 

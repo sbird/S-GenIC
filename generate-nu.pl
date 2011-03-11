@@ -228,9 +228,13 @@ sub gen_camb_file{
                 s/^\s*scalar_nrun\(1\)\s*=\s*[\w\/.-]*/scalar_nrun(1) = 0/i;
                 #Set up output
                 s/^\s*transfer_kmax\s*=\s*[\w\/.-]*/transfer_kmax = 200/i;
+                s/^\s*transfer_k_per_logint \s*=\s*[\w\/.-]*/transfer_k_per_logint  = 30/i;
                 my $nout=$#red+1;
                 s/^\s*transfer_num_redshifts\s*=\s*[\w\/.-]*/transfer_num_redshifts = $nout/i;
-                s/^\s*transfer_interp_matterpower\s*=\s*[\w\/.-]*/transfer_interp_matterpower = T/i;
+                #It is EXTREMELY IMPORTANT that this is set to F, because the 
+                #calculations done in N-GenICs and Gadget assume that a matterpow 
+                #row has the same k as the equivalent row in the transfer function!
+                s/^\s*transfer_interp_matterpower\s*=\s*[\w\/.-]*/transfer_interp_matterpower = F/i;
                 #Output files set later.
                 s/^\s*transfer_redshift\([0-9]\)\s*=\s*[\w\/.-]*//i;
                 s/^\s*transfer_filename\([0-9]\)\s*=\s*[\w\/.-]*//i;
