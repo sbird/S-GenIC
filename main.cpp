@@ -28,7 +28,6 @@ int main(int argc, char **argv)
   read_parameterfile(argv[1]);
   set_units();
 
-  initialize_powerspectrum();
   printf("Nmesh = %d Nsample = %d\n",Nmesh,Nsample);
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
@@ -40,6 +39,10 @@ int main(int argc, char **argv)
    * so that the OmegaBaryon should be added to the DM.*/
   if (npart[BARYON_TYPE] == 0)
           no_gas = 1;
+  else
+          no_gas = 0;
+  /*We need to initialise the power spectrum here so that no_gas is set*/
+  initialize_powerspectrum();
 
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
