@@ -23,12 +23,9 @@ static int NPowerTable;
 /*Structure for matter power table*/
 static struct pow_table
 {
-  double logk, logD;
-#ifdef NEUTRINOS
+  double logk, logD,logDb;
   double logD2nd;
   double logDtot;
-  double logDb;
-#endif
 }
  *PowerTable;
 
@@ -59,14 +56,16 @@ double PowerSpec(double k, int Type)
       power = PowerSpec_EH(k);
       break;
     case 2:
-      if(Type != 2)
-        power = PowerSpec_Tabulated(k);
-      else
+      if (Type == 2)
 #ifdef NEUTRINOS
         power = PowerSpec_Tabulated2nd(k);
 #else
         power = PowerSpec_DM_2ndSpecies(k);
 #endif
+      else if(Type == 0)
+          power = PowerSpec_Tabulated_b(k);
+      else
+          power = PowerSpec_Tabulated(k);
       break;
 #ifdef DIFFERENT_TRANSFER_FUNC
     case 3:
@@ -91,11 +90,9 @@ double PowerSpec(double k, int Type)
     }
 
 #if defined(DIFFERENT_TRANSFER_FUNC)
-#ifdef NEUTRINOS
 /* Type 100 recomputes normalization over the total matter p(k) */
   if(Type == 100 && WhichSpectrum ==2) 
 	power = PowerSpec_TOTAL(k);
-#endif //NEUTRINOS
 #endif 
   if(WhichSpectrum < 2)
     power *= pow(k, PrimordialIndex - 1.0);
@@ -189,14 +186,10 @@ void read_power_table(void)
   NPowerTable = 0;
   do
     {
-#ifdef NEUTRINOS
       double T_cdm, T_b, dummy, T_nu, T_tot;
 
       /* read transfer function file from CAMB */
       if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
-#else
-      if(fscanf(fd, " %lg %lg ", &k, &p) == 2)
-#endif
 	NPowerTable++;
       else
 	break;
@@ -208,7 +201,6 @@ void read_power_table(void)
 
 
 
-#ifdef NEUTRINOS
 sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
@@ -218,22 +210,19 @@ sprintf(buf, FileWithInputSpectrum);
   NPowerTable = 0;
   do
     {
-#ifdef NEUTRINOS
       double ktab, Pktab;
       /* read TOTAL matter power spectrum from CAMB*/
       if(fscanf(fd, " %lg %lg ", &ktab, &Pktab) == 2)
-#endif
 	NPowerTable++;
       else
 	break;
     }
   while(1);
   fclose(fd);
-#endif
-      printf("found %d rows in input SPECTRUM table\n", NPowerTable);
-      fflush(stdout);
-   PowerTable = (pow_table *) malloc(NPowerTable * sizeof(struct pow_table));  
-   PowerMatter = (pow_matter *) malloc(NPowerTable * sizeof(struct pow_matter)); 
+  printf("found %d rows in input SPECTRUM table\n", NPowerTable);
+  fflush(stdout);
+  PowerTable = (pow_table *) malloc(NPowerTable * sizeof(struct pow_table));  
+  PowerMatter = (pow_matter *) malloc(NPowerTable * sizeof(struct pow_matter)); 
   /* define matter array */
   sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
@@ -245,7 +234,6 @@ sprintf(buf, FileWithInputSpectrum);
   NPowerTable = 0;
   do
     {
-#ifdef NEUTRINOS
       double kmat, pmat;
       if(fscanf(fd, " %lg %lg", &kmat, &pmat) == 2)
 	{
@@ -255,17 +243,6 @@ sprintf(buf, FileWithInputSpectrum);
 	}
       else
 	break;
-#else
-      double p;
-      if(fscanf(fd, " %lg %lg ", &k, &p) == 2)
-	{
-	  PowerTable[NPowerTable].logk = k;
-	  PowerTable[NPowerTable].logD = p;
-	  NPowerTable++;
-	}
-      else
-	break;
-#endif
     }
   while(1);
 
@@ -283,7 +260,6 @@ sprintf(buf, FileWithInputSpectrum);
   NPowerTable = 0;
   do
     {
-#ifdef NEUTRINOS
       double T_cdmnew, T_b, dummy, T_nu, T_tot, T_cdm;
       double delta_cdm, delta_nu, delta_tot, delta_b;
 
@@ -342,18 +318,6 @@ sprintf(buf, FileWithInputSpectrum);
 	}
       else
 	break;
-#else
-      double p;
-
-      if(fscanf(fd, " %lg %lg ", &k, &p) == 2)
-	{
-	  PowerTable[NPowerTable].logk = k;
-	  PowerTable[NPowerTable].logD = p;
-	  NPowerTable++;
-	}
-      else
-	break;
-#endif
     }
   while(1);
 
@@ -455,8 +419,6 @@ double PowerSpec_Tabulated(double k)
 }
 
 
-#ifdef NEUTRINOS
-
 double PowerSpec_Tabulated_b(double k)
 {
   double logk, logD, P, kold, u, dlogk, Delta2;
@@ -500,6 +462,8 @@ return P;
 }
 
 
+
+#ifdef NEUTRINOS
 
 double PowerSpec_Tabulated2nd(double k)
 {
@@ -546,7 +510,6 @@ double PowerSpec_Tabulated2nd(double k)
 
 
 
-#ifdef NEUTRINOS
 double PowerSpec_TOTAL(double k)
 {
   double logk, logD, P, kold, u, dlogk, Delta2;
@@ -588,7 +551,6 @@ double PowerSpec_TOTAL(double k)
 
   return P;
 }
-#endif
 
 double PowerSpec_Efstathiou(double k)
 {
