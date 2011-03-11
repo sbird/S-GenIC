@@ -21,13 +21,6 @@ int NumFiles;
 double InitTime;
 double Redshift;
 
-/*Parameters for spline knots*/
-#ifdef SPLINE
-int NumKnots;
-char KnotValues[400];
-char KnotPositions[400];
-#endif
-
 char OutputDir[1000], FileBase[1000];
 int NumFilesWrittenInParallel;
 
