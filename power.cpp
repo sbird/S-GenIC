@@ -391,11 +391,12 @@ double sigma2_int(double k)
   kr2 = kr * kr;
   kr3 = kr2 * kr;
 
-  if(kr < 1e-8)
-    return 0;
-
-  w = 3 * (sin(kr) / kr3 - cos(kr) / kr2);
-  x = 4 * PI * k * k * w * w * PowerSpec(k,100);
+  /*Series expansion; actually good until kr~1*/
+  if(kr < 1e-2)
+      w = 1./3. - kr2/30. +kr2*kr2/840.;
+  else
+      w = 3 * (sin(kr) / kr - cos(kr)) / kr2;
+  x = 4 * M_PI * k * k * w * w * PowerSpec(k,100);
 
   return x;
 }
