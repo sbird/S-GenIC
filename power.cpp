@@ -2,9 +2,9 @@
 #include "allvars.h"
 #include "proto.h"
 #include <map>
+#include <gsl/gsl_integration.h>
 
 static double R8;
-static double r_tophat;
 
 static double AA, BB, CC;
 static double nu;
@@ -376,20 +376,25 @@ double tk_eh(double k)		/* from Martin White */
 
 double TopHatSigma2(double R)
 {
-  r_tophat = R;
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  double result,abserr;
+  gsl_function F;
+  F.function = &sigma2_int;
+  F.params = &R;
 
-  return qromb(sigma2_int, 0, 500.0 * 1 / R);	/* note: 500/R is here chosen as 
-						   integration boundary (infinity) */
+  /* note: 500/R is here chosen as integration boundary (infinity) */
+  gsl_integration_qags (&F, 0, 500./R, 0, 1e-4,1000,w,&result, &abserr);
+//   printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_workspace_free (w);
+  return result;
 }
 
-
-double sigma2_int(double k)
+double sigma2_int(double k, void * params)
 {
-  double kr, kr3, kr2, w, x;
-
-  kr = r_tophat * k;
+  double r = *(double *) params;
+  double kr, kr2, w, x;
+  kr = r * k;
   kr2 = kr * kr;
-  kr3 = kr2 * kr;
 
   /*Series expansion; actually good until kr~1*/
   if(kr < 1e-2)
@@ -407,21 +412,27 @@ double GrowthFactor(double astart, double aend)
   return growth(aend) / growth(astart);
 }
 
-
 double growth(double a)
 {
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
   double hubble_a, Omegan=Omega;
-
+  double result,abserr;
+  gsl_function F;
+  F.function = &growth_int;
+  F.params = NULL;
   if(neutrinos_ks){
         Omegan = Omega + OmegaDM_2ndSpecies;
         printf("\n Omegan %g\n\n",Omegan);
   }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
-  return hubble_a * qromb(growth_int, 0, a);
+  gsl_integration_qags (&F, 0, a, 0, 1e-4,1000,w,&result, &abserr);
+  printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_workspace_free (w);
+  return hubble_a * result;
 }
 
 
-double growth_int(double a)
+double growth_int(double a, void * param)
 {
   double Omegan=Omega;
   if(neutrinos_ks)
@@ -450,7 +461,7 @@ double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
 
 double WDM_V0 = 0;
 
-double fermi_dirac_kernel(double x)
+double fermi_dirac_kernel(double x, void * param)
 {
   return x * x / (exp(x) + 1);
 }
@@ -459,11 +470,18 @@ void fermi_dirac_init(void)
 {
   int i;
 
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  double abserr;
+  gsl_function F;
+  F.function = &fermi_dirac_kernel;
+  F.params = NULL;
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
       fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      fermi_dirac_cumprob[i] = qromb(fermi_dirac_kernel, 0, fermi_dirac_vel[i]);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,1000,w,&(fermi_dirac_cumprob[i]), &abserr);
+      printf("gsl_integration_qng in fermi_dirac_init. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
+  gsl_integration_workspace_free (w);
 
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
@@ -538,12 +556,18 @@ double NU_V0 = 0;
 void fermi_dirac_init_nu(void)
 {
   int i;
-
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  double abserr;
+  gsl_function F;
+  F.function = &fermi_dirac_kernel;
+  F.params = NULL;
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
-      fermi_dirac_vel_nu[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      fermi_dirac_cumprob_nu[i] = qromb(fermi_dirac_kernel, 0, fermi_dirac_vel_nu[i]);
+      fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,1000,w,&(fermi_dirac_cumprob[i]), &abserr);
+      printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
+  gsl_integration_workspace_free (w);
 
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     fermi_dirac_cumprob_nu[i] /= fermi_dirac_cumprob_nu[LENGTH_FERMI_DIRAC_TABLE - 1];
