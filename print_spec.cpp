@@ -1,3 +1,4 @@
+#ifdef PRINT_SPEC
 #include "proto.h"
 #include "allvars.h"
 
@@ -72,4 +73,4 @@ void print_spec(int type)
       fclose(fd);
 }
 
-
+#endif

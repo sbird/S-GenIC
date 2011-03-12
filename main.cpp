@@ -67,7 +67,9 @@ int main(int argc, char **argv)
 
   printf("Initial scale factor = %g\n", InitTime);
 
-/*   print_spec(); */
+#ifdef PRINT_SPEC
+   print_spec();
+#endif
 
   return 0;
 }
