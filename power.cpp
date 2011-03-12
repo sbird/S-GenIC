@@ -585,15 +585,21 @@ double get_fermi_dirac_vel_nu(void)
 {
   int i;
   double p, u;
+  int binlow = 0;
+  int binhigh = LENGTH_FERMI_DIRAC_TABLE - 2;
+
 
   p = drand48();
   i = 0;
 
-  while(i < LENGTH_FERMI_DIRAC_TABLE - 2)
-    if(p > fermi_dirac_cumprob_nu[i + 1])
-      i++;
-    else
-      break;
+  while(binhigh - binlow > 1)
+    {
+      i = (binhigh + binlow) / 2;
+      if(p > fermi_dirac_cumprob_nu[i + 1])
+        binhigh = i;
+      else
+        binlow = i;
+    }
 
   u = (p - fermi_dirac_cumprob_nu[i]) / (fermi_dirac_cumprob_nu[i + 1] - fermi_dirac_cumprob_nu[i]);
 
