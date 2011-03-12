@@ -33,7 +33,7 @@ ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -g -c -Wall -fopenmp
+  CFLAGS +=-O2 -g -c -Wall -fopenmp $(PRO)
   LINK +=${CXX} -openmp $(PRO)
   LFLAGS += -lm -lgomp
 endif
@@ -42,8 +42,7 @@ CXXFLAGS +=${CFLAGS}
 EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
-	 initialise.o print_spec.o \
-	nrsrc/qromb.o nrsrc/nrutil.o nrsrc/polint.o nrsrc/trapzd.o 
+	 initialise.o print_spec.o
 
 INCL   = allvars.h proto.h Makefile
 
@@ -52,7 +51,6 @@ INCL   = allvars.h proto.h Makefile
 
 all: $(EXEC)
 
-nrsrc/%.o: nrsrc/%.c nrsrc/nrutil.h 
 %.o: %.cpp $(INCL)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
