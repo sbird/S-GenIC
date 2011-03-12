@@ -564,8 +564,8 @@ void fermi_dirac_init_nu(void)
   F.params = NULL;
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
-      fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob[i]), &abserr);
+      fermi_dirac_vel_nu[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel_nu[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob_nu[i]), &abserr);
 //       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
   gsl_integration_workspace_free (w);
