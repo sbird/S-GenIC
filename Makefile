@@ -54,6 +54,7 @@ all: $(EXEC)
 
 nrsrc/%.o: nrsrc/%.c nrsrc/nrutil.h 
 %.o: %.cpp $(INCL)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 allvars.o: allvars.c allvars.h Makefile
 read_param.o: read_param.c $(INCL)
