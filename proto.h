@@ -7,7 +7,9 @@
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
 
+#ifdef PRINT_SPEC
 void   print_spec(int type);
+#endif
 int    FatalError(int errnum);
 void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh);
 void   initialize_ffts(void);

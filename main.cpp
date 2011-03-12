@@ -60,16 +60,16 @@ int main(int argc, char **argv)
       displacement_fields(type, NumPart, P, Nmesh);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
       free(P);
+#ifdef PRINT_SPEC
+      print_spec(type);
+#endif
+
   }
 
   fftwf_free(Disp);
   fftwf_destroy_plan(Inverse_plan);
 
   printf("Initial scale factor = %g\n", InitTime);
-
-#ifdef PRINT_SPEC
-   print_spec();
-#endif
 
   return 0;
 }
