@@ -414,7 +414,7 @@ double GrowthFactor(double astart, double aend)
 
 double growth(double a)
 {
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
   double hubble_a, Omegan=Omega;
   double result,abserr;
   gsl_function F;
@@ -425,8 +425,8 @@ double growth(double a)
         printf("\n Omegan %g\n\n",Omegan);
   }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
-  gsl_integration_qags (&F, 0, a, 0, 1e-4,1000,w,&result, &abserr);
-  printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_qags (&F, 0, a, 0, 1e-4,10,w,&result, &abserr);
+//   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
   return hubble_a * result;
 }
@@ -470,7 +470,7 @@ void fermi_dirac_init(void)
 {
   int i;
 
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
   double abserr;
   gsl_function F;
   F.function = &fermi_dirac_kernel;
@@ -478,8 +478,8 @@ void fermi_dirac_init(void)
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
       fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,1000,w,&(fermi_dirac_cumprob[i]), &abserr);
-      printf("gsl_integration_qng in fermi_dirac_init. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob[i]), &abserr);
+//       printf("gsl_integration_qng in fermi_dirac_init. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
   gsl_integration_workspace_free (w);
 
@@ -556,7 +556,8 @@ double NU_V0 = 0;
 void fermi_dirac_init_nu(void)
 {
   int i;
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  /*These functions are so smooth that we don't need much space*/
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
   double abserr;
   gsl_function F;
   F.function = &fermi_dirac_kernel;
@@ -564,8 +565,8 @@ void fermi_dirac_init_nu(void)
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
       fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,1000,w,&(fermi_dirac_cumprob[i]), &abserr);
-      printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob[i]), &abserr);
+//       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
   gsl_integration_workspace_free (w);
 
