@@ -192,7 +192,7 @@ sprintf(buf, FileWithInputSpectrum);
                 /*If we have separate gas particles, subtract
                  * the baryon transfer function */
                 if(!no_gas){
-                    T_cdm -=T_b*OmegaBaryon/Omega;
+                    T_cdm = (Omega*T_tot - T_b*OmegaBaryon)/(Omega-OmegaBaryon);
                 }
           }
           /*Add baryons to the CDM if there are no gas particles*/
