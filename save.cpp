@@ -31,16 +31,17 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
   blockmaxlen = bytes / (3 * sizeof(float));
 
   /*We are about to write the POS block*/
+  /* Add displacement to Lagrangian coordinates, and multiply velocities by correct factor when writing VEL*/
   for(i = 0, pc = 0; i < NumPart; i++){
       for(k = 0; k < 3; k++)
-	  block[3 * pc + k] = P[i].Pos[k];
+	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + P[i].Vel[k]);
       pc++;
 
 #ifdef NEUTRINO_PAIRS
       /*Add an extra copy of the position vector for the double neutrino*/
       if(type == NEUTRINO_TYPE) {
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = P[i].Pos[k];
+	    block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + P[i].Vel[k]);
 	  pc++;
       }
 #endif //NEUTRINO_PAIRS
@@ -75,10 +76,10 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
 	    vtherm[k] = 0;
 	  add_NU_thermal_speeds(vtherm);
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = P[i].Vel[k] + vtherm[k];
+	    block[3 * pc + k] = vel_prefac*P[i].Vel[k] + vtherm[k];
 	  pc++;
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = P[i].Vel[k] - vtherm[k];
+	    block[3 * pc + k] = vel_prefac*P[i].Vel[k] - vtherm[k];
 	}
 #else
       if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2)
@@ -156,5 +157,16 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
           FirstId+=NumPart;
 #endif
   return FirstId;
+}
+
+double periodic_wrap(double x)
+{
+  while(x >= Box)
+    x -= Box;
+
+  while(x < 0)
+    x += Box;
+
+  return x;
 }
 

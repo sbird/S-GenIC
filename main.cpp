@@ -257,36 +257,12 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 	    }
         } //end omp_parallel
 	}
-  /* now add displacement to Lagrangian coordinates, and multiply velocities by correct factor */
-  #pragma omp parallel 
-  {
-  #pragma omp for 
-  for(int64_t n = 0; n < NumPart; n++)
-    {
-      for(int axes = 0; axes < 3; axes++)
-	{
-	  P[n].Pos[axes] = periodic_wrap(P[n].Pos[axes] + P[n].Vel[axes]);
-	}
-    }
-  }
-
 
   printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
   printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
          mindisp, mindisp / (Box / Nmesh));
   return;
-}
-
-double periodic_wrap(double x)
-{
-  while(x >= Box)
-    x -= Box;
-
-  while(x < 0)
-    x += Box;
-
-  return x;
 }
 
 
