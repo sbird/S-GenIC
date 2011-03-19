@@ -2,9 +2,9 @@
 #include "allvars.h"
 #include "proto.h"
 #include <map>
+#include <gsl/gsl_integration.h>
 
 static double R8;
-static double r_tophat;
 
 static double AA, BB, CC;
 static double nu;
@@ -168,7 +168,7 @@ sprintf(buf, FileWithInputSpectrum);
   NPowerTable = 0;
   do
     {
-      double T_cdmnew, T_b, dummy, T_nu, T_tot, T_cdm;
+      double T_b, dummy, T_nu, T_tot, T_cdm;
       double delta_cdm, delta_nu, delta_tot, delta_b;
 
       if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
@@ -376,26 +376,32 @@ double tk_eh(double k)		/* from Martin White */
 
 double TopHatSigma2(double R)
 {
-  r_tophat = R;
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+  double result,abserr;
+  gsl_function F;
+  F.function = &sigma2_int;
+  F.params = &R;
 
-  return qromb(sigma2_int, 0, 500.0 * 1 / R);	/* note: 500/R is here chosen as 
-						   integration boundary (infinity) */
+  /* note: 500/R is here chosen as integration boundary (infinity) */
+  gsl_integration_qags (&F, 0, 500./R, 0, 1e-4,1000,w,&result, &abserr);
+//   printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_workspace_free (w);
+  return result;
 }
 
-
-double sigma2_int(double k)
+double sigma2_int(double k, void * params)
 {
-  double kr, kr3, kr2, w, x;
-
-  kr = r_tophat * k;
+  double r = *(double *) params;
+  double kr, kr2, w, x;
+  kr = r * k;
   kr2 = kr * kr;
-  kr3 = kr2 * kr;
 
-  if(kr < 1e-8)
-    return 0;
-
-  w = 3 * (sin(kr) / kr3 - cos(kr) / kr2);
-  x = 4 * PI * k * k * w * w * PowerSpec(k,100);
+  /*Series expansion; actually good until kr~1*/
+  if(kr < 1e-2)
+      w = 1./3. - kr2/30. +kr2*kr2/840.;
+  else
+      w = 3 * (sin(kr) / kr - cos(kr)) / kr2;
+  x = 4 * M_PI * k * k * w * w * PowerSpec(k,100);
 
   return x;
 }
@@ -406,21 +412,27 @@ double GrowthFactor(double astart, double aend)
   return growth(aend) / growth(astart);
 }
 
-
 double growth(double a)
 {
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
   double hubble_a, Omegan=Omega;
-
+  double result,abserr;
+  gsl_function F;
+  F.function = &growth_int;
+  F.params = NULL;
   if(neutrinos_ks){
         Omegan = Omega + OmegaDM_2ndSpecies;
         printf("\n Omegan %g\n\n",Omegan);
   }
   hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
-  return hubble_a * qromb(growth_int, 0, a);
+  gsl_integration_qags (&F, 0, a, 0, 1e-4,10,w,&result, &abserr);
+//   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_workspace_free (w);
+  return hubble_a * result;
 }
 
 
-double growth_int(double a)
+double growth_int(double a, void * param)
 {
   double Omegan=Omega;
   if(neutrinos_ks)
@@ -449,7 +461,7 @@ double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
 
 double WDM_V0 = 0;
 
-double fermi_dirac_kernel(double x)
+double fermi_dirac_kernel(double x, void * param)
 {
   return x * x / (exp(x) + 1);
 }
@@ -458,11 +470,18 @@ void fermi_dirac_init(void)
 {
   int i;
 
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
+  double abserr;
+  gsl_function F;
+  F.function = &fermi_dirac_kernel;
+  F.params = NULL;
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
       fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      fermi_dirac_cumprob[i] = qromb(fermi_dirac_kernel, 0, fermi_dirac_vel[i]);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob[i]), &abserr);
+//       printf("gsl_integration_qng in fermi_dirac_init. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
+  gsl_integration_workspace_free (w);
 
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
@@ -537,12 +556,19 @@ double NU_V0 = 0;
 void fermi_dirac_init_nu(void)
 {
   int i;
-
+  /*These functions are so smooth that we don't need much space*/
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
+  double abserr;
+  gsl_function F;
+  F.function = &fermi_dirac_kernel;
+  F.params = NULL;
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     {
       fermi_dirac_vel_nu[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-      fermi_dirac_cumprob_nu[i] = qromb(fermi_dirac_kernel, 0, fermi_dirac_vel_nu[i]);
+      gsl_integration_qags (&F, 0, fermi_dirac_vel_nu[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob_nu[i]), &abserr);
+//       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
+  gsl_integration_workspace_free (w);
 
   for(i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
     fermi_dirac_cumprob_nu[i] /= fermi_dirac_cumprob_nu[LENGTH_FERMI_DIRAC_TABLE - 1];
@@ -559,15 +585,21 @@ double get_fermi_dirac_vel_nu(void)
 {
   int i;
   double p, u;
+  int binlow = 0;
+  int binhigh = LENGTH_FERMI_DIRAC_TABLE - 2;
+
 
   p = drand48();
   i = 0;
 
-  while(i < LENGTH_FERMI_DIRAC_TABLE - 2)
-    if(p > fermi_dirac_cumprob_nu[i + 1])
-      i++;
-    else
-      break;
+  while(binhigh - binlow > 1)
+    {
+      i = (binhigh + binlow) / 2;
+      if(p > fermi_dirac_cumprob_nu[i + 1])
+        binhigh = i;
+      else
+        binlow = i;
+    }
 
   u = (p - fermi_dirac_cumprob_nu[i]) / (fermi_dirac_cumprob_nu[i + 1] - fermi_dirac_cumprob_nu[i]);
 

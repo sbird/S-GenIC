@@ -7,7 +7,9 @@
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
 
+#ifdef PRINT_SPEC
 void   print_spec(int type);
+#endif
 int    FatalError(int errnum);
 void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh);
 void   initialize_ffts(void);
@@ -37,9 +39,8 @@ double PowerSpec_DM_2ndSpecies(double k);
 void   initialize_powerspectrum(void);
 double GrowthFactor(double astart, double aend);
 double growth(double a);
-double growth_int(double);
-double qromb(double (*func)(double), double a, double b);
-double sigma2_int(double k);
+double growth_int(double, void *);
+double sigma2_int(double k, void * params);
 double TopHatSigma2(double R);
 double F_Omega(double a);
 

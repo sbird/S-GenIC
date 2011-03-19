@@ -1,59 +1,65 @@
-SYSTYPE="#SYSTYPE#"
-
-EXEC   = N-GenIC
-
-OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
-	 initialise.o print_spec.o \
-         nrsrc/nrutil.o nrsrc/qromb.o nrsrc/polint.o nrsrc/trapzd.o #cubspl.o
-
-INCL   = allvars.h proto.h  nrsrc/nrutil.h  Makefile
-
-OPT   += -DDIFFERENT_TRANSFER_FUNC  # set this if you want to implement a transfer function that depends on particle type. Or for tk_CAMB to work.
-OPT	+= -DFORMAT_TWO  #Set this if you want to output IC files in format 2.												
+#Change this to where you installed GadgetReader
+GREAD=${CURDIR}/../GadgetReader
+#Use this for extra library directories, eg for FFTW or the GSL.
+LIBDIR =
 
 #OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
-
-OPT   +=  -DNEUTRINOS  # this will produce a second component as light neutrinos (needs to be in initial glass)
+OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second DM component
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
+#OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
 
-OPTIONS = $(OPT)
-
-CC       =  icc  # sets the C-compiler (default)
-CXX 	 = icpc
-FC			=  ifort
-#OPTIMIZE =  -O2 -g -fopenmp -Wall
-OPTIMIZE =  -O2 -g -openmp -w1
-MPICHLIB = 
-FFTW_INCL=  
-FFTW_LIBS=  
-
-GREAD= $(CURDIR)/../GadgetReader
-
-#FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread -lgomp 
-FFTW_LIB =  $(FFTW_LIBS) -lfftw3f_threads -lfftw3f -lpthread
-LIBS   =   -lm   $(FFTW_LIB)  $(GSL_LIBS)  -lgsl -lgslcblas -L$(GREAD) -lrgad -lwgad -Wl,-rpath,$(GREAD)
-
-
-ifeq ($(SYSTYPE),"Solaris")
-LIBS   =   -R/opt/local/lib/sparcv9 -lm  -lmpi   $(GSL_LIBS) -lgsl -lgslcblas  $(FFTW_LIB)
+ifeq ($(CC),cc)
+  ICC:=$(shell which icc --tty-only 2>&1)
+  #Can we find icc?
+  ifeq (/icc,$(findstring /icc,${ICC}))
+     CC = icc -vec_report0
+     CXX = icpc
+  else
+     GCC:=$(shell which gcc --tty-only 2>&1)
+     #Can we find gcc?
+     ifeq (/gcc,$(findstring /gcc,${GCC}))
+        CC = gcc
+        CXX = g++
+     endif
+  endif
 endif
 
-CFLAGS = $(OPTIONS) $(OPTIMIZE) $(FFTW_INCL) $(GSL_INCL) -I$(GREAD)
+LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
+CFLAGS += -I${GREAD} ${OPT}
+#PRO = -pg
+#Are we using gcc or icc?
+ifeq (icc,$(findstring icc,${CC}))
+  CFLAGS +=-O2 -g -c -w1 -openmp
+  LINK +=${CXX} -openmp
+else
+  CFLAGS +=-O2 -g -c -Wall -fopenmp $(PRO)
+  LINK +=${CXX} -openmp $(PRO)
+  LFLAGS += -lm -lgomp
+endif
 
-CXXFLAGS = -I../GadgetReader $(OPTIMIZE) $(OPTIONS)
+CXXFLAGS +=${CFLAGS}
+EXEC   = N-GenIC
 
+OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
+	 initialise.o print_spec.o
+
+INCL   = allvars.h proto.h Makefile
+
+.PHONY : clean all
+
+
+all: $(EXEC)
+
+%.o: %.cpp $(INCL)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+allvars.o: allvars.c allvars.h Makefile
+read_param.o: read_param.c $(INCL)
 
 $(EXEC): $(OBJS) 
-	$(CXX) $(OPTIMIZE) $(OBJS) $(LIBS)   -o  $(EXEC)  
+	${LINK} ${LFLAGS} $^ -o  $@  
 
-cubspl.o: cubspl.f
-	$(FC) -c cubspl.f
-
-$(OBJS): $(INCL)
-
-
-.PHONY : clean
 clean:
 	rm -f $(OBJS) $(EXEC)
 

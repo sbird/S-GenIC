@@ -1,3 +1,4 @@
+#ifdef PRINT_SPEC
 #include "proto.h"
 #include "allvars.h"
 
@@ -26,14 +27,14 @@ void print_spec(int type)
       fprintf(fd, "%12g %12g\n", Redshift, DDD);	/* print actual starting redshift and 
 							   linear growth factor for this cosmology */
 
-      kstart = 2 * PI / (1000.0 * (3.085678e24 / UnitLength_in_cm));	/* 1000 Mpc/h */
-      kend = 2 * PI / (0.001 * (3.085678e24 / UnitLength_in_cm));	/* 0.001 Mpc/h */
+      kstart = 2 * M_PI / (1000.0 * (3.085678e24 / UnitLength_in_cm));	/* 1000 Mpc/h */
+      kend = 2 * M_PI / (0.001 * (3.085678e24 / UnitLength_in_cm));	/* 0.001 Mpc/h */
 
       for(k = kstart; k < kend; k *= 1.025)
 	{
 	  po = PowerSpec(k, type);
           //printf(" po k %g %g\n ",k,po);
-	  dl = 4.0 * PI * k * k * k * po;
+	  dl = 4.0 * M_PI * k * k * k * po;
 
 	  kf = 0.5;
 
@@ -72,4 +73,4 @@ void print_spec(int type)
       fclose(fd);
 }
 
-
+#endif
