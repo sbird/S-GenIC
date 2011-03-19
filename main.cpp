@@ -80,9 +80,7 @@ int main(int argc, char **argv)
 void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
-  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const unsigned int *seedtable = initialize_rng(Seed);
-  const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
   double mindisp=0, maxdisp=0;
 
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
@@ -90,8 +88,6 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
     Omega = Omega + OmegaDM_2ndSpecies;*/
 
   /* the final term converts to Gadget velocity */
-
-  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
 
       for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting axis %d.\n", axes);
@@ -270,7 +266,6 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
       for(int axes = 0; axes < 3; axes++)
 	{
 	  P[n].Pos[axes] = periodic_wrap(P[n].Pos[axes] + P[n].Vel[axes]);
-	  P[n].Vel[axes] *= vel_prefac;
 	}
     }
   }

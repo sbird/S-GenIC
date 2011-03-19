@@ -15,6 +15,10 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
   int blockmaxlen;
   int64_t maxidlen,written=0;
   int i,k,pc;
+  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
+  const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
+  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
+
     
   printf("\nWriting IC-file\n");
 
@@ -58,7 +62,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
   for(i = 0, pc = 0; i < NumPart; i++)
     {
       for(k = 0; k < 3; k++)
-	block[3 * pc + k] = P[i].Vel[k];
+	block[3 * pc + k] = vel_prefac*P[i].Vel[k];
 
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
