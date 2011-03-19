@@ -66,16 +66,16 @@ class part_data{
             return pos[3 * n + axis] * IGlassBox * BoxGTile + i*BoxGTile;
         }
         
-        double Vel(size_t index, int axis){
+        inline double Vel(size_t index, int axis){
                 return Vel_data[3*index+axis];
         }
         
-        void SetVel(double Vel_in, size_t index, int axis){
+        inline void SetVel(double Vel_in, size_t index, int axis){
                 Vel_data[3*index+axis] = Vel_in;
                 return;
         }
 
-        int64_t GetNumPart(){
+        inline int64_t GetNumPart(){
                 return Vel_data.size()/3;
         }
 
