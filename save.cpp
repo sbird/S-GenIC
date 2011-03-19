@@ -7,7 +7,7 @@ using namespace std;
 
 #define BUFFER 48
 
-int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId)
+int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t NumPart, int64_t FirstId)
 {
   size_t bytes;
   float *block;
@@ -34,14 +34,14 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
   /* Add displacement to Lagrangian coordinates, and multiply velocities by correct factor when writing VEL*/
   for(i = 0, pc = 0; i < NumPart; i++){
       for(k = 0; k < 3; k++)
-	  block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + P[i].Vel[k]);
+	  block[3 * pc + k] = periodic_wrap(P.Pos(i,k) + P.Vel(i,k));
       pc++;
 
 #ifdef NEUTRINO_PAIRS
       /*Add an extra copy of the position vector for the double neutrino*/
       if(type == NEUTRINO_TYPE) {
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = periodic_wrap(P[i].Pos[k] + P[i].Vel[k]);
+	    block[3 * pc + k] = periodic_wrap(P.Pos(i,k) + P.Vel(i,k));
 	  pc++;
       }
 #endif //NEUTRINO_PAIRS
@@ -63,7 +63,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
   for(i = 0, pc = 0; i < NumPart; i++)
     {
       for(k = 0; k < 3; k++)
-	block[3 * pc + k] = vel_prefac*P[i].Vel[k];
+	block[3 * pc + k] = vel_prefac*P.Vel(i,k);
 
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
@@ -76,10 +76,10 @@ int64_t write_particle_data(GWriteSnap & snap, int type, struct part_data * P, i
 	    vtherm[k] = 0;
 	  add_NU_thermal_speeds(vtherm);
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = vel_prefac*P[i].Vel[k] + vtherm[k];
+	    block[3 * pc + k] = vel_prefac*P.Vel(i,k) + vtherm[k];
 	  pc++;
 	  for(k = 0; k < 3; k++)
-	    block[3 * pc + k] = vel_prefac*P[i].Vel[k] - vtherm[k];
+	    block[3 * pc + k] = vel_prefac*P.Vel(i,k) - vtherm[k];
 	}
 #else
       if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2)

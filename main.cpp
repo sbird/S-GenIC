@@ -5,6 +5,7 @@
 
 #include "allvars.h"
 #include "proto.h"
+#include "part_data.hpp"
 
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
@@ -14,7 +15,6 @@ int main(int argc, char **argv)
   int type;
   std::valarray<int64_t> npart(N_TYPE);
   int64_t FirstId=0;
-  struct part_data *P=NULL;
 
   if(argc < 2)
     {
@@ -56,14 +56,13 @@ int main(int argc, char **argv)
       int64_t NumPart = 0;
       if(npart[type] == 0)
               continue;
-      NumPart = read_glass(snap, type, GlassTileFac, P);
+      part_data P(snap, type, GlassTileFac);
+      NumPart = P.GetNumPart();
       displacement_fields(type, NumPart, P, Nmesh);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
-      free(P);
 #ifdef PRINT_SPEC
       print_spec(type);
 #endif
-
   }
 
   fftwf_free(Disp);
@@ -77,7 +76,7 @@ int main(int argc, char **argv)
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
 
-void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh)
+void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
@@ -221,7 +220,7 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
                   double u[3];
                   int64_t i[3], ii[3];
                   for(int q=0;q<3;q++){
-        		  u[q] = P[n].Pos[q] / Box * Nmesh;
+        		  u[q] = P.Pos(n,q) / Box * Nmesh;
                           i[q] = (int64_t) u[q];
                           if(i[q] == Nmesh)
                                   i[q]--;
@@ -249,7 +248,7 @@ void displacement_fields(const int type, const int64_t NumPart, struct part_data
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
 
-		  P[n].Vel[axes] = dis;
+		  P.SetVel(dis, n,axes);
 		  if(dis > maxdisp)
 		    maxdisp = dis;
                   if(dis <mindisp)

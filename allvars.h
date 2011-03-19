@@ -28,13 +28,6 @@ extern int      GlassTileFac;
 extern double   Box;
 extern int Seed;
 
-struct part_data 
-{
-  float Pos[3];
-  float Vel[3];
-};
-
-
 extern double InitTime;
 extern double Redshift;
 

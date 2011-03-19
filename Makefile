@@ -41,10 +41,10 @@ endif
 CXXFLAGS +=${CFLAGS}
 EXEC   = N-GenIC
 
-OBJS   = main.o power.o allvars.o save.o read_param.o  read_glass.o  \
+OBJS   = main.o power.o allvars.o save.o read_param.o \
 	 initialise.o print_spec.o
 
-INCL   = allvars.h proto.h Makefile
+INCL   = allvars.h proto.h part_data.hpp Makefile
 
 .PHONY : clean all
 

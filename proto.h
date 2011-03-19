@@ -6,12 +6,13 @@
 #ifdef __cplusplus
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
+#include "part_data.hpp"
 
 #ifdef PRINT_SPEC
 void   print_spec(int type);
 #endif
 int    FatalError(int errnum);
-void displacement_fields(const int type, const int64_t NumPart, struct part_data* P, const int Nmesh);
+void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh);
 void   initialize_ffts(void);
 unsigned int * initialize_rng(int Seed);
 void   set_units(void);
@@ -19,8 +20,7 @@ double fnl(double x);
 
 double periodic_wrap(double x);
 
-int64_t read_glass(GadgetReader::GSnap& snap, int type, int GlassTileFac, struct part_data *& P);
-int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, struct part_data * P, int64_t NumPart, int64_t FirstId);
+int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data&  P, int64_t NumPart, int64_t FirstId);
 
 gadget_header generate_header(std::valarray<int64_t> & npart);
 
