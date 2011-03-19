@@ -31,8 +31,8 @@ my $Omega_M='';
 my $Omega_B='';
 my $O_Nu='';
 my $Redshift='';
-my $NS=0.97;
-my $A_prim=2.43e-9;
+my $NS='';
+my $A_prim='';
 my $hub='';
 my $Sigma_8=0.8;
 my $Prefix='';
@@ -44,7 +44,8 @@ my @options=@ARGV;
 GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$Omega_M, 
         'ob:f'=>\$Omega_B,'redshift:f'=>\$Redshift, 'output=s'=>\$Directory, 
         'glass=s'=>\$GlassFile, 'nglass:i'=>\$GlassPart,'onu:f'=>\$O_Nu, 'help'=>\$help,
-         'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'kspace'=>\$kspace
+         'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'kspace'=>\$kspace, 'ns:f'=>\$NS,
+         'as:f'=>\$A_prim
                 ) or die "Failed Options";
 if($help){
         print "Usage: 
@@ -69,6 +70,8 @@ if(!$hub){$hub=0.70;}
 if(!$Redshift){$Redshift=99;}
 if(!$O_Nu){$O_Nu = 0;}
 if(!$kspace){$kspace = 0;}
+if(!$NS){$NS=1.0;}
+if(!$A_prim){$A_prim=2.27e-9;}
 $Omega_M -= $O_Nu;
 #Keep the seed the same as in the best-fit case.
 if(!$seed){$seed=250;}
@@ -138,7 +141,7 @@ my $PYPlotScript="_plot-init.py";
 $CAMBParams=$Directory."/".$CAMBParams;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
-gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$O_Nu,$Omega_B, $Omega_M, $hub, $Redshift);
+gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$O_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, $Redshift);
 print "Running CAMB...\n";
 print_run("$CAMB $CAMBParams");
 print "Done Running CAMB, running N-GenICs.\n";
@@ -158,7 +161,7 @@ if($kspace){
         print "Generating CAMB_TABLES\n";
         `mkdir -p $Directory/CAMB_TABLES/`;
         my $IntParams = $Directory."/CAMB_TABLES/_int-camb-params.ini";
-        gen_camb_file($CAMBDefParams,$IntParams,$Directory."/CAMB_TABLES/tab",$O_Nu,$Omega_B, $Omega_M, $hub, @Redshifts);
+        gen_camb_file($CAMBDefParams,$IntParams,$Directory."/CAMB_TABLES/tab",$O_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, @Redshifts);
         print_run("$CAMB $IntParams");
 }
 
@@ -192,6 +195,8 @@ sub gen_camb_file{
                 $o_cdm -=$o_b;
         }
         my $hub = 100*(shift);
+        my $NS = shift;
+        my $A_prim = shift;
         my @red = @_;
         my $mass_nu;
         my $nomass_nu;
@@ -223,8 +228,8 @@ sub gen_camb_file{
                 #Set initial conditions; scalar_amp is to give sigma_8 = 0.878 at z=0 with nu=0.
                 #Pivot irrelevant as n_s = 1
                 s/^\s*initial_power_num\s*=\s*[\w\/.-]*/initial_power_num = 1/i;
-                s/^\s*scalar_amp\(1\)\s*=\s*[\w\/.-]*/scalar_amp(1) = 2.27e-9/i;
-                s/^\s*scalar_spectral_index\(1\)\s*=\s*[\w\/.-]*/scalar_spectral_index(1) = 1.0/i;
+                s/^\s*scalar_amp\(1\)\s*=\s*[\w\/.-]*/scalar_amp(1) = $A_prim/i;
+                s/^\s*scalar_spectral_index\(1\)\s*=\s*[\w\/.-]*/scalar_spectral_index(1) = $NS/i;
                 s/^\s*scalar_nrun\(1\)\s*=\s*[\w\/.-]*/scalar_nrun(1) = 0/i;
                 #Set up output
                 s/^\s*transfer_kmax\s*=\s*[\w\/.-]*/transfer_kmax = 200/i;
