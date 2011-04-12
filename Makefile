@@ -27,13 +27,14 @@ endif
 
 LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
 CFLAGS += -I${GREAD} ${OPT}
-#PRO = -pg
+#PRO = -fprofile-generate
+#PRO = -fprofile-use -fprofile-correction
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -g -c -Wall -fopenmp $(PRO)
+  CFLAGS +=-O3 -g -c -Wall -fopenmp $(PRO)
   LINK +=${CXX} -openmp $(PRO)
   LFLAGS += -lm -lgomp
 endif
