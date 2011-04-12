@@ -24,7 +24,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
 
   if(!(block = (float *) malloc(bytes = BUFFER * 1024 * 1024)))
     {
-      printf("failed to allocate memory for `block' (%g bytes).\n", (double) bytes);
+      printf("failed to allocate memory for `block' (%g bytes).\n", static_cast<double>(bytes));
       exit(24);
     }
 

@@ -221,7 +221,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                   int64_t i[3], ii[3];
                   for(int q=0;q<3;q++){
         		  u[q] = P.Pos(n,q) / Box * Nmesh;
-                          i[q] = (int64_t) u[q];
+                          i[q] = static_cast<int64_t>(u[q]);
                           if(i[q] == Nmesh)
                                   i[q]--;
                           u[q] -= i[q];
@@ -283,15 +283,15 @@ double invwindow(int kx,int ky,int kz,int n)
 	if(!kx)
 		iwx=1.0;
 	else
-		iwx=M_PI*kx/(n*sin(M_PI*kx/(float)n));
+		iwx=M_PI*kx/(n*sin(M_PI*kx/static_cast<float>(n)));
 	if(!ky)
 		iwy=1.0;
 	else
-		iwy=M_PI*ky/(n*sin(M_PI*ky/(float)n));
+		iwy=M_PI*ky/(n*sin(M_PI*ky/static_cast<float>(n)));
 	if(!kz)
 		iwz=1.0;
 	else
-		iwz=M_PI*kz/(n*sin(M_PI*kz/(float)n));
+		iwz=M_PI*kz/(n*sin(M_PI*kz/static_cast<float>(n)));
 	return pow(iwx*iwy*iwz,2);
 }
 #endif
