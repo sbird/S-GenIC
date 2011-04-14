@@ -596,9 +596,9 @@ double get_fermi_dirac_vel_nu(void)
     {
       i = (binhigh + binlow) / 2;
       if(p > fermi_dirac_cumprob_nu[i + 1])
-        binhigh = i;
-      else
         binlow = i;
+      else
+        binhigh = i;
     }
 
   u = (p - fermi_dirac_cumprob_nu[i]) / (fermi_dirac_cumprob_nu[i + 1] - fermi_dirac_cumprob_nu[i]);

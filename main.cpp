@@ -35,6 +35,8 @@ int main(int argc, char **argv)
   /*Set particle numbers*/
   for(type = 0; type < N_TYPE; type++)
     npart[type] = snap.GetNpart(type) * GlassTileFac * GlassTileFac * GlassTileFac;
+  if(npart.sum() == 0)
+          exit(1);
   /*Set the global variable saying there is no gas in the glassfile,
    * so that the OmegaBaryon should be added to the DM.*/
   if (npart[BARYON_TYPE] == 0)
