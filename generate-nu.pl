@@ -74,7 +74,7 @@ if(!$NS){$NS=1.0;}
 if(!$A_prim){$A_prim=2.27e-9;}
 $Omega_M -= $O_Nu;
 #Keep the seed the same as in the best-fit case.
-if(!$seed){$seed=250;}
+if(!$seed){$seed=181170;}
 if(!$boxsize){$boxsize=60;}
 if(!$GlassPart){$GlassPart=100;}
 if(!$npart){$npart=400;}
@@ -295,6 +295,7 @@ sub gen_ngen_file{
                 s!^\s*GlassFile\s+[/\w\.=]*! GlassFile  $GlassFile!i;
                 s!^\s*GlassTileFac\s+[/\w]*! GlassTileFac  $GlassTileFac!i;
                 s!^\s*Box\s+[/\w]*! Box  $box!i;
+                s!^\s*Seed\s+[/\w]*! Seed  $seed!i;
                 s!^\s*Omega\s+[/\w\.]*! Omega  $Omega_M!i;
                 s!^\s*OmegaDM_2ndSpecies\s+[/\w\.]*! OmegaDM_2ndSpecies  $O_nu!i;
                 s!^\s*OmegaBaryon\s+[/\w\.]*! OmegaBaryon  $Omega_B!i;
