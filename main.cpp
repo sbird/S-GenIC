@@ -279,21 +279,21 @@ int FatalError(int errnum)
 /* do deconvolution of CIC interpolation */
 double invwindow(int kx,int ky,int kz,int n)
 {
-	double iwx,iwy,iwz;
+	double iwx=1.0,iwy=1.0,iwz=1.0;
         if(!n)
                 return 0;
-	if(!kx)
-		iwx=1.0;
-	else
-		iwx=M_PI*kx/(n*sin(M_PI*kx/static_cast<float>(n)));
-	if(!ky)
-		iwy=1.0;
-	else
-		iwy=M_PI*ky/(n*sin(M_PI*ky/static_cast<float>(n)));
-	if(!kz)
-		iwz=1.0;
-	else
-		iwz=M_PI*kz/(n*sin(M_PI*kz/static_cast<float>(n)));
+	if(kx){
+		iwx=M_PI*kx/static_cast<float>(n);
+		iwx=iwx/sin(iwx);
+        }
+	if(ky){
+		iwy=M_PI*ky/static_cast<float>(n);
+		iwy=iwy/sin(iwy);
+        }
+	if(kz){
+		iwz=M_PI*kz/static_cast<float>(n);
+		iwz=iwz/sin(iwz);
+        }
 	return pow(iwx*iwy*iwz,2);
 }
 #endif
