@@ -197,7 +197,8 @@ sprintf(buf, FileWithInputSpectrum);
           }
           /*Add baryons to the CDM if there are no gas particles*/
           else if(no_gas){
-                T_cdm = (T_cdm*(Omega-OmegaDM_2ndSpecies - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaDM_2ndSpecies);
+                    T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
+//                 T_cdm = (T_cdm*(Omega-OmegaDM_2ndSpecies - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaDM_2ndSpecies);
           }
           /*This should be equivalent to the above in almost all cases,
            * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/
