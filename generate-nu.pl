@@ -64,14 +64,14 @@ if($help){
                die;
        }
        #Parameters are WMAP 7-year.
-if(!$Omega_M){$Omega_M=0.25;}
-if(!$Omega_B){$Omega_B=0.05;}
+if(!$Omega_M){$Omega_M=0.222;}
+if(!$Omega_B){$Omega_B=0.0449;}
 if(!$hub){$hub=0.70;}
 if(!$Redshift){$Redshift=99;}
 if(!$O_Nu){$O_Nu = 0;}
 if(!$kspace){$kspace = 0;}
 if(!$NS){$NS=1.0;}
-if(!$A_prim){$A_prim=2.27e-9;}
+if(!$A_prim){$A_prim=2.43e-9;}
 $Omega_M -= $O_Nu;
 #Keep the seed the same as in the best-fit case.
 if(!$seed){$seed=181170;}
@@ -178,7 +178,7 @@ perl $0 @options
 close($outhandle);
 
 # pyscript datafile dir O_M box hub redshift
-gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $O_Nu, $boxsize, $hub, $Redshift, $kspace);
+gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $O_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
 print `python $PYPlotScript`;
 
@@ -231,6 +231,9 @@ sub gen_camb_file{
                 s/^\s*scalar_amp\(1\)\s*=\s*[\w\/.-]*/scalar_amp(1) = $A_prim/i;
                 s/^\s*scalar_spectral_index\(1\)\s*=\s*[\w\/.-]*/scalar_spectral_index(1) = $NS/i;
                 s/^\s*scalar_nrun\(1\)\s*=\s*[\w\/.-]*/scalar_nrun(1) = 0/i;
+		#Set the pivot scale for scalar and tensor modes to be WMAP value
+                s/^\s*pivot_scalar\s*=\s*[\w\/.-]*/pivot_scalar = 2e-3/i;
+                s/^\s*pivot_tensor\s*=\s*[\w\/.-]*/pivot_tensor = 2e-3/i;
                 #Set up output
                 s/^\s*transfer_kmax\s*=\s*[\w\/.-]*/transfer_kmax = 200/i;
                 s/^\s*transfer_k_per_logint \s*=\s*[\w\/.-]*/transfer_k_per_logint  = 30/i;
@@ -342,6 +345,7 @@ my $Omega_Nu = shift;
 my $boxsize = shift;
 my $hub = shift;
 my $Redshift = shift;
+my $Omega_B = shift;
 my $kspace = shift;
 $PYPlotScript =$Directory."/".$PYPlotScript;
 open($outhandle, ">", $PYPlotScript) or 
@@ -399,7 +403,7 @@ def plot_power(box,filename_dm,filename_b,camb_filename,redshift,hub,omegab,omeg
         return (k_gadget,Pk_gadget)
 
 ';
-if(!$kspace){
+if(!$kspace and $Omega_Nu > 0){
 print $outhandle
 "
 plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_Nu,$Omega_M)
@@ -409,6 +413,18 @@ plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Direct
 savefig('$Directory/$Pkestimate-bar.png')
 clf()";
 }
+
+if($Omega_B > 0){
+print $outhandle
+"
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,$Omega_M)
+savefig('$Directory/$Pkestimate.png')
+clf()
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,0)
+savefig('$Directory/$Pkestimate-bar.png')
+clf()";
+}
+
 print $outhandle
 "
 plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-DM-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,0,$Omega_M)
