@@ -144,7 +144,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 			  p_of_k = PowerSpec(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
-			  // p_of_k *= -log(ampl);
+			  p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) ;
                           /* scale back to starting redshift */
