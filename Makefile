@@ -35,7 +35,7 @@ ifeq (icc,$(findstring icc,${CC}))
   LINK +=${CXX} -openmp
 else
   CFLAGS +=-O3 -g -c -Wall -fopenmp $(PRO)
-  LINK +=${CXX} -openmp $(PRO)
+  LINK +=${CXX} $(PRO)
   LFLAGS += -lm -lgomp
 endif
 
