@@ -28,6 +28,18 @@ fftwf_plan Inverse_plan;
 float *Disp;
 fftwf_complex *Cdata;
 
+#ifdef TWOLPT
+  fftwf_plan Forward_plan_grad;
+  fftwf_plan Inverse_plan2;
+  fftwf_complex *cdisp2; /* 2nd order displacements */
+  float *disp2;
+  float *twosrc;
+  fftwf_complex *(cdigrad[3]);
+  float *(digrad[3]);
+  fftwf_complex *cdigrad_0;
+  float *digrad_0;
+#endif
+
 
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 double InputSpectrum_UnitLength_in_cm;

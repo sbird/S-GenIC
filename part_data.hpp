@@ -13,6 +13,9 @@ class part_data{
         part_data(GadgetReader::GSnap& snap, int type, int GlassTileFac):
         Nglass(snap.GetNpart(type)), IGlassBox(1./snap.GetHeader().BoxSize), NglassGTile(Nglass*GlassTileFac),
         NglassG2Tile(Nglass*GlassTileFac*GlassTileFac), BoxGTile(Box/GlassTileFac),
+#ifdef TWOLPT
+        Vel_2_data(3*Nglass*GlassTileFac*GlassTileFac*GlassTileFac),
+#endif
         Vel_data(3*Nglass*GlassTileFac*GlassTileFac*GlassTileFac)
         {
           pos = NULL;
@@ -75,6 +78,18 @@ class part_data{
                 return;
         }
 
+#ifdef TWOLPT
+        inline double Vel2(size_t index, int axis){
+                return Vel_2_data[3*index+axis];
+        }
+        
+        inline void Set2Vel(double Vel_in, size_t index, int axis){
+                Vel_2_data[3*index+axis] = Vel_in;
+                return;
+        }
+#endif
+
+
         inline int64_t GetNumPart(){
                 return Vel_data.size()/3;
         }
@@ -86,6 +101,9 @@ class part_data{
         const int64_t NglassG2Tile;
         const double BoxGTile;
         float *pos;
+#ifdef TWOLPT
+        std::valarray <float> Vel_2_data;
+#endif
         std::valarray <float> Vel_data;
 
 };

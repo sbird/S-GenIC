@@ -17,6 +17,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   int i,k,pc;
   const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
+#ifdef TWOLPT
+  const double vel_prefac2 = InitTime * hubble_a * F2_Omega(InitTime) /sqrt(InitTime);
+#endif
   printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
 
     
@@ -34,7 +37,11 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   /* Add displacement to Lagrangian coordinates, and multiply velocities by correct factor when writing VEL*/
   for(i = 0, pc = 0; i < NumPart; i++){
       for(k = 0; k < 3; k++)
-	  block[3 * pc + k] = periodic_wrap(P.Pos(i,k) + P.Vel(i,k));
+	  block[3 * pc + k] = P.Pos(i,k) + P.Vel(i,k);
+#ifdef TWOLPT
+	  block[3 * pc + k] -= 3./7. * P.Vel2(i,k);
+#endif
+	  block[3 * pc + k] = periodic_wrap(block[3*pc+k]);
       pc++;
 
 #ifdef NEUTRINO_PAIRS
@@ -64,6 +71,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
     {
       for(k = 0; k < 3; k++)
 	block[3 * pc + k] = vel_prefac*P.Vel(i,k);
+#ifdef TWOLPT
+        block[3 * pc + k] -= 3./7. *vel_prefac2* P.Vel2(i,k);
+#endif
 
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);

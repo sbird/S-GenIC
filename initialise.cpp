@@ -57,6 +57,19 @@ void initialize_ffts(void)
 {
   size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (float *) fftwf_malloc(bytes);
+#ifdef TWOLPT
+  twosrc = (float *) fftwf_malloc(bytes);
+  disp2 = (float *) fftwf_malloc(bytes);
+  cdisp2 = (fftwf_complex *) disp2;	/* transformed array */
+ for(int i=0; i<3; i++){ 
+  cdigrad[i] = (fftwf_complex *) malloc(bytes);
+  digrad[i] = (float *) cdigrad[i];
+ }
+ cdigrad_0=cdigrad[0];
+ digrad_0=digrad[0];
+  /*Check memory allocation*/
+#endif
+      
   if(Disp)
         printf("Nmesh = %d. Allocated %ld MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
   else{
@@ -71,6 +84,10 @@ void initialize_ffts(void)
   }
   fftwf_plan_with_nthreads(omp_get_num_procs());
   Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
+#ifdef TWOLPT
+  Forward_plan_grad = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,digrad_0,cdigrad_0, FFTW_ESTIMATE);
+  Inverse_plan2 = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdisp2,disp2, FFTW_ESTIMATE);
+#endif
   return;
 }
 
