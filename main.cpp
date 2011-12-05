@@ -289,6 +289,10 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               (Cdata[0])[0] = (Cdata[0])[1] = 0.0;
               #pragma omp parallel
               {
+                #pragma omp for
+                for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
+                        Disp[i] = 0;
+
               #pragma omp for
               for(int i = 0; i < Nmesh; i++)
         	for(int j = 0; j < Nmesh; j++)
