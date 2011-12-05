@@ -90,9 +90,6 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
   const unsigned int *seedtable = initialize_rng(Seed);
   double maxdisp=0;
 
-/*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
-/*  if(neutrinos_ks)
-    Omega = Omega + OmegaDM_2ndSpecies;*/
 #ifdef TWOLPT
   /* the final term converts to Gadget velocity */
       for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++){
