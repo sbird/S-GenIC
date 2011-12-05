@@ -1,4 +1,4 @@
-#!/bin/env perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -132,7 +132,7 @@ my $Pkestimate="pk-init-$npart-$boxsize-z$Redshift-$seed";
 my $TransferFile=$Prefix."_transfer_$Redshift.dat";
 my $PYPlotScript="_plot-init.py";
 
-# $CAMB="true";
+$CAMB="true";
 # $NGenIC="true";
 # $genpk= "true";
 #Output the parameter file for CAMB.

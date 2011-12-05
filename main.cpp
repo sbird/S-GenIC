@@ -101,7 +101,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 #endif
 
       for(int axes = 0; axes < 3; axes++) {
-	  printf("Starting axis %d.\n", axes);
+	  printf("Starting Zeldovich axis %d.\n", axes);
 
           #pragma omp parallel
 	  {
@@ -222,8 +222,6 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 #ifdef TWOLPT
       /* At this point, Cdata contains the complex Zeldovich displacement for this axis */
 
-      printf("Done Zeldovich.\n");
-      
       /* Compute displacement gradient
        * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
       for(int ax=2;ax>=axes; ax--){ 
@@ -244,7 +242,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                   }
 
               /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
-              printf("Fourier transforming displacement gradient...%d",ax);
+//               printf("Finding gradient FT component (%d,%d)\n",ax,axes);
               cdigrad_0=cdigrad[axes];
               digrad_0=digrad[axes];
               fftwf_execute(Inverse_plan_grad);	/** FFT of cdigrad_0 **/
@@ -276,7 +274,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 	  }
       fftwf_execute(Forward_plan2);	/** FFT of twosrc**/
       for(int axes=0; axes< 3; axes++){
-              printf("Fourier transforming second order source...");
+              printf("Starting 2LPT term, axis %d\n",axes);
               
               /* Solve Poisson eq. and calculate 2nd order displacements */
               /* Reuse the memory used earlier for ZA field */

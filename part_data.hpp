@@ -30,7 +30,11 @@ class part_data{
                   free(pos);
                   exit(113);
           }
+#ifndef TWOLPT
           printf("Type %d allocated %ld MB for %ld particles\n",type,sizeof(float)*Vel_data.size()/1024/1024, GetNumPart());
+#else
+          printf("Type %d allocated %ld MB for %ld particles\n",type,sizeof(float)*(Vel_data.size()+Vel_2_data.size())/1024/1024, GetNumPart());
+#endif
           return;
         }
         
