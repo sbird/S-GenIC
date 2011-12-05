@@ -36,12 +36,13 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   /*We are about to write the POS block*/
   /* Add displacement to Lagrangian coordinates, and multiply velocities by correct factor when writing VEL*/
   for(i = 0, pc = 0; i < NumPart; i++){
-      for(k = 0; k < 3; k++)
+      for(k = 0; k < 3; k++){
 	  block[3 * pc + k] = P.Pos(i,k) + P.Vel(i,k);
 #ifdef TWOLPT
 	  block[3 * pc + k] -= 3./7. * P.Vel2(i,k);
 #endif
 	  block[3 * pc + k] = periodic_wrap(block[3*pc+k]);
+      }
       pc++;
 
 #ifdef NEUTRINO_PAIRS
@@ -69,11 +70,12 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   /* write velocities: sizes are the same as for positions */
   for(i = 0, pc = 0; i < NumPart; i++)
     {
-      for(k = 0; k < 3; k++)
+      for(k = 0; k < 3; k++){
 	block[3 * pc + k] = vel_prefac*P.Vel(i,k);
 #ifdef TWOLPT
         block[3 * pc + k] -= 3./7. *vel_prefac2* P.Vel2(i,k);
 #endif
+      }
 
       if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1)
 	add_WDM_thermal_speeds(&block[3 * pc]);
