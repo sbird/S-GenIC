@@ -40,7 +40,7 @@ extern fftwf_complex     *Cdata;
 
 #ifdef TWOLPT
   extern fftwf_plan Forward_plan2;
-  extern fftwf_plan Inverse_plan_grad;
+  extern fftwf_plan Inverse_plan_grad[3];
   extern fftwf_plan Inverse_plan2;
   extern fftwf_complex *cdisp2; /* 2nd order displacements */
   extern float *disp2;
@@ -48,8 +48,6 @@ extern fftwf_complex     *Cdata;
   extern fftwf_complex *ctwosrc;
   extern fftwf_complex *(cdigrad[3]);
   extern float *(digrad[3]);
-  extern fftwf_complex *cdigrad_0;
-  extern float *digrad_0;
 #endif
 
 

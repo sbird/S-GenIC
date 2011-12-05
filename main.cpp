@@ -73,7 +73,10 @@ int main(int argc, char **argv)
   /* Free  */
   fftwf_free(twosrc);
   fftwf_destroy_plan(Forward_plan2);
-  fftwf_destroy_plan(Inverse_plan_grad);
+  for(int i=0;i<3;i++){
+        fftwf_free(cdigrad[i]);
+        fftwf_destroy_plan(Inverse_plan_grad[i]);
+  }
 #endif
 
   printf("Initial scale factor = %g\n", InitTime);
@@ -222,8 +225,8 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
       /* Compute displacement gradient
        * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
       for(int ax=2;ax>=axes; ax--){ 
-      #pragma omp parallel
-      {
+        #pragma omp parallel
+        {
               #pragma omp for
               for(int i = 0; i < Nmesh; i++)
         	for(int j = 0; j < Nmesh; j++)
@@ -240,15 +243,16 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
         	      (cdigrad[axes][coord])[0] = -(Cdata[coord])[1] * kvec[ax]; /* disp0,0 */
         	      (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
                   }
+        }//omp_parallel
 
               /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
 //               printf("Finding gradient FT component (%d,%d)\n",ax,axes);
-              cdigrad_0=cdigrad[axes];
-              digrad_0=digrad[axes];
-              fftwf_execute(Inverse_plan_grad);	/** FFT of cdigrad_0 **/
+              fftwf_execute(Inverse_plan_grad[axes]);	/** FFT of cdigrad[axes] **/
 
               /* Compute second order source and store it in twosrc*/
               if(ax != axes)
+              #pragma omp parallel
+              {
                   #pragma omp for
                   for(int i = 0; i < Nmesh; i++)
                     for(int j = 0; j < Nmesh; j++)
@@ -256,11 +260,10 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                           size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
                           twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
                       }
-      }//omp_parallel
+               }//omp_parallel
       }
 #endif
 	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
-
 	  /* read-out Zeldovich displacements into P.Vel*/
           maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
 	}

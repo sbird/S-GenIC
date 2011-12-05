@@ -79,8 +79,6 @@ void initialize_ffts(void)
       fprintf(stderr, "Failed to allocate %ld MB for 2LPT term\n",4*bytes / (1024 * 1024));
       FatalError(1);
   }
-  cdigrad_0=cdigrad[0];
-  digrad_0=digrad[0];
 #endif
 
   if(!fftwf_init_threads()){
@@ -91,7 +89,9 @@ void initialize_ffts(void)
   Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
 #ifdef TWOLPT
   Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
-  Inverse_plan_grad = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad_0,digrad_0, FFTW_ESTIMATE);
+  for(int i=0; i<3; i++){
+          Inverse_plan_grad[i] = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad[i],digrad[i], FFTW_ESTIMATE);
+  }
 #endif
   return;
 }
