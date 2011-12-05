@@ -240,81 +240,79 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
         	      (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
         	    }
 
+      /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
        printf("Fourier transforming displacement gradient...%d",ax);
        cdigrad_0=cdigrad[axes];
        digrad_0=digrad[axes];
-       fftwf_execute(Forward_plan_grad);	/** FFT **/
+       fftwf_execute(Inverse_plan2);	/** FFT of cdigrad_0 **/
 
       /* Compute second order source and store it in digrad[3]*/
 
+      if(ax != axes)
       for(int i = 0; i < Nmesh; i++)
 	for(int j = 0; j < Nmesh; j++)
 	  for(int k = 0; k < Nmesh; k++)
 	    {
 	      size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
                 // g_00(g_11+g_22) + g_11*g_22 -g_01*g_01-g_02*g_02-g12_g12
-              if(ax != axes)
         	      twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
 //		digrad[0][coord]*(digrad[3][coord]+digrad[5][coord])+digrad[3][coord]*digrad[5][coord]
 //               -digrad[1][coord]*digrad[1][coord]-digrad[2][coord]*digrad[2][coord]-digrad[4][coord]*digrad[4][coord];
 	    }
       }
-      /*At this point, cdigrad[i] contains FT(phi,ii) and twosrc contains  - phi,ij^2 for this axis */
 #endif
 	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
 
-	  /* read-out Zeldovich displacements */
+	  /* read-out Zeldovich displacements into P.Vel*/
           maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
 	}
+        
 #ifdef TWOLPT
-      digrad_0 = twosrc;
-      cdigrad_0 = (fftwf_complex *) twosrc;
-      fftwf_execute(Forward_plan_grad);	/** FFT of twosrc**/
-      for(int axes=0; axes< 3; axes++){
-      printf("Fourier transforming second order source...");
-      
-      /* The memory allocated for cdigrad[0], [1], and [2] will be used for 2nd order displacements */
-      /* Freeing the rest. cdigrad[3] still has 2nd order displacement source, free later */
-
-      /* Solve Poisson eq. and calculate 2nd order displacements */
-
+      /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
+       * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
       for(int i = 0; i < Nmesh; i++)
 	for(int j = 0; j < Nmesh; j++)
-	  for(int k = 0; k <= Nmesh / 2; k++)
-	    {
-              double kvec[3],kmag2;
-	      size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-              kvec[0] = KVAL(i) * 2 * M_PI / Box;
-              kvec[1] = KVAL(j) * 2 * M_PI / Box;
-              kvec[2] = KVAL(k) * 2 * M_PI / Box;
-
-	      kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
+	  for(int k = 0; k < Nmesh; k++){
+	      size_t co = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
+              twosrc[co] += digrad[0][co]*digrad[1][co]+digrad[0][co]*digrad[2][co]+digrad[1][co]*digrad[2][co];
+	  }
+      fftwf_execute(Forward_plan2);	/** FFT of twosrc**/
+      for(int axes=0; axes< 3; axes++){
+              printf("Fourier transforming second order source...");
+              
+              /* The memory allocated for cdigrad[0], [1], and [2] will be used for 2nd order displacements */
+              /* Freeing the rest. cdigrad[3] still has 2nd order displacement source, free later */
+        
+              /* Solve Poisson eq. and calculate 2nd order displacements */
+              (cdisp2[0])[0] = (cdisp2[0])[1] = 0.0;
+              for(int i = 0; i < Nmesh; i++)
+        	for(int j = 0; j < Nmesh; j++)
+        	  for(int k = 1; k <= Nmesh / 2; k++){
+                      double kvec[3],kmag2;
+        	      size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+                      kvec[0] = KVAL(i) * 2 * M_PI / Box;
+                      kvec[1] = KVAL(j) * 2 * M_PI / Box;
+                      kvec[2] = KVAL(k) * 2 * M_PI / Box;
+        
+        	      kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
+        	      /* cdisp2 = source * k / (sqrt(-1) k^2) */
+        	      (cdisp2[coord])[0] = (ctwosrc[coord])[1] * kvec[axes] / kmag2;
+        	      (cdisp2[coord])[1] = -(ctwosrc[coord])[0] * kvec[axes] / kmag2;
 #ifdef CORRECT_CIC
-	      /* do deconvolution of CIC interpolation */
-	      double smth= invwindow(i,j,k,Nmesh);
+        	      /* do deconvolution of CIC interpolation */
+        	      double smth= invwindow(i,j,k,Nmesh);
+        	      (cdisp2[coord])[0] *= smth;  
+                      (cdisp2[coord])[1] *= smth;
 #endif
-
-	      /* cdisp2 = source * k / (sqrt(-1) k^2) */
-		  if(kmag2 > 0.0) 
-		    {
-		      (cdisp2[coord])[0] = (((fftwf_complex *)twosrc)[coord])[1] * kvec[axes] / kmag2;
-		      (cdisp2[coord])[1] = -(((fftwf_complex *)twosrc)[coord])[0] * kvec[axes] / kmag2;
-		    }
-		  else 
-                      (cdisp2[coord])[0] = (cdisp2[coord])[1] = 0.0;
-#ifdef CORRECT_CIC
-		  (cdisp2[coord])[0] *= smth;  
-                  (cdisp2[coord])[1] *= smth;
-#endif
-	    }
+        	    }
       
-      /* Free cdigrad[3] */
-      free(twosrc);
-      /* Now, both cdisp, and cdisp2 have the ZA and 2nd order displacements */
-	  fftwf_execute(Inverse_plan2);	/** FFT **/
-	  /* read-out displacements */
-          displacement_read_out(disp2, 2, NumPart, P, Nmesh,axes);
-	}
+              /* Free cdigrad[3] */
+              free(twosrc);
+              /* Now, both cdisp, and cdisp2 have the ZA and 2nd order displacements */
+              fftwf_execute(Inverse_plan2);	/** FFT of cdisp2**/
+              /* read-out displacements */
+              displacement_read_out(disp2, 2, NumPart, P, Nmesh,axes);
+      	}
 #endif
       
   printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",

@@ -29,11 +29,13 @@ float *Disp;
 fftwf_complex *Cdata;
 
 #ifdef TWOLPT
-  fftwf_plan Forward_plan_grad;
+  fftwf_plan Forward_plan2;
+  fftwf_plan Inverse_plan_grad;
   fftwf_plan Inverse_plan2;
   fftwf_complex *cdisp2; /* 2nd order displacements */
   float *disp2;
   float *twosrc;
+  fftwf_complex *ctwosrc;
   fftwf_complex *(cdigrad[3]);
   float *(digrad[3]);
   fftwf_complex *cdigrad_0;
