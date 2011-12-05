@@ -57,24 +57,6 @@ void initialize_ffts(void)
 {
   size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (float *) fftwf_malloc(bytes);
-#ifdef TWOLPT
-  twosrc = (float *) fftwf_malloc(bytes);
-  ctwosrc = (fftwf_complex *) twosrc;
-  disp2 = (float *) fftwf_malloc(bytes);
-  cdisp2 = (fftwf_complex *) disp2;	/* transformed array */
- for(int i=0; i<3; i++){ 
-  cdigrad[i] = (fftwf_complex *) malloc(bytes);
-  digrad[i] = (float *) cdigrad[i];
-  if(!cdigrad[i])
-          exit(1);
- }
- cdigrad_0=cdigrad[0];
- digrad_0=digrad[0];
-  /*Check memory allocation*/
- if(!twosrc || !disp2)
-        exit(1); 
-#endif
-      
   if(Disp)
         printf("Nmesh = %d. Allocated %ld MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
   else{
@@ -82,6 +64,24 @@ void initialize_ffts(void)
       FatalError(1);
   }
   Cdata = (fftwf_complex *) Disp;	/* transformed array */
+
+#ifdef TWOLPT
+  twosrc = (float *) fftwf_malloc(bytes);
+  ctwosrc = (fftwf_complex *) twosrc;
+  for(int i=0; i<3; i++){
+     cdigrad[i] = (fftwf_complex *) malloc(bytes);
+     digrad[i] = (float *) cdigrad[i];
+  }
+  /*Check memory allocation*/
+  if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
+        printf("Allocated %ld MB for 2LPT term\n",4*bytes / (1024 * 1024));
+  else{
+      fprintf(stderr, "Failed to allocate %ld MB for 2LPT term\n",4*bytes / (1024 * 1024));
+      FatalError(1);
+  }
+  cdigrad_0=cdigrad[0];
+  digrad_0=digrad[0];
+#endif
 
   if(!fftwf_init_threads()){
   		  fprintf(stderr,"Error initialising fftw threads\n");
@@ -92,7 +92,6 @@ void initialize_ffts(void)
 #ifdef TWOLPT
   Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
   Inverse_plan_grad = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad_0,digrad_0, FFTW_ESTIMATE);
-  Inverse_plan2 = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdisp2,disp2, FFTW_ESTIMATE);
 #endif
   return;
 }
