@@ -132,7 +132,7 @@ my $Pkestimate="pk-init-$npart-$boxsize-z$Redshift-$seed";
 my $TransferFile=$Prefix."_transfer_$Redshift.dat";
 my $PYPlotScript="_plot-init.py";
 
-$CAMB="true";
+# $CAMB="true";
 # $NGenIC="true";
 # $genpk= "true";
 #Output the parameter file for CAMB.
@@ -180,7 +180,7 @@ close($outhandle);
 # pyscript datafile dir O_M box hub redshift
 gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $O_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
-print `python $PYPlotScript`;
+print `python2 $PYPlotScript`;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
 sub gen_camb_file{
