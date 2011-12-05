@@ -13,7 +13,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   float *block;
   id_type *blockid;
   int blockmaxlen;
-  int64_t maxidlen,written=0;
+  int64_t written=0;
   int i,k,pc;
   const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
@@ -115,7 +115,6 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   /* write particle ID */
   written=0;
   blockid = (id_type *) block;
-  maxidlen = bytes / (sizeof(id_type));
   
   for(i = 0, pc = 0; i < NumPart; i++){
       blockid[pc] = i+FirstId;
