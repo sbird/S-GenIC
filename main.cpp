@@ -91,9 +91,10 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
-  double maxdisp,maxdisp2;
+  double maxdisp;
 
 #ifdef TWOLPT
+  double maxdisp2;
   /* the final term converts to Gadget velocity */
       for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
               twosrc[i]=0;
