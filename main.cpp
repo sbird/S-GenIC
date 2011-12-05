@@ -222,6 +222,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
       /* Compute displacement gradient
        * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
       for(int ax=2;ax>=axes; ax--){ 
+      #pragma omp parallel
+      {
+              #pragma omp for
               for(int i = 0; i < Nmesh; i++)
         	for(int j = 0; j < Nmesh; j++)
                   for(int k = 0; k <= Nmesh / 2; k++){
@@ -246,12 +249,14 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 
               /* Compute second order source and store it in twosrc*/
               if(ax != axes)
+                  #pragma omp for
                   for(int i = 0; i < Nmesh; i++)
                     for(int j = 0; j < Nmesh; j++)
                       for(int k = 0; k < Nmesh; k++){
                           size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
                           twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
                       }
+      }//omp_parallel
       }
 #endif
 	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
@@ -263,12 +268,16 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 #ifdef TWOLPT
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
+      #pragma omp parallel
+      {
+      #pragma omp for
       for(int i = 0; i < Nmesh; i++)
 	for(int j = 0; j < Nmesh; j++)
 	  for(int k = 0; k < Nmesh; k++){
 	      size_t co = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
               twosrc[co] += digrad[0][co]*digrad[1][co]+digrad[0][co]*digrad[2][co]+digrad[1][co]*digrad[2][co];
 	  }
+      }//omp_parallel
       fftwf_execute(Forward_plan2);	/** FFT of twosrc**/
       for(int axes=0; axes< 3; axes++){
               printf("Starting 2LPT term, axis %d\n",axes);
@@ -276,6 +285,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               /* Solve Poisson eq. and calculate 2nd order displacements */
               /* Reuse the memory used earlier for ZA field */
               (Cdata[0])[0] = (Cdata[0])[1] = 0.0;
+              #pragma omp parallel
+              {
+              #pragma omp for
               for(int i = 0; i < Nmesh; i++)
         	for(int j = 0; j < Nmesh; j++)
         	  for(int k = 1; k <= Nmesh / 2; k++){
@@ -296,6 +308,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                       (Cdata[coord])[1] *= smth;
 #endif
         	    }
+              }//omp_parallel
       
               /* Cdata now contains the FFT of the 2LPT term */
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
