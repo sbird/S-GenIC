@@ -91,13 +91,12 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
-  double maxdisp=0;
+  double maxdisp,maxdisp2;
 
 #ifdef TWOLPT
   /* the final term converts to Gadget velocity */
-      for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++){
+      for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
               twosrc[i]=0;
-      }
 #endif
 
       for(int axes = 0; axes < 3; axes++) {
@@ -312,16 +311,20 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 #endif
         	    }
               }//omp_parallel
-      
+
               /* Cdata now contains the FFT of the 2LPT term */
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
-              displacement_read_out(Disp, 2, NumPart, P, Nmesh,axes);
+              maxdisp2=displacement_read_out(Disp, 2, NumPart, P, Nmesh,axes);
       	}
 #endif
       
-  printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
+  printf("\nMaximum Zeldovich displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
+#ifdef TWOLPT
+  printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",
+         maxdisp2, maxdisp2 / (Box / Nmesh));
+#endif
   return;
 }
 
@@ -400,7 +403,7 @@ double displacement_read_out(float * Disp, const int order, const int64_t NumPar
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
 #ifdef TWOLPT
                   if(order == 2){
-		        dis /= ((float) Nmesh)*Nmesh*Nmesh;
+		        dis /= ((double) Nmesh)*Nmesh*Nmesh;
 		        P.Set2Vel(dis, n,axes);
                   }
                   else
