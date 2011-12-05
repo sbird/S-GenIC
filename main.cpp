@@ -82,7 +82,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
-  double mindisp=0, maxdisp=0;
+  double maxdisp=0;
 
 /*I really think this is not right; Omega should be specified as total matter density, not cdm matter*/
 /*  if(neutrinos_ks)
@@ -214,7 +214,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
           #pragma omp barrier
           } //omp_parallel
 #ifdef TWOLPT
-      /* At this point, cdisp[axes] contains the complex Zeldovich displacement */
+      /* At this point, Cdata contains the complex Zeldovich displacement for this axis */
 
       printf("Done Zeldovich.\n");
       
@@ -259,54 +259,12 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 //               -digrad[1][coord]*digrad[1][coord]-digrad[2][coord]*digrad[2][coord]-digrad[4][coord]*digrad[4][coord];
 	    }
       }
+      /*At this point, cdigrad[i] contains FT(phi,ii) and twosrc contains  - phi,ij^2 for this axis */
 #endif
-	  fftwf_execute(Inverse_plan);	/** FFT **/
+	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
 
-	  /* read-out displacements */
-        #pragma omp parallel 
-          {
-	  #pragma omp for 
-	  for(int n = 0; n < NumPart; n++)
-	    {
-                  double dis;
-                  double f1, f2, f3, f4, f5, f6, f7, f8;
-                  double u[3];
-                  int64_t i[3], ii[3];
-                  for(int q=0;q<3;q++){
-        		  u[q] = P.Pos(n,q) / Box * Nmesh;
-                          i[q] = static_cast<int64_t>(u[q]);
-                          if(i[q] == Nmesh)
-                                  i[q]--;
-                          u[q] -= i[q];
-                          ii[q] = i[q]+1;
-        		  if(ii[q] >= Nmesh)
-	        	    ii[q] -= Nmesh;
-                  }
-
-		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
-		  f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
-		  f4 = (1 - u[0]) * (u[1]) * (u[2]);
-		  f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f6 = (u[0]) * (1 - u[1]) * (u[2]);
-		  f7 = (u[0]) * (u[1]) * (1 - u[2]);
-		  f8 = (u[0]) * (u[1]) * (u[2]);
-
-		  dis = Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
-		    Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
-		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
-		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
-		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
-		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
-		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
-		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
-		  P.SetVel(dis, n,axes);
-		  if(dis > maxdisp)
-		    maxdisp = dis;
-                  if(dis <mindisp)
-                    mindisp=dis;
-	    }
-        } //end omp_parallel
+	  /* read-out Zeldovich displacements */
+          maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
 	}
 #ifdef TWOLPT
       digrad_0 = twosrc;
@@ -355,54 +313,12 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
       /* Now, both cdisp, and cdisp2 have the ZA and 2nd order displacements */
 	  fftwf_execute(Inverse_plan2);	/** FFT **/
 	  /* read-out displacements */
-        #pragma omp parallel 
-          {
-	  #pragma omp for 
-	  for(int n = 0; n < NumPart; n++)
-	    {
-                  double dis2;
-                  double f1, f2, f3, f4, f5, f6, f7, f8;
-                  double u[3];
-                  int64_t i[3], ii[3];
-                  for(int q=0;q<3;q++){
-        		  u[q] = P.Pos(n,q) / Box * Nmesh;
-                          i[q] = static_cast<int64_t>(u[q]);
-                          if(i[q] == Nmesh)
-                                  i[q]--;
-                          u[q] -= i[q];
-                          ii[q] = i[q]+1;
-        		  if(ii[q] >= Nmesh)
-	        	    ii[q] -= Nmesh;
-                  }
-
-		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
-		  f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
-		  f4 = (1 - u[0]) * (u[1]) * (u[2]);
-		  f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f6 = (u[0]) * (1 - u[1]) * (u[2]);
-		  f7 = (u[0]) * (u[1]) * (1 - u[2]);
-		  f8 = (u[0]) * (u[1]) * (u[2]);
-
-		  dis2 = disp2[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
-		    disp2[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
-		    disp2[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
-		    disp2[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
-		    disp2[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
-		    disp2[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
-		    disp2[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
-		    disp2[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
-		  dis2 /= ((float) Nmesh)*Nmesh*Nmesh;
-		  P.Set2Vel(dis2, n,axes);
-	    }
-        } //end omp_parallel
+          displacement_read_out(disp2, 2, NumPart, P, Nmesh,axes);
 	}
 #endif
       
   printf("\nMaximum displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
-  printf("Minimum displacement: %g kpc/h, in units of the part-spacing= %g\n",
-         mindisp, mindisp / (Box / Nmesh));
   return;
 }
 
@@ -438,3 +354,63 @@ double invwindow(int kx,int ky,int kz,int n)
 }
 #endif
 
+double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const int Nmesh, const int axes)
+{
+        double maxx=0;
+        #pragma omp parallel 
+          {
+           double maxdisp=0;
+	  #pragma omp for 
+	  for(int n = 0; n < NumPart; n++)
+	    {
+                  double dis;
+                  double f1, f2, f3, f4, f5, f6, f7, f8;
+                  double u[3];
+                  int64_t i[3], ii[3];
+                  for(int q=0;q<3;q++){
+        		  u[q] = P.Pos(n,q) / Box * Nmesh;
+                          i[q] = static_cast<int64_t>(u[q]);
+                          if(i[q] == Nmesh)
+                                  i[q]--;
+                          u[q] -= i[q];
+                          ii[q] = i[q]+1;
+        		  if(ii[q] >= Nmesh)
+	        	    ii[q] -= Nmesh;
+                  }
+
+		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
+		  f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
+		  f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
+		  f4 = (1 - u[0]) * (u[1]) * (u[2]);
+		  f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
+		  f6 = (u[0]) * (1 - u[1]) * (u[2]);
+		  f7 = (u[0]) * (u[1]) * (1 - u[2]);
+		  f8 = (u[0]) * (u[1]) * (u[2]);
+
+		  dis = Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
+		    Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
+		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
+		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
+		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
+		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
+		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
+		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
+#ifdef TWOLPT
+                  if(order == 2){
+		        dis /= ((float) Nmesh)*Nmesh*Nmesh;
+		        P.Set2Vel(dis, n,axes);
+                  }
+                  else
+#endif
+		        P.SetVel(dis, n,axes);
+		  if(dis > maxdisp)
+		    maxdisp = dis;
+	    }
+            #pragma omp critical
+            {
+                  if (maxdisp > maxx)
+                          maxx=maxdisp;
+            }
+        } //end omp_parallel
+          return maxx;
+}

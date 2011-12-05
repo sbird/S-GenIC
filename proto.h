@@ -18,6 +18,8 @@ unsigned int * initialize_rng(int Seed);
 void   set_units(void);
 double fnl(double x);
 
+double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const int Nmesh, const int axes);
+
 double periodic_wrap(double x);
 
 int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data&  P, int64_t NumPart, int64_t FirstId);
