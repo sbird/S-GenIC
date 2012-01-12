@@ -60,7 +60,7 @@ int main(int argc, char **argv)
               continue;
       part_data P(snap, type, GlassTileFac);
       NumPart = P.GetNumPart();
-      displacement_fields(type, NumPart, P, Nmesh);
+      displacement_fields(type, NumPart, P, Nmesh, RayleighScatter);
       FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
 #ifdef PRINT_SPEC
       print_spec(type);
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
 
-void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh)
+void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh, bool RayleighScatter=true)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
@@ -154,7 +154,8 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 			  p_of_k = PowerSpec(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
-			  p_of_k *= -log(ampl);
+                          if(RayleighScatter)
+			        p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) ;
                           /* scale back to starting redshift */

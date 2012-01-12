@@ -138,6 +138,10 @@ void read_parameterfile(char *fname)
   addr[nt] = &ReNormalizeInputSpectrum;
   id[nt++] = INT;
 
+  strcpy(tag[nt], "RayleighScatter");
+  addr[nt] = &RayleighScatter;
+  id[nt++] = INT;
+
   strcpy(tag[nt], "WDM_On");
   addr[nt] = &WDM_On;
   id[nt++] = INT;

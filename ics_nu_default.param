@@ -69,6 +69,7 @@ PrimordialIndex  1.0       % may be used to tilt the primordial index (one if ta
 
 		  
 Seed             181170    %  seed for IC-generator
+RayleighScatter       0
 
 
 NumFilesWrittenInParallel 4  % limits the number of files that are

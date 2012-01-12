@@ -15,6 +15,7 @@ int GlassTileFac;
 
 double Box;
 int Seed;
+int RayleighScatter;
 
 int NumFiles;
 

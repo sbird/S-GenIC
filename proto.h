@@ -12,7 +12,7 @@
 void   print_spec(int type);
 #endif
 int    FatalError(int errnum);
-void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh);
+void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh, bool RayleighScatter);
 void   initialize_ffts(void);
 unsigned int * initialize_rng(int Seed);
 void   set_units(void);

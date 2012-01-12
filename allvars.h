@@ -27,6 +27,7 @@ extern int      GlassTileFac;
 
 extern double   Box;
 extern int Seed;
+extern int RayleighScatter;
 
 extern double InitTime;
 extern double Redshift;
