@@ -1,0 +1,36 @@
+==N-GenIC==
+
+This is N-GenIC-spb, an extended and optimised version of Volker Springel's 
+N-GenIC program for generating Gadget-compatible initial conditions. 
+Requires the GadgetReader library and FFTW 3.
+
+Changes over the version of N-GenIC available from the Gadget website are:
+- Ability to output Format 2 Gadget files. 
+- Always uses the correct (different) transfer functions for DM and baryons. 
+- Substantially lower memory usage for multiple species initial conditions.
+- 2LPT term, using substantially less memory than the N-GenICs version by Scoccimarro et al.
+- Parallelised with OpenMP rather than MPI. 
+- FFTW3
+- Support for both fake (fourier-space) and particle neutrinos
+- Many and various cleanups
+- perl script that runs CAMB and N-GenIC in turn, consistently, and 
+then generates a power spectrum with GenPK to compare with the input.
+
+To build the library, do:
+
+make
+
+For the test suite (requires Boost::Test > 1.34), do: 
+
+make test
+
+For the doxygen-generated documentation:
+
+make doc
+
+To delete compiler output:
+
+make clean or make cleanall
+
+Further documentation may be found in the doxygen generated files in doc/html/index.html
+(type "make doc" to make this file).
