@@ -50,8 +50,10 @@ INCL   = allvars.h proto.h part_data.hpp Makefile
 
 .PHONY : clean all
 
-
 all: $(EXEC)
+
+doc: Doxyfile main.cpp ${INCL}
+	doxygen $<
 
 %.o: %.cpp $(INCL)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@

@@ -1,6 +1,5 @@
 *.o
 .*.swp
 N-GenIC
-html/*
-latex/*
+doc/*
 tags
