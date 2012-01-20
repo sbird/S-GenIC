@@ -29,7 +29,7 @@ my $Spectrum=4;
 #Cosmological parameters
 my $Omega_M='';
 my $Omega_B='';
-my $O_Nu='';
+my $M_Nu='';
 my $Redshift='';
 my $NS='';
 my $A_prim='';
@@ -43,7 +43,7 @@ my $help='';
 my @options=@ARGV;
 GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$Omega_M, 
         'ob:f'=>\$Omega_B,'redshift:f'=>\$Redshift, 'output=s'=>\$Directory, 
-        'glass=s'=>\$GlassFile, 'nglass:i'=>\$GlassPart,'onu:f'=>\$O_Nu, 'help'=>\$help,
+        'glass=s'=>\$GlassFile, 'nglass:i'=>\$GlassPart,'mnu:f'=>\$M_Nu, 'help'=>\$help,
          'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'kspace'=>\$kspace, 'ns:f'=>\$NS,
          'as:f'=>\$A_prim
                 ) or die "Failed Options";
@@ -54,7 +54,7 @@ if($help){
                --npart 400      => Number of particles.
                --om   f         => Omega_matter
                --ob   f         => Omega_Baryons
-               --onu  f         => Omega_neutrino
+               --mnu  f         => M_nu (single flavour)
                --prefix str     => Prefix for IC file
                --redshift n     => Starting redshift
                --output  path   => Directory to output files to
@@ -68,11 +68,12 @@ if(!$Omega_M){$Omega_M=0.222;}
 if(!$Omega_B){$Omega_B=0.0449;}
 if(!$hub){$hub=0.70;}
 if(!$Redshift){$Redshift=99;}
-if(!$O_Nu){$O_Nu = 0;}
+if(!$M_Nu){$M_Nu = 0;}
 if(!$kspace){$kspace = 0;}
 if(!$NS){$NS=1.0;}
 if(!$A_prim){$A_prim=2.43e-9;}
-$Omega_M -= $O_Nu;
+my $Omega_Nu = 3*$M_Nu / 93.14/$hub/$hub;
+$Omega_M -= $Omega_Nu;
 #Keep the seed the same as in the best-fit case.
 if(!$seed){$seed=181170;}
 if(!$boxsize){$boxsize=60;}
@@ -110,7 +111,7 @@ unless (-e $genpk){
 #the size of the POS area will overflow.
 #Also we don't want N-GenICs to take too long.
 my $NumFiles=ceil($npart**3*3/2**29);
-if($Omega_B > 0 || $O_Nu > 0 ){
+if($Omega_B > 0 || $M_Nu > 0 ){
         $NumFiles=ceil($npart**3*3/2**28);
 }
 # We don't ever want to use an odd number of files or processors.
@@ -121,7 +122,7 @@ if($NumFiles < 4){
         $NumFiles =4;
 }
 my $GlassTileFac=$npart/$GlassPart;
-my $ICFile=$Prefix."_$npart-$boxsize-z$Redshift-nu$O_Nu.dat";
+my $ICFile=$Prefix."_$npart-$boxsize-z$Redshift-nu$M_Nu.dat";
 my $NGenParams="_spb41-gen.param";
 my $NGenDefParams=$NGenIC;
 $NGenDefParams =~ s!/[\w-]*$!/ics_nu_default.param!;
@@ -141,18 +142,19 @@ my $PYPlotScript="_plot-init.py";
 $CAMBParams=$Directory."/".$CAMBParams;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
-gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$O_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, $Redshift);
+gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$Omega_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, $Redshift);
 print "Running CAMB...\n";
 print_run("$CAMB $CAMBParams");
 print "Done Running CAMB, running N-GenICs.\n";
 $NGenParams=$Directory."/".$NGenParams;
 # Output the initial conditions file for N-GenICs.
 # paramfile newparams directory transferfile icfile glassfile glasspart npart box omega_nu omega_b omega_m hubble redshift kspace
-gen_ngen_file($NGenDefParams , $NGenParams,$Directory, $TransferFile,$ICFile,$GlassFile, $GlassPart,$npart, $boxsize,$O_Nu, $Omega_B, $Omega_M, $hub, $Redshift, $kspace, $NumFiles);
+gen_ngen_file($NGenDefParams , $NGenParams,$Directory, $TransferFile,$ICFile,$GlassFile, $GlassPart,$npart, $boxsize,$Omega_Nu, $Omega_B, $Omega_M, $hub, $Redshift, $kspace, $NumFiles);
 print_run("$NGenIC $NGenParams");
 
 #If we are using Kspace neutrinos, we also want to generate CAMB tables for all redshifts along the way.
-if($kspace){
+#Not for the new style kspace neutrinos
+if( 0  and $kspace){
         my @Redshifts;
         for(my $i = log(1+$Redshift); $i > 0; $i-=1./50){
                 push @Redshifts, exp($i)-1;
@@ -161,7 +163,7 @@ if($kspace){
         print "Generating CAMB_TABLES\n";
         `mkdir -p $Directory/CAMB_TABLES/`;
         my $IntParams = $Directory."/CAMB_TABLES/_int-camb-params.ini";
-        gen_camb_file($CAMBDefParams,$IntParams,$Directory."/CAMB_TABLES/tab",$O_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, @Redshifts);
+        gen_camb_file($CAMBDefParams,$IntParams,$Directory."/CAMB_TABLES/tab",$Omega_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, @Redshifts);
         print_run("$CAMB $IntParams");
 }
 
@@ -178,7 +180,7 @@ perl $0 @options
 close($outhandle);
 
 # pyscript datafile dir O_M box hub redshift
-gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $O_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
+gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $Omega_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
 print `python2 $PYPlotScript`;
 
