@@ -128,7 +128,7 @@ my $NGenDefParams=$NGenIC;
 $NGenDefParams =~ s!/[\w-]*$!/ics_nu_default.param!;
 my $CAMBParams="_spb41-camb-params.ini";
 my $CAMBDefParams = $CAMB;
-$CAMBDefParams =~ s!/[\w-]*$!/paramfiles/default-params.ini!;
+$CAMBDefParams = "/home/spb/codes/numatpowscripts/paramfiles/default-params.ini"; #=~ s!/[\w-]*$!/paramfiles/default-params.ini!;
 my $Pkestimate="pk-init-$npart-$boxsize-z$Redshift-$seed";
 my $TransferFile=$Prefix."_transfer_$Redshift.dat";
 my $PYPlotScript="_plot-init.py";
@@ -287,6 +287,12 @@ sub gen_ngen_file{
         my $NumFiles=shift;
         my $Omega_L = 1.0-$Omega_M;
         my $nu = $O_nu*1.0 > 0 ? 1 : 0;
+        #Subtract radiation
+        $Omega_M -= 4.92375e-05;
+        #Subtract massless neutrinos
+        if (!$nu){
+                $Omega_M -=3.38663e-05;
+        }
         my $nu_mass = 600*$O_nu/13.;
         open(my $INHAND, "<","$NGenDefParams") or die "Could not open $NGenDefParams for reading!";
         open(my $OUTHAND, ">","$NGenParams") or die "Could not open $NGenParams for writing!";
