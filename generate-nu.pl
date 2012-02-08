@@ -287,13 +287,7 @@ sub gen_ngen_file{
         my $NumFiles=shift;
         my $Omega_L = 1.0-$Omega_M;
         my $nu = $O_nu*1.0 > 0 ? 1 : 0;
-        #Subtract radiation
-        $Omega_M -= 4.92375e-05;
-        #Subtract massless neutrinos
-        if (!$nu){
-                $Omega_M -=3.38663e-05;
-        }
-        my $nu_mass = 600*$O_nu/13.;
+        my $nu_mass = 93.14*$hub*$hub*$O_nu;
         open(my $INHAND, "<","$NGenDefParams") or die "Could not open $NGenDefParams for reading!";
         open(my $OUTHAND, ">","$NGenParams") or die "Could not open $NGenParams for writing!";
         while(<$INHAND>){
