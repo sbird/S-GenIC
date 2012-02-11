@@ -28,6 +28,7 @@ my $kspace='';
 my $Spectrum=4;
 #Cosmological parameters
 my $Omega_M='';
+my $Omega_L='';
 my $Omega_B='';
 my $M_Nu='';
 my $Redshift='';
@@ -41,7 +42,7 @@ my $Prefix='';
 #For printing help
 my $help='';
 my @options=@ARGV;
-GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$Omega_M, 
+GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$Omega_M, 'ol:f'=>\$Omega_L,
         'ob:f'=>\$Omega_B,'redshift:f'=>\$Redshift, 'output=s'=>\$Directory, 
         'glass=s'=>\$GlassFile, 'nglass:i'=>\$GlassPart,'mnu:f'=>\$M_Nu, 'help'=>\$help,
          'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'kspace'=>\$kspace, 'ns:f'=>\$NS,
@@ -53,6 +54,7 @@ if($help){
                --box  60        => Boxsize in Mpc/h
                --npart 400      => Number of particles.
                --om   f         => Omega_matter
+               --ol   f         => Omega_Lambda
                --ob   f         => Omega_Baryons
                --mnu  f         => M_nu (single flavour)
                --prefix str     => Prefix for IC file
@@ -66,6 +68,7 @@ if($help){
        #Parameters are WMAP 7-year.
 if(!$Omega_M){$Omega_M=0.222;}
 if(!$Omega_B){$Omega_B=0.0449;}
+if(!$Omega_L){$Omega_L = 1-$Omega_M-$Omega_B;}
 if(!$hub){$hub=0.70;}
 if(!$Redshift){$Redshift=99;}
 if(!$M_Nu){$M_Nu = 0;}
@@ -182,7 +185,7 @@ close($outhandle);
 # pyscript datafile dir O_M box hub redshift
 gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $Omega_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
-print `python2 $PYPlotScript`;
+print `/usr/bin/python2 $PYPlotScript`;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
 sub gen_camb_file{
@@ -209,7 +212,6 @@ sub gen_camb_file{
                 $mass_nu = 3.04;
                 $nomass_nu = 0;
         }
-        my $o_lam = 1.0 - $o_cdm -$o_b -$o_nu;
         #Read in template parameter file
         open(my $INHAND, "<","$paramfile") or die "Could not open $paramfile for reading!";
         open(my $OUTHAND, ">","$newparams") or die "Could not open $newparams for writing!";
@@ -219,7 +221,7 @@ sub gen_camb_file{
                 s/^\s*use_physical\s*=\s*[\w\/.-]*/use_physical = F/i;
                 s/^\s*omega_cdm\s*=\s*[\w\/.-]*/omega_cdm=$o_cdm/i;
                 s/^\s*omega_baryon\s*=\s*[\w\/.-]*/omega_baryon=$o_b/i;
-                s/^\s*omega_lambda\s*=\s*[\w\/.-]*/omega_lambda=$o_lam/i;
+                s/^\s*omega_lambda\s*=\s*[\w\/.-]*/omega_lambda=$Omega_L/i;
                 s/^\s*omega_neutrino\s*=\s*[\w\/.-]*/omega_neutrino=$o_nu/i;
                 s/^\s*hubble\s*=\s*[\w\/.-]*/hubble = $hub/i;
                 #Set things we always need here
@@ -285,7 +287,6 @@ sub gen_ngen_file{
         my $red = shift;
         my $kspace = shift;
         my $NumFiles=shift;
-        my $Omega_L = 1.0-$Omega_M;
         my $nu = $O_nu*1.0 > 0 ? 1 : 0;
         my $nu_mass = 93.14*$hub*$hub*$O_nu;
         open(my $INHAND, "<","$NGenDefParams") or die "Could not open $NGenDefParams for reading!";
@@ -354,7 +355,7 @@ open($outhandle, ">", $PYPlotScript) or
       die "Can't open parameter file $PYPlotScript for writing!";
 (my $la, my $la2,my $f) = File::Spec->splitpath($Directory."/".$DataFile);
 print $outhandle 
-'#!/usr/bin/env python
+'#!/usr/bin/python
 
 """
 Plot P(k)
