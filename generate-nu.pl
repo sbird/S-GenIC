@@ -142,7 +142,8 @@ $classprecision =~ s/class$/pk_ref.pre/;
 my $classdefparams = $class;
 $classdefparams =~ s/class$/explanatory.ini/;
 my $Pkestimate="pk-init-$npart-$boxsize-z$Redshift-$seed";
-my $TransferFile=$Prefix."_transfer_$Redshift.dat";
+#my $TransferFile=$Prefix."_transfer_$Redshift.dat";
+my $TransferFile=$Prefix."_z1_tk.dat";
 my $PYPlotScript="_plot-init.py";
 
 # $CAMB="true";
@@ -289,6 +290,7 @@ sub gen_class_file{
         my $paramfile=shift;
         my $newparams=shift;
         my $root = shift;
+        $root = $root."_";
         my $M_Nu=shift; 
         my $o_b = shift;
         my $o_cdm=shift;
@@ -338,7 +340,7 @@ sub gen_class_file{
 		#Set the pivot scale for scalar and tensor modes to be WMAP value
                 s/^\s*k_pivot\s*=\s*[\w\/.-]*/k_pivot = 2e-3/i;
                 #Set up output
-                s!^\s*P_k_max_h/Mpc\s*=\s*[\w\/.-]*!P_k_max_h/Mpc = 200!i;
+                s!^\s*P_k_max_h/Mpc\s*=\s*[\w\/.-]*!P_k_max_h/Mpc = 100!i;
                 s/^\s*transfer_k_per_logint \s*=\s*[\w\/.-]*/transfer_k_per_logint  = 30/i;
                 #It is EXTREMELY IMPORTANT that this is set to F, because the 
                 #calculations done in N-GenICs and Gadget assume that a matterpow 
@@ -360,7 +362,8 @@ sub gen_ngen_file{
         my $Directory = shift;
         my $TransferFile=shift;
         my $MatterFile = $TransferFile;
-        $MatterFile=~ s/_transfer_/_matterpow_/;
+        #$MatterFile=~ s/_transfer_/_matterpow_/;
+        $MatterFile=~ s/tk/pk/;
         my $ICFile = shift;
         my $GlassFile= shift;
         my $GlassPart = shift;
@@ -501,10 +504,10 @@ def plot_power(box,filename_dm,filename_b,camb_filename,redshift,hub,omegab,omeg
 if(!$kspace and $Omega_Nu > 0){
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_Nu,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_Nu,$Omega_M)
 savefig('$Directory/$Pkestimate.png')
 clf()
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_Nu,0)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_Nu,0)
 savefig('$Directory/$Pkestimate-bar.png')
 clf()";
 }
@@ -512,17 +515,17 @@ clf()";
 if($Omega_B > 0){
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_B,$Omega_M)
 savefig('$Directory/$Pkestimate.png')
 clf()
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,0)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_B,0)
 savefig('$Directory/$Pkestimate-bar.png')
 clf()";
 }
 
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-DM-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,0,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-DM-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,0,$Omega_M)
 savefig('$Directory/$Pkestimate-DM.png')
 
 ";
