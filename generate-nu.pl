@@ -185,7 +185,7 @@ close($outhandle);
 # pyscript datafile dir O_M box hub redshift
 gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $Omega_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
-print `/usr/bin/python2 $PYPlotScript`;
+print `python $PYPlotScript`;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
 sub gen_camb_file{
@@ -359,7 +359,7 @@ open($outhandle, ">", $PYPlotScript) or
       die "Can't open parameter file $PYPlotScript for writing!";
 (my $la, my $la2,my $f) = File::Spec->splitpath($Directory."/".$DataFile);
 print $outhandle 
-'#!/usr/bin/python
+'#!/usr/bin/python2
 
 """
 Plot P(k)
