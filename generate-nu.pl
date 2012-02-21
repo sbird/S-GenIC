@@ -104,6 +104,11 @@ unless (-e $CAMB){
             $CAMB = $lst[0];
         }
 }
+my $class="$ENV{HOME}/codes/class/class";
+unless (-e $class){
+        my @lst = glob("$ENV{HOME}/*/class/class");
+        $class = $lst[0];
+}
 my $genpk= "$ENV{HOME}/C-post-process/gen-pk";
 unless (-e $genpk){
         my @lst = glob("$ENV{HOME}/*/C-post-process/gen-pk");
@@ -132,6 +137,10 @@ $NGenDefParams =~ s!/[\w-]*$!/ics_nu_default.param!;
 my $CAMBParams="_spb41-camb-params.ini";
 my $CAMBDefParams = $CAMB;
 $CAMBDefParams = "/home/spb/codes/numatpowscripts/paramfiles/default-params.ini"; #=~ s!/[\w-]*$!/paramfiles/default-params.ini!;
+my $classprecision =$class;
+$classprecision =~ s/class$/pk_ref.pre/;
+my $classdefparams = $class;
+$classdefparams =~ s/class$/explanatory.ini/;
 my $Pkestimate="pk-init-$npart-$boxsize-z$Redshift-$seed";
 my $TransferFile=$Prefix."_transfer_$Redshift.dat";
 my $PYPlotScript="_plot-init.py";
@@ -143,12 +152,22 @@ my $PYPlotScript="_plot-init.py";
 
 #Output the initial conditions file for N-GenICs.
 $CAMBParams=$Directory."/".$CAMBParams;
-
+#Generate later redshifts
+my @Redshifts = ($Redshift);
+my @rrr = (49,24,9,4,3,2,1,0);
+foreach(@rrr)
+{
+        if($_ < $Redshift){
+                push @Redshifts,$_;
+        }
+}
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
-gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$Omega_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, $Redshift);
-print "Running CAMB...\n";
-print_run("$CAMB $CAMBParams");
-print "Done Running CAMB, running N-GenICs.\n";
+#gen_camb_file($CAMBDefParams,$CAMBParams,$Directory."/".$Prefix,$Omega_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, $Redshift);
+gen_class_file($classdefparams,$CAMBParams,$Directory."/".$Prefix,$M_Nu,$Omega_B, $Omega_M, $hub, $NS, $A_prim, @Redshifts);
+print "Running CLASS...\n";
+#print_run("$CAMB $CAMBParams");
+print_run("$class $CAMBParams $classprecision");
+print "Done Running CLASS, running N-GenICs.\n";
 $NGenParams=$Directory."/".$NGenParams;
 # Output the initial conditions file for N-GenICs.
 # paramfile newparams directory transferfile icfile glassfile glasspart npart box omega_nu omega_b omega_m hubble redshift kspace
@@ -260,6 +279,75 @@ sub gen_camb_file{
                 print $OUTHAND "transfer_redshift(".($i+1).") = $red[$i]\n";
                 print $OUTHAND "transfer_filename(".($i+1).") = transfer_$red[$i].dat\n";
                 print $OUTHAND "transfer_matterpower(".($i+1).") = matterpow_$red[$i].dat\n";
+        }
+        close($INHAND);
+        close($OUTHAND);
+}
+
+# paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
+sub gen_class_file{
+        my $paramfile=shift;
+        my $newparams=shift;
+        my $root = shift;
+        my $M_Nu=shift; 
+        my $o_b = shift;
+        my $o_cdm=shift;
+        if($o_b < 0.001){ 
+                $o_b = 0.05;
+                $o_cdm -=$o_b;
+        }
+        my $hub = shift;
+        my $NS = shift;
+        my $A_prim = shift;
+        my @red = @_;
+        my $mass_nu;
+        my $nomass_nu;
+        if($M_Nu == 0){
+                $mass_nu = 0;
+                $nomass_nu = 3.04;
+        }else{
+                $mass_nu = 3;
+                $nomass_nu = 0;
+        }
+        my $redstr=join(", ",@red);
+        #Read in template parameter file
+        open(my $INHAND, "<","$paramfile") or die "Could not open $paramfile for reading!";
+        open(my $OUTHAND, ">","$newparams") or die "Could not open $newparams for writing!";
+        while(<$INHAND>){
+                s/^\s*root\s*=\s*[\w\/\.-]*/root = $root/i;
+                #Set neutrino mass
+                s/^\s*Omega_cdm\s*=\s*[\w\/.-]*/Omega_cdm=$o_cdm/i;
+                s/^\s*Omega_b\s*=\s*[\w\/.-]*/Omega_b=$o_b/i;
+                s/^\s*Omega_Lambda\s*=\s*[\w\/.-]*/Omega_Lambda=$Omega_L/i;
+                s/^\s*m_ncdm\s*=\s*[\w\/., -]*/m_ncdm=$M_Nu,$M_Nu,$M_Nu/i;
+                #Class does not support non-flat models
+                s/^\s*Omega_k\s*=\s*[\w\/.,-]*/Omega_k=0/i;
+                s/^\s*h\s*=\s*[\w\/.-]*/h = $hub/i;
+                #Set things we always need here
+                s/^\s*N_eff\s*=\s*[\w\/.-]*/N_eff = $nomass_nu/i;
+                s/^\s*N_ncdm\s*=\s*[\w\/.-]*/N_ncdm = $mass_nu/i;
+                s/^\s*output\s*=\s*[\w\/.,-]*/output = mPk,mTk/i;
+                s/^\s*non linear\s*=\s*[\w\/.-]*/non linear = no/i;
+                s/^\s*format\s*=\s*[\w\/.-]*/format = camb/i;
+                s/^\s*headers\s*=\s*[\w\/.-]*/headers= no/i;
+                s/^\s*YHe\s*=\s*[\w\/.-]*/YHe = 0.24/i;
+                #Set initial conditions; scalar_amp is to give sigma_8 = 0.878 at z=0 with nu=0.
+                s/^\sA_s\s*=\s*[\w\/.-]*/A_s = $A_prim/i;
+                s/^\s*n_s\s*=\s*[\w\/.-]*/n_s = $NS/i;
+                s/^\s*alpha_s\s*=\s*[\w\/.-]*/alpha_s = 0./i;
+		#Set the pivot scale for scalar and tensor modes to be WMAP value
+                s/^\s*k_pivot\s*=\s*[\w\/.-]*/k_pivot = 2e-3/i;
+                #Set up output
+                s!^\s*P_k_max_h/Mpc\s*=\s*[\w\/.-]*!P_k_max_h/Mpc = 200!i;
+                s/^\s*transfer_k_per_logint \s*=\s*[\w\/.-]*/transfer_k_per_logint  = 30/i;
+                #It is EXTREMELY IMPORTANT that this is set to F, because the 
+                #calculations done in N-GenICs and Gadget assume that a matterpow 
+                #row has the same k as the equivalent row in the transfer function!
+                #s/^\s*transfer_interp_matterpower\s*=\s*[\w\/.-]*/transfer_interp_matterpower = F/i;
+                #Output files set later.
+                s/^\s*z_pk\s*=\s*[\w\/.-]*/z_pk = $redstr/i;
+                #Write to new file.
+                print $OUTHAND $_;
         }
         close($INHAND);
         close($OUTHAND);
