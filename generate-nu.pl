@@ -288,6 +288,10 @@ sub gen_ngen_file{
         my $kspace = shift;
         my $NumFiles=shift;
         my $nu = $O_nu*1.0 > 0 ? 1 : 0;
+        #Subtract massless neutrinos
+        if (!$nu){
+                $Omega_M -=3.38663e-05;
+        }
         my $nu_mass = 93.14*$hub*$hub*$O_nu;
         open(my $INHAND, "<","$NGenDefParams") or die "Could not open $NGenDefParams for reading!";
         open(my $OUTHAND, ">","$NGenParams") or die "Could not open $NGenParams for writing!";
