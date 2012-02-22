@@ -367,8 +367,8 @@ sub gen_ngen_file{
         my $Directory = shift;
         my $TransferFile=shift;
         my $MatterFile = $TransferFile;
-        #$MatterFile=~ s/_transfer_/_matterpow_/;
-        $MatterFile=~ s/tk/pk/;
+        $MatterFile=~ s/_transfer_/_matterpow_/;
+        $MatterFile=~ s/_tk.dat/_pk.dat/;
         my $ICFile = shift;
         my $GlassFile= shift;
         my $GlassPart = shift;
