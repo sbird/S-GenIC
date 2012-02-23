@@ -156,7 +156,7 @@ my $PYPlotScript="_plot-init.py";
 #Output the initial conditions file for N-GenICs.
 $CAMBParams=$Directory."/".$CAMBParams;
 #Generate later redshifts
-my @Redshifts = ($Redshift);
+my @Redshifts = ($Redshift+1,$Redshift);
 my @rrr = (49,24,9,4,3,2,1,0);
 foreach(@rrr)
 {
