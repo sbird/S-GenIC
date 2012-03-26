@@ -374,6 +374,9 @@ sub gen_ngen_file{
         my $GlassPart = shift;
         my $npart=shift;
         my $nmesh=3*$npart/2;
+        if( $nmesh > 1024){
+                $nmesh=$npart;
+        }
         my $GlassTileFac=$npart/$GlassPart;
         my $box=1000*shift; 
         my $O_nu = shift;
