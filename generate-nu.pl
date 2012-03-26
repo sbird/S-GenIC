@@ -136,7 +136,7 @@ my $NGenDefParams=$NGenIC;
 $NGenDefParams =~ s!/[\w-]*$!/ics_nu_default.param!;
 my $CAMBParams="_spb41-camb-params.ini";
 my $CAMBDefParams = $CAMB;
-$CAMBDefParams = "/home/spb/codes/numatpowscripts/paramfiles/default-params.ini"; #=~ s!/[\w-]*$!/paramfiles/default-params.ini!;
+$CAMBDefParams = "$ENV{HOME}/codes/numatpowscripts/paramfiles/default-params.ini"; #=~ s!/[\w-]*$!/paramfiles/default-params.ini!;
 #my $classParams="_spb41-class-params.ini";
 #$classParams=$Directory."/".$classParams;
 #my $classprecision =$class;
