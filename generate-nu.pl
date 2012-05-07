@@ -512,10 +512,10 @@ def plot_power(box,filename_dm,filename_b,camb_filename,redshift,hub,omegab,omeg
 if(!$kspace and $Omega_Nu > 0){
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_Nu,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_Nu,$Omega_M)
 savefig('$Directory/$Pkestimate.png')
 clf()
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_Nu,0)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-nu-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_Nu,0)
 savefig('$Directory/$Pkestimate-bar.png')
 clf()";
 }
@@ -523,17 +523,17 @@ clf()";
 if($Omega_B > 0){
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_B,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,$Omega_M)
 savefig('$Directory/$Pkestimate.png')
 clf()
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,$Omega_B,0)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-by-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,$Omega_B,0)
 savefig('$Directory/$Pkestimate-bar.png')
 clf()";
 }
 
 print $outhandle
 "
-plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-DM-".$f."','$Directory/$Prefix"."_z1_pk.dat','$Redshift',$hub,0,$Omega_M)
+plot_power($boxsize,'$Directory/PK-DM-".$f."','$Directory/PK-DM-".$f."','$Directory/$Prefix"."_matterpow_$Redshift.dat','$Redshift',$hub,0,$Omega_M)
 savefig('$Directory/$Pkestimate-DM.png')
 
 ";
