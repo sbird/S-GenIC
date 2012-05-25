@@ -17,6 +17,8 @@ static struct pow_table
 {
   double logk, logD,logDb;
   double logD2nd;
+  /*For a second neutrino species: type 3*/
+  double logD3rd;
   double logDtot;
 }
  *PowerTable;
@@ -168,10 +170,10 @@ sprintf(buf, FileWithInputSpectrum);
   NPowerTable = 0;
   do
     {
-      double T_b, dummy, T_nu, T_tot, T_cdm;
+      double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
       double delta_cdm, delta_nu, delta_tot, delta_b;
 
-      if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
+      if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &T_nu2, &T_nu, &T_tot) == 7)
 	{
           if(fabs(PowerMatter[NPowerTable].kmat - k) > 0.01 *k){
                   fprintf(stderr, "Error: Input spectrum row %d has k=%g, transfer has k=%g.\n",NPowerTable,PowerMatter[NPowerTable].kmat,k);
@@ -210,11 +212,13 @@ sprintf(buf, FileWithInputSpectrum);
 	  delta_b   = k * k * k * pow(T_b/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
+	  delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
 	  delta_tot = k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 
           PowerTable[NPowerTable].logD = log10(delta_cdm);
 	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
 	  PowerTable[NPowerTable].logD2nd = log10(delta_nu);
+	  PowerTable[NPowerTable].logD3rd = log10(delta_nu_2nd);
           PowerTable[NPowerTable].logDtot = log10(delta_tot);
 	  PowerTable[NPowerTable].logDb = log10(delta_b);
 
@@ -318,6 +322,9 @@ double PowerSpec_Tabulated(double k, int Type)
                 break;
           case 2:
                 logD = (1 - u) * PowerTable[binlow].logD2nd + u * PowerTable[binhigh].logD2nd;
+                break;
+          case 3:
+                logD = (1 - u) * PowerTable[binlow].logD3rd + u * PowerTable[binhigh].logD3rd;
                 break;
           default:
                 logD = (1 - u) * PowerTable[binlow].logDtot + u * PowerTable[binhigh].logDtot;
