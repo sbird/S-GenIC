@@ -226,6 +226,10 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
       /* Compute displacement gradient
        * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
       for(int ax=2;ax>=axes; ax--){ 
+#ifdef NEUTRINOS
+          if(type == 2)
+              break;
+#endif
         #pragma omp parallel
         {
               #pragma omp for
@@ -270,6 +274,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 	}
         
 #ifdef TWOLPT
+#ifdef NEUTRINOS
+          if(type != 2){
+#endif
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
       #pragma omp parallel
@@ -323,11 +330,17 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               /* read-out displacements */
               maxdisp2=displacement_read_out(Disp, 2, NumPart, P, Nmesh,axes);
       	}
+#ifdef NEUTRINOS
+        } //type !=2
+#endif
 #endif
       
   printf("\nMaximum Zeldovich displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
 #ifdef TWOLPT
+#ifdef NEUTRINOS
+          if(type != 2)
+#endif
   printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp2, maxdisp2 / (Box / Nmesh));
 #endif
@@ -408,6 +421,8 @@ double displacement_read_out(float * Disp, const int order, const int64_t NumPar
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
 #ifdef TWOLPT
+          /*Read out the 2lpt velocity if this is
+           * being called from the 2lpt part of the code*/
                   if(order == 2){
 		        dis /= ((double) Nmesh)*Nmesh*Nmesh;
 		        P.Set2Vel(dis, n,axes);

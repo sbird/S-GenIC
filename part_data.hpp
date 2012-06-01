@@ -14,7 +14,12 @@ class part_data{
         Nglass(snap.GetNpart(type)), IGlassBox(1./snap.GetHeader().BoxSize), NglassGTile(Nglass*GlassTileFac),
         NglassG2Tile(Nglass*GlassTileFac*GlassTileFac), BoxGTile(Box/GlassTileFac),
 #ifdef TWOLPT
+#ifdef NEUTRINOS
+        /*Do not allocate the 2lpt array for neutrinos*/
+        Vel_2_data((type != 2)*3*Nglass*GlassTileFac*GlassTileFac*GlassTileFac),
+#else
         Vel_2_data(3*Nglass*GlassTileFac*GlassTileFac*GlassTileFac),
+#endif
 #endif
         Vel_data(3*Nglass*GlassTileFac*GlassTileFac*GlassTileFac)
         {

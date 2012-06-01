@@ -39,6 +39,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
       for(k = 0; k < 3; k++){
 	  block[3 * pc + k] = P.Pos(i,k) + P.Vel(i,k);
 #ifdef TWOLPT
+#ifdef NEUTRINOS
+    if(type !=2)
+#endif
 	  block[3 * pc + k] -= 3./7. * P.Vel2(i,k);
 #endif
 	  block[3 * pc + k] = periodic_wrap(block[3*pc+k]);
@@ -73,6 +76,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
       for(k = 0; k < 3; k++){
 	block[3 * pc + k] = vel_prefac*P.Vel(i,k);
 #ifdef TWOLPT
+#ifdef NEUTRINOS
+    if(type !=2)
+#endif
         block[3 * pc + k] -= 3./7. *vel_prefac2* P.Vel2(i,k);
 #endif
       }
