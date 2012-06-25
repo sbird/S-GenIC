@@ -171,7 +171,7 @@ sprintf(buf, FileWithInputSpectrum);
   do
     {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
-      double delta_cdm, delta_nu, delta_tot, delta_b;
+      double delta_cdm, delta_nu, delta_nu_2nd,delta_tot, delta_b;
 
       if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &T_nu2, &T_nu, &T_tot) == 7)
 	{
