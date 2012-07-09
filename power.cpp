@@ -188,7 +188,9 @@ sprintf(buf, FileWithInputSpectrum);
            * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
            * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
            * so instead of summing the transfer functions, use the total transfer function and
-           * optionally subtract the baryons.*/
+           * optionally subtract the baryons.
+           * We want to incorporate neutrinos into the dark matter if we are changing the transfer function,
+           * but not if we are using the full kspace method. */
           if(neutrinos_ks){
                 T_cdm = T_tot;
                 /*If we have separate gas particles, subtract
@@ -199,8 +201,8 @@ sprintf(buf, FileWithInputSpectrum);
           }
           /*Add baryons to the CDM if there are no gas particles*/
           else if(no_gas){
-                    T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
-//                 T_cdm = (T_cdm*(Omega-OmegaDM_2ndSpecies - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaDM_2ndSpecies);
+//                     T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
+                T_cdm = (T_cdm*(Omega-OmegaDM_2ndSpecies - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaDM_2ndSpecies);
           }
           /*This should be equivalent to the above in almost all cases,
            * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/

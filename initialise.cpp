@@ -117,9 +117,9 @@ gadget_header generate_header(std::valarray<int64_t> & npart)
 #endif //NEUTRINO_PAIRS
     OmegaCDM -=OmegaDM_2ndSpecies;
   }
-  /*Subtract off the fake neutrinos, as their masses are
-   * incorporated within the mesh*/
-  else if (neutrinos_ks){
+  /*For the "edit the transfer function" neutrino simulation method, we would *not* want to do this.
+   * For true kspace neutrinos, we do. */
+  else if (!neutrinos_ks){
           OmegaCDM-=OmegaDM_2ndSpecies;
   }
 

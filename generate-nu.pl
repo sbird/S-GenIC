@@ -45,7 +45,7 @@ my @options=@ARGV;
 GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$Omega_M, 'ol:f'=>\$Omega_L,
         'ob:f'=>\$Omega_B,'redshift:f'=>\$Redshift, 'output=s'=>\$Directory, 
         'glass=s'=>\$GlassFile, 'nglass:i'=>\$GlassPart,'mnu:f'=>\$M_Nu, 'help'=>\$help,
-         'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'kspace'=>\$kspace, 'ns:f'=>\$NS,
+         'hub:f'=>\$hub, "prefix:s"=>\$Prefix, 'ns:f'=>\$NS,
          'as:f'=>\$A_prim
                 ) or die "Failed Options";
 if($help){
