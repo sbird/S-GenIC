@@ -119,7 +119,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
                   FatalError(2);
 
   /* write particle ID */
-  written=0;
+  written=1;
   blockid = (id_type *) block;
   
   for(i = 0, pc = 0; i < NumPart; i++){
