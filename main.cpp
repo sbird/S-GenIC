@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 {
   int type;
   std::valarray<int64_t> npart(N_TYPE);
-  int64_t FirstId=0;
+  int64_t FirstId=1;
 
   if(argc < 2)
     {
