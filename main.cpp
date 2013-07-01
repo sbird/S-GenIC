@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 }
 
 /**Little macro to work the storage order of the FFT.*/
-#define KVAL(n) ((n)< Nmesh/2 ? (n) : ((n)-Nmesh))
+#define KVAL(n) ((n)< Nmesh/2. ? (n) : ((n)-Nmesh))
 
 void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh, bool RayleighScatter=true)
 {
@@ -200,13 +200,14 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 				    continue;
 				  else
 				    {
+                                      int ii = (Nmesh - i) % Nmesh;
 				      int jj = (Nmesh - j) % Nmesh;
                                       size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1);
 					  (Cdata[index])[0] =
 					    -kvec[axes] / kmag2 * delta * sin(phase);
 					  (Cdata[index])[1] =
 					    kvec[axes] / kmag2 * delta * cos(phase);
-                                      index = (i * Nmesh + jj) * (Nmesh / 2 + 1);
+                                      index = (ii * Nmesh + jj) * (Nmesh / 2 + 1);
 					  (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
 					  (Cdata[index])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
 				    }
