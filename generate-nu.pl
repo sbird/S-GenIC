@@ -20,12 +20,6 @@ my $seed='';
 my $boxsize='';
 my $npart='';
 my $kspace='';
-# 1 is Eisenstein & Hu
-# 2 is some tabulated power spectrum written by Volker
-# 3 is a CAMB transfer function, with different transfer functions for different species, but P(k) = A k^n_s
-# 4 is a spline, CAMB transfer function, different transfers for different species
-# 5 is a spline, CAMB transfer function, *total* transfer for all species.
-my $Spectrum=4;
 #Cosmological parameters
 my $Omega_M='';
 my $Omega_L='';

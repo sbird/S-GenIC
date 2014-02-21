@@ -1,7 +1,6 @@
 #include <math.h>
 #include "allvars.h"
 #include "proto.h"
-#include <map>
 #include <gsl/gsl_integration.h>
 
 static double R8;
