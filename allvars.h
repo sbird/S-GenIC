@@ -33,7 +33,6 @@ extern double InitTime;
 extern double Redshift;
 
 extern char OutputDir[1000], FileBase[1000];
-extern int  NumFilesWrittenInParallel;
 
 extern fftwf_plan Inverse_plan;
 extern float        *Disp;

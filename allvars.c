@@ -23,7 +23,6 @@ double InitTime;
 double Redshift;
 
 char OutputDir[1000], FileBase[1000];
-int NumFilesWrittenInParallel;
 
 fftwf_plan Inverse_plan;
 float *Disp;

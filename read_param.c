@@ -102,10 +102,6 @@ void read_parameterfile(char *fname)
   addr[nt] = &SphereMode;
   id[nt++] = INT;
 
-  strcpy(tag[nt], "NumFilesWrittenInParallel");
-  addr[nt] = &NumFilesWrittenInParallel;
-  id[nt++] = INT;
-
   strcpy(tag[nt], "OutputDir");
   addr[nt] = OutputDir;
   id[nt++] = STRING;
