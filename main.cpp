@@ -176,61 +176,52 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                           /*If we are using the CAMB P(k), Dplus=1.
                             * fac=(2π/Box)^1.5*/
 #ifdef CORRECT_CIC
-			  /* do deconvolution of CIC interpolation */
-			  delta *= invwindow(i,j,k,Nmesh);
+              /* do deconvolution of CIC interpolation */
+              delta *= invwindow(i,j,k,Nmesh);
 #endif
-			  if(k > 0) {
-                                  size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-				  (Cdata[index])[0] =
-				    -kvec[axes] / kmag2 * delta * sin(phase);
-				  (Cdata[index])[1] =
-				    kvec[axes] / kmag2 * delta * cos(phase);
-			    }
-			  else	/* k=0 plane needs special treatment */
-			    {
-			      if(i == 0)
-				{
-				  if(j >= Nmesh / 2)
-				    continue;
-				  else
-				    {
-					  int jj = Nmesh - j;	/* note: i=k=0 => j!=0 */
-                                          size_t index = j * (Nmesh / 2 + 1);
-					  (Cdata[index])[0] =
-					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[index])[1] =
-					    kvec[axes] / kmag2 * delta * cos(phase);
+              if(k > 0) {
+                  size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+                  (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+                  (Cdata[index])[1] = kvec[axes] / kmag2 * delta * cos(phase);
+                }
+              else    /* k=0 plane needs special treatment */
+                {
+                  if(i == 0)
+                {
+                  if(j >= Nmesh / 2)
+                    continue;
+                  else
+                    {
+                      int jj = Nmesh - j;    /* note: i=k=0 => j!=0 */
+                      size_t index = j * (Nmesh / 2 + 1);
+                      (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+                      (Cdata[index])[1] =  kvec[axes] / kmag2 * delta * cos(phase);
+                      index = jj * (Nmesh / 2 + 1);
+                      (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+                      (Cdata[index])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
+                    }
+                }
+                  else    /* here comes i!=0 */
+                {
+                  if(i >= Nmesh / 2)
+                    continue;
+                  else
+                    {
+                      int ii = (Nmesh - i) % Nmesh;
+                      int jj = (Nmesh - j) % Nmesh;
+                      size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1);
+                      (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+                      (Cdata[index])[1] =  kvec[axes] / kmag2 * delta * cos(phase);
+                      index = (ii * Nmesh + jj) * (Nmesh / 2 + 1);
+                      (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
+                      (Cdata[index])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
+                    }
+                }
+                }
+            }
 
-                                          index = jj * (Nmesh / 2 + 1);
-					  (Cdata[index])[0] =
-					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[index])[1] =
-					    -kvec[axes] / kmag2 * delta * cos(phase);
-				    }
-				}
-			      else	/* here comes i!=0 */
-				{
-				  if(i >= Nmesh / 2)
-				    continue;
-				  else
-				    {
-                                      int ii = (Nmesh - i) % Nmesh;
-				      int jj = (Nmesh - j) % Nmesh;
-                                      size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1);
-					  (Cdata[index])[0] =
-					    -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[index])[1] =
-					    kvec[axes] / kmag2 * delta * cos(phase);
-                                      index = (ii * Nmesh + jj) * (Nmesh / 2 + 1);
-					  (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
-					  (Cdata[index])[1] = -kvec[axes] / kmag2 * delta * cos(phase);
-				    }
-				}
-			    }
-			}
-
-		    }
-	    }
+            }
+        }
 
           gsl_rng_free(random_generator);
           #pragma omp barrier
@@ -396,26 +387,27 @@ double invwindow(int kx,int ky,int kz,int n)
 
 double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const int Nmesh, const int axes)
 {
-        double maxx=0;
-        #pragma omp parallel 
-          {
-           double maxdisp=0;
-	  #pragma omp for 
-	  for(int n = 0; n < NumPart; n++)
-	    {
+   double maxx=0;
+   const double Nmesh3 = pow(1.*Nmesh, 3);
+   #pragma omp parallel
+   {
+      double maxdisp=0;
+      #pragma omp for
+      for(int n = 0; n < NumPart; n++)
+        {
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
                   double u[3];
                   int64_t i[3], ii[3];
                   for(int q=0;q<3;q++){
-        		  u[q] = P.Pos(n,q) / Box * Nmesh;
-                          i[q] = static_cast<int64_t>(u[q]);
-                          if(i[q] == Nmesh)
-                                  i[q]--;
-                          u[q] -= i[q];
-                          ii[q] = i[q]+1;
-        		  if(ii[q] >= Nmesh)
-	        	    ii[q] -= Nmesh;
+                      u[q] = P.Pos(n,q) / Box * Nmesh;
+                      i[q] = static_cast<int64_t>(u[q]);
+                      if(i[q] == Nmesh)
+                          i[q]--;
+                      u[q] -= i[q];
+                      ii[q] = i[q]+1;
+                      if(ii[q] >= Nmesh)
+                          ii[q] -= Nmesh;
                   }
 
 		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
@@ -438,21 +430,21 @@ double displacement_read_out(float * Disp, const int order, const int64_t NumPar
 #ifdef TWOLPT
           /*Read out the 2lpt velocity if this is
            * being called from the 2lpt part of the code*/
-                  if(order == 2){
-		        dis /= ((double) Nmesh)*Nmesh*Nmesh;
-		        P.Set2Vel(dis, n,axes);
-                  }
-                  else
+          if(order == 2){
+              dis /= Nmesh3;
+              P.Set2Vel(dis, n,axes);
+          }
+          else
 #endif
-		        P.SetVel(dis, n,axes);
-		  if(dis > maxdisp)
-		    maxdisp = dis;
-	    }
-            #pragma omp critical
-            {
-                  if (maxdisp > maxx)
-                          maxx=maxdisp;
-            }
-        } //end omp_parallel
-          return maxx;
+              P.SetVel(dis, n,axes);
+          if(dis > maxdisp)
+            maxdisp = dis;
+        }
+        #pragma omp critical
+        {
+              if (maxdisp > maxx)
+                      maxx=maxdisp;
+        }
+   } //end omp_parallel
+   return maxx;
 }
