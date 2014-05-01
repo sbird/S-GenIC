@@ -58,10 +58,24 @@ int main(int argc, char **argv)
       int64_t NumPart = 0;
       if(npart[type] == 0)
               continue;
-      part_data P(snap, type, GlassTileFac);
-      NumPart = P.GetNumPart();
-      displacement_fields(type, NumPart, P, Nmesh, RayleighScatter);
-      FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
+      try{
+        part_data P(snap, type, GlassTileFac);
+        NumPart = P.GetNumPart();
+        displacement_fields(type, NumPart, P, Nmesh, RayleighScatter);
+        FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
+      }
+      catch (std::bad_alloc& ba)
+      {
+         size_t mem = sizeof(float)*snap.GetNpart(type)*3*GlassTileFac*GlassTileFac*GlassTileFac/1024/1024;
+#ifdef TWOLPT
+#ifdef NEUTRINOS
+         if (type != 2)
+#endif
+             mem*=2;
+#endif
+         fprintf(stderr, "Could not allocate %ld MB for particle velocities\n", mem);
+         FatalError(24);
+      }
 #ifdef PRINT_SPEC
       print_spec(type);
 #endif
