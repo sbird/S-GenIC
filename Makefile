@@ -11,6 +11,13 @@ OPT   +=  -DTWOLPT  # Use 2LPT instead of ZA. Uses more memory.
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
 
 ifeq ($(CC),cc)
+GCCV:=$(shell gcc --version | head -1)
+ifeq (4.8,$(findstring 4.8,${GCCV}))
+	CC = gcc
+	CXX = g++
+endif
+endif
+ifeq ($(CC),cc)
   ICC:=$(shell which icc --tty-only 2>&1)
   #Can we find icc?
   ifeq (/icc,$(findstring /icc,${ICC}))
