@@ -86,7 +86,7 @@ unless (-e $NGenIC){
         my @lst = glob("$ENV{HOME}/*/N-GenIC/N-GenIC");
         $NGenIC = $lst[0];
 }
-my $CAMB="$ENV{HOME}/cosmomc/camb/camb";
+my $CAMB="$ENV{HOME}/codes/camb/camb";
 unless (-e $CAMB){
         my @lst = glob("$ENV{HOME}/*/cosmomc/camb/camb");
         if( $#lst > -1){
@@ -225,8 +225,8 @@ sub gen_camb_file{
                 $mass_nu = 0;
                 $nomass_nu = 3.04;
         }else{
-                $mass_nu = 3.04;
-                $nomass_nu = 0;
+                $mass_nu = 3.0;
+                $nomass_nu = 0.04;
         }
         #Read in template parameter file
         open(my $INHAND, "<","$paramfile") or die "Could not open $paramfile for reading!";
