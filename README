@@ -20,10 +20,6 @@ To build the library, do:
 
 make
 
-For the test suite (requires Boost::Test > 1.34), do: 
-
-make test
-
 For the doxygen-generated documentation:
 
 make doc
