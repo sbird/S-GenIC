@@ -178,10 +178,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
 
 double periodic_wrap(double x)
 {
-  while(x >= Box)
-    x -= Box;
+  x = fmod(x, Box);
 
-  while(x < 0)
+  if (x < 0)
     x += Box;
 
   return x;
