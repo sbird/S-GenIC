@@ -226,57 +226,52 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 
       /* Compute displacement gradient
        * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
-      for(int ax=2;ax>=axes; ax--){ 
+      for(int ax=2;ax>=axes; ax--){
 #ifdef NEUTRINOS
           if(type == 2)
               break;
 #endif
-        #pragma omp parallel
-        {
-              #pragma omp for
+          #pragma omp parallel for
+          for(int i = 0; i < Nmesh; i++) {
+            for(int j = 0; j < Nmesh; j++) {
+              for(int k = 0; k <= Nmesh / 2; k++){
+                  double kvec[3];
+                  size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+                  kvec[0] = KVAL(i) * 2 * M_PI / Box;
+                  kvec[1] = KVAL(j) * 2 * M_PI / Box;
+                  kvec[2] = KVAL(k) * 2 * M_PI / Box;
+                  /*Note that unlike Scoccimaro et al, we do not have
+                   * memory to waste, so we only do one axis at a time */
+                  /* Derivatives of ZA displacement  */
+                  /* d(dis_i)/d(q_j)  -> sqrt(-1) k_j dis_i */
+                  (cdigrad[axes][coord])[0] = -(Cdata[coord])[1] * kvec[ax]; /* disp0,0 */
+                  (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
+              }
+            }
+          }
+          /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
+//           printf("Finding gradient FT component (%d,%d)\n",ax,axes);
+          fftwf_execute(Inverse_plan_grad[axes]);	/** FFT of cdigrad[axes] **/
+
+          /* Compute second order source and store it in twosrc*/
+          if(ax != axes)
+              #pragma omp parallel for
               for(int i = 0; i < Nmesh; i++)
-        	for(int j = 0; j < Nmesh; j++)
-                  for(int k = 0; k <= Nmesh / 2; k++){
-                      double kvec[3];
-        	      size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-                      kvec[0] = KVAL(i) * 2 * M_PI / Box;
-                      kvec[1] = KVAL(j) * 2 * M_PI / Box;
-                      kvec[2] = KVAL(k) * 2 * M_PI / Box;
-        	      /*Note that unlike Scoccimaro et al, we do not have 
-                       * memory to waste, so we only do one axis at a time */ 
-        	      /* Derivatives of ZA displacement  */
-        	      /* d(dis_i)/d(q_j)  -> sqrt(-1) k_j dis_i */
-        	      (cdigrad[axes][coord])[0] = -(Cdata[coord])[1] * kvec[ax]; /* disp0,0 */
-        	      (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
+                for(int j = 0; j < Nmesh; j++)
+                  for(int k = 0; k < Nmesh; k++){
+                      size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
+                      twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
                   }
-        }//omp_parallel
-
-              /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
-//               printf("Finding gradient FT component (%d,%d)\n",ax,axes);
-              fftwf_execute(Inverse_plan_grad[axes]);	/** FFT of cdigrad[axes] **/
-
-              /* Compute second order source and store it in twosrc*/
-              if(ax != axes)
-              #pragma omp parallel
-              {
-                  #pragma omp for
-                  for(int i = 0; i < Nmesh; i++)
-                    for(int j = 0; j < Nmesh; j++)
-                      for(int k = 0; k < Nmesh; k++){
-                          size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
-                          twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
-                      }
-               }//omp_parallel
       }
 #endif
 	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
 	  /* read-out Zeldovich displacements into P.Vel*/
-          maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
+      maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
 	}
         
 #ifdef TWOLPT
 #ifdef NEUTRINOS
-          if(type != 2){
+    if(type != 2){
 #endif
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
@@ -322,7 +317,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               maxdisp2=displacement_read_out(Disp, 2, NumPart, P, Nmesh,axes);
       	}
 #ifdef NEUTRINOS
-        } //type !=2
+    } //type !=2
 #endif
 #endif
       
