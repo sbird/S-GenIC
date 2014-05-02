@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <fftw3.h>
 #include <gsl/gsl_rng.h>
-
+#include <string.h>
 #include "allvars.h"
 #include "proto.h"
 #include "part_data.hpp"
@@ -106,28 +106,23 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
   double maxdisp;
+  const size_t fftsize = 2*Nmesh*Nmesh*(Nmesh/2+1);
 
 #ifdef TWOLPT
   double maxdisp2;
-  /* the final term converts to Gadget velocity */
-      for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
-              twosrc[i]=0;
+  memset(twosrc, 0, fftsize*sizeof(float));
 #endif
 
-      for(int axes = 0; axes < 3; axes++) {
+  for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting Zeldovich axis %d.\n", axes);
-
-          #pragma omp parallel
+	  /* first, clean the array */
+      memset(Disp, 0, fftsize*sizeof(float));
+      #pragma omp parallel
 	  {
           gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
-	  /* first, clean the array */
-	  #pragma omp for 
-	  for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
-		  Disp[i] = 0;
-
-	  #pragma omp for 
-	  for(int i = 0; i < Nmesh; i++) {
-		  for(int j = 0; j < Nmesh; j++) {
+	      #pragma omp for
+	      for(int i = 0; i < Nmesh; i++) {
+		    for(int j = 0; j < Nmesh; j++) {
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
 
 		      for(int k = 0; k < Nmesh / 2; k++) {
@@ -220,12 +215,12 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                 }
             }
 
-            }
+          }
         }
 
-          gsl_rng_free(random_generator);
-          #pragma omp barrier
-          } //omp_parallel
+        gsl_rng_free(random_generator);
+        #pragma omp barrier
+     } //omp_parallel
 #ifdef TWOLPT
       /* At this point, Cdata contains the complex Zeldovich displacement for this axis */
 
@@ -285,51 +280,41 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 #endif
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
-      #pragma omp parallel
-      {
-      #pragma omp for
+      #pragma omp parallel for
       for(int i = 0; i < Nmesh; i++)
-	for(int j = 0; j < Nmesh; j++)
-	  for(int k = 0; k < Nmesh; k++){
-	      size_t co = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
-              twosrc[co] += digrad[0][co]*digrad[1][co]+digrad[0][co]*digrad[2][co]+digrad[1][co]*digrad[2][co];
-	  }
-      }//omp_parallel
+        for(int j = 0; j < Nmesh; j++)
+          for(int k = 0; k < Nmesh; k++){
+            size_t co = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
+            twosrc[co] += digrad[0][co]*digrad[1][co]+digrad[0][co]*digrad[2][co]+digrad[1][co]*digrad[2][co];
+          }
       fftwf_execute(Forward_plan2);	/** FFT of twosrc**/
       for(int axes=0; axes< 3; axes++){
               printf("Starting 2LPT term, axis %d\n",axes);
-              
-              /* Solve Poisson eq. and calculate 2nd order displacements */
               /* Reuse the memory used earlier for ZA field */
+              memset(Disp, 0, fftsize*sizeof(float));
+              /* Solve Poisson eq. and calculate 2nd order displacements */
               (Cdata[0])[0] = (Cdata[0])[1] = 0.0;
-              #pragma omp parallel
-              {
-                #pragma omp for
-                for(size_t i = 0; i < ((size_t) 2*Nmesh*Nmesh)*(Nmesh/2+1); i++)
-                        Disp[i] = 0;
-
-              #pragma omp for
+              #pragma omp parallel for
               for(int i = 0; i < Nmesh; i++)
-        	for(int j = 0; j < Nmesh; j++)
-        	  for(int k = 1; k <= Nmesh / 2; k++){
+                for(int j = 0; j < Nmesh; j++)
+                    for(int k = 1; k <= Nmesh / 2; k++){
                       double kvec[3],kmag2;
-        	      size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+                      size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
                       kvec[0] = KVAL(i) * 2 * M_PI / Box;
                       kvec[1] = KVAL(j) * 2 * M_PI / Box;
                       kvec[2] = KVAL(k) * 2 * M_PI / Box;
-        
-        	      kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
-        	      /* cdisp2 = source * k / (sqrt(-1) k^2) */
+
+                      kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
+                      /* cdisp2 = source * k / (sqrt(-1) k^2) */
                       (Cdata[coord])[0] = (ctwosrc[coord])[1] * kvec[axes] / kmag2;
                       (Cdata[coord])[1] = -(ctwosrc[coord])[0] * kvec[axes] / kmag2;
 #ifdef CORRECT_CIC
-        	      /* do deconvolution of CIC interpolation */
-        	      double smth= invwindow(i,j,k,Nmesh);
+                      /* do deconvolution of CIC interpolation */
+                      double smth= invwindow(i,j,k,Nmesh);
                       (Cdata[coord])[0] *= smth;
                       (Cdata[coord])[1] *= smth;
 #endif
-        	    }
-              }//omp_parallel
+               }
 
               /* Cdata now contains the FFT of the 2LPT term */
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
