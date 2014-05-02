@@ -4,8 +4,6 @@
 
 unsigned int * initialize_rng(int Seed)
 {
-  int i,j;
-
   gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
   gsl_rng_set(random_generator, Seed);
   unsigned int * seedtable;
@@ -13,8 +11,9 @@ unsigned int * initialize_rng(int Seed)
   if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
     FatalError(4);
 
-  for(i = 0; i < Nmesh / 2; i++)
+  for(size_t i = 0; i < Nmesh / 2; i++)
     {
+      size_t j;
       for(j = 0; j < i; j++)
 	seedtable[i * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
 
@@ -58,9 +57,9 @@ void initialize_ffts(void)
   size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (float *) fftwf_malloc(bytes);
   if(Disp)
-        printf("Nmesh = %d. Allocated %ld MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
+        printf("Nmesh = %lu. Allocated %lu MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
   else{
-      fprintf(stderr, "Nmesh = %d. Failed to allocate %ld MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
+      fprintf(stderr, "Nmesh = %lu. Failed to allocate %lu MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
       FatalError(1);
   }
   Cdata = (fftwf_complex *) Disp;	/* transformed array */
@@ -74,9 +73,9 @@ void initialize_ffts(void)
   }
   /*Check memory allocation*/
   if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
-        printf("Allocated %ld MB for 2LPT term\n",4*bytes / (1024 * 1024));
+        printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
   else{
-      fprintf(stderr, "Failed to allocate %ld MB for 2LPT term\n",4*bytes / (1024 * 1024));
+      fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
       FatalError(1);
   }
 #endif

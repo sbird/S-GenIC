@@ -16,14 +16,17 @@ extern int      WhichSpectrum;
 
 extern int NumFiles;
 
-extern int      Nmesh, Nsample;
+//These should be 64 bit, to avoid Nmesh^3 overflowing.
+//Make sure they are unsigned as well, as unsigned overflow
+//is defined, but signed overflow is not.
+extern size_t      Nmesh, Nsample;
 
 extern int      SphereMode;
 
 extern char     GlassFile[500]; 
 extern char     FileWithInputSpectrum[500];
 extern  char     FileWithTransfer[500];
-extern int      GlassTileFac; 
+extern size_t      GlassTileFac;
 
 extern double   Box;
 extern int Seed;

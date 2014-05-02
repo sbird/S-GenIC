@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   read_parameterfile(argv[1]);
   set_units();
 
-  printf("Nmesh = %d Nsample = %d\n",Nmesh,Nsample);
+  printf("Nmesh = %lu Nsample = %lu\n",Nmesh,Nsample);
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 /**Little macro to work the storage order of the FFT.*/
 #define KVAL(n) ((n)< Nmesh/2. ? (n) : ((n)-Nmesh))
 
-void displacement_fields(const int type, const int64_t NumPart, part_data& P, const int Nmesh, bool RayleighScatter=true)
+void displacement_fields(const int type, const int64_t NumPart, part_data& P, const size_t Nmesh, bool RayleighScatter=true)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   const unsigned int *seedtable = initialize_rng(Seed);
@@ -121,11 +121,11 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 	  {
           gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
 	      #pragma omp for
-	      for(int i = 0; i < Nmesh; i++) {
-		    for(int j = 0; j < Nmesh; j++) {
+	      for(size_t i = 0; i < Nmesh; i++) {
+		    for(size_t j = 0; j < Nmesh; j++) {
 		      gsl_rng_set(random_generator, seedtable[i * Nmesh + j]);
 
-		      for(int k = 0; k < Nmesh / 2; k++) {
+		      for(size_t k = 0; k < Nmesh / 2; k++) {
                           double kvec[3], kmag, kmag2, p_of_k;
                           double delta, phase, ampl;
 			  phase = gsl_rng_uniform(random_generator) * 2 * M_PI;
@@ -232,9 +232,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               break;
 #endif
           #pragma omp parallel for
-          for(int i = 0; i < Nmesh; i++) {
-            for(int j = 0; j < Nmesh; j++) {
-              for(int k = 0; k <= Nmesh / 2; k++){
+          for(size_t i = 0; i < Nmesh; i++) {
+            for(size_t j = 0; j < Nmesh; j++) {
+              for(size_t k = 0; k <= Nmesh / 2; k++){
                   double kvec[3];
                   size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
                   kvec[0] = KVAL(i) * 2 * M_PI / Box;
@@ -256,9 +256,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
           /* Compute second order source and store it in twosrc*/
           if(ax != axes)
               #pragma omp parallel for
-              for(int i = 0; i < Nmesh; i++)
-                for(int j = 0; j < Nmesh; j++)
-                  for(int k = 0; k < Nmesh; k++){
+              for(size_t i = 0; i < Nmesh; i++)
+                for(size_t j = 0; j < Nmesh; j++)
+                  for(size_t k = 0; k < Nmesh; k++){
                       size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
                       twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
                   }
@@ -268,7 +268,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 	  /* read-out Zeldovich displacements into P.Vel*/
       maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
 	}
-        
+
 #ifdef TWOLPT
 #ifdef NEUTRINOS
     if(type != 2){
@@ -276,9 +276,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
       #pragma omp parallel for
-      for(int i = 0; i < Nmesh; i++)
-        for(int j = 0; j < Nmesh; j++)
-          for(int k = 0; k < Nmesh; k++){
+      for(size_t i = 0; i < Nmesh; i++)
+        for(size_t j = 0; j < Nmesh; j++)
+          for(size_t k = 0; k < Nmesh; k++){
             size_t co = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
             twosrc[co] += digrad[0][co]*digrad[1][co]+digrad[0][co]*digrad[2][co]+digrad[1][co]*digrad[2][co];
           }
@@ -290,9 +290,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               /* Solve Poisson eq. and calculate 2nd order displacements */
               (Cdata[0])[0] = (Cdata[0])[1] = 0.0;
               #pragma omp parallel for
-              for(int i = 0; i < Nmesh; i++)
-                for(int j = 0; j < Nmesh; j++)
-                    for(int k = 1; k <= Nmesh / 2; k++){
+              for(size_t i = 0; i < Nmesh; i++)
+                for(size_t j = 0; j < Nmesh; j++)
+                    for(size_t k = 1; k <= Nmesh / 2; k++){
                       double kvec[3],kmag2;
                       size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
                       kvec[0] = KVAL(i) * 2 * M_PI / Box;
@@ -365,7 +365,7 @@ double invwindow(int kx,int ky,int kz,int n)
 }
 #endif
 
-double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const int Nmesh, const int axes)
+double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const size_t Nmesh, const int axes)
 {
    double maxx=0;
    const double Nmesh3 = pow(1.*Nmesh, 3);
@@ -378,10 +378,10 @@ double displacement_read_out(float * Disp, const int order, const int64_t NumPar
                   double dis;
                   double f1, f2, f3, f4, f5, f6, f7, f8;
                   double u[3];
-                  int64_t i[3], ii[3];
+                  size_t i[3], ii[3];
                   for(int q=0;q<3;q++){
                       u[q] = P.Pos(n,q) / Box * Nmesh;
-                      i[q] = static_cast<int64_t>(u[q]);
+                      i[q] = static_cast<size_t>(u[q]);
                       if(i[q] == Nmesh)
                           i[q]--;
                       u[q] -= i[q];

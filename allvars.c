@@ -5,13 +5,13 @@ int WhichSpectrum;
 
 int SphereMode;
 
-int Nmesh, Nsample;
+size_t Nmesh, Nsample;
 
 char GlassFile[500];
 char FileWithInputSpectrum[500];
 char FileWithTransfer[500];
 
-int GlassTileFac;
+size_t GlassTileFac;
 
 double Box;
 int Seed;
