@@ -29,6 +29,10 @@ int main(int argc, char **argv)
   set_units();
 
   printf("Nmesh = %lu Nsample = %lu\n",Nmesh,Nsample);
+  if (Nmesh % 2 != 0){
+    printf("Nmesh must be even or correct output is not guaranteed.\n");
+    exit(1);
+  }
   initialize_ffts();
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
