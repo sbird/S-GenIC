@@ -99,7 +99,10 @@ int main(int argc, char **argv)
 }
 
 /**Little macro to work the storage order of the FFT.*/
-#define KVAL(n) ((n)< Nmesh/2. ? (n) : ((n)-Nmesh))
+inline int KVAL(const size_t n, const size_t Nmesh)
+{
+    return (n < Nmesh / 2 ? n : n - Nmesh);
+}
 
 void displacement_fields(const int type, const int64_t NumPart, part_data& P, const size_t Nmesh, bool RayleighScatter=true)
 {
@@ -138,9 +141,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
 			  if(i == 0 && j == 0 && k == 0)
 			    continue;
 
-			  kvec[0] = KVAL(i) * 2 * M_PI / Box;
-			  kvec[1] = KVAL(j) * 2 * M_PI / Box;
-			  kvec[2] = KVAL(k) * 2 * M_PI / Box;
+			  kvec[0] = KVAL(i, Nmesh) * 2 * M_PI / Box;
+			  kvec[1] = KVAL(j, Nmesh) * 2 * M_PI / Box;
+			  kvec[2] = KVAL(k, Nmesh) * 2 * M_PI / Box;
 
 			  kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
 			  kmag = sqrt(kmag2);
@@ -237,9 +240,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
               for(size_t k = 0; k <= Nmesh / 2; k++){
                   double kvec[3];
                   size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-                  kvec[0] = KVAL(i) * 2 * M_PI / Box;
-                  kvec[1] = KVAL(j) * 2 * M_PI / Box;
-                  kvec[2] = KVAL(k) * 2 * M_PI / Box;
+                  kvec[0] = KVAL(i, Nmesh) * 2 * M_PI / Box;
+                  kvec[1] = KVAL(j, Nmesh) * 2 * M_PI / Box;
+                  kvec[2] = KVAL(k, Nmesh) * 2 * M_PI / Box;
                   /*Note that unlike Scoccimaro et al, we do not have
                    * memory to waste, so we only do one axis at a time */
                   /* Derivatives of ZA displacement  */
@@ -295,9 +298,9 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
                     for(size_t k = 1; k <= Nmesh / 2; k++){
                       double kvec[3],kmag2;
                       size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-                      kvec[0] = KVAL(i) * 2 * M_PI / Box;
-                      kvec[1] = KVAL(j) * 2 * M_PI / Box;
-                      kvec[2] = KVAL(k) * 2 * M_PI / Box;
+                      kvec[0] = KVAL(i, Nmesh) * 2 * M_PI / Box;
+                      kvec[1] = KVAL(j, Nmesh) * 2 * M_PI / Box;
+                      kvec[2] = KVAL(k, Nmesh) * 2 * M_PI / Box;
 
                       kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
                       /* cdisp2 = source * k / (sqrt(-1) k^2) */
