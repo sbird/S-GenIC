@@ -20,7 +20,7 @@ double fnl(double x);
 
 double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const size_t Nmesh, const int axes);
 
-double periodic_wrap(double x);
+double periodic_wrap(double x, double box);
 
 int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data&  P, int64_t NumPart, int64_t FirstId);
 
