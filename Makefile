@@ -51,7 +51,7 @@ CXXFLAGS +=${CFLAGS}
 EXEC   = N-GenIC
 
 OBJS   = main.o power.o allvars.o save.o read_param.o \
-	 initialise.o print_spec.o
+	 initialise.o print_spec.o thermalvel.o
 
 INCL   = allvars.h proto.h part_data.hpp Makefile
 

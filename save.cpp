@@ -12,6 +12,8 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   float *block;
   id_type *blockid;
   int64_t written=0, pc;
+  //Init structure for neutrino velocities
+  FermiDiracVelNu nuvels (Redshift, NU_PartMass_in_ev);
   const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
 #ifdef TWOLPT
@@ -88,7 +90,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
           float vtherm[3];
           for(int k = 0; k < 3; k++)
               vtherm[k] = 0;
-          add_NU_thermal_speeds(vtherm);
+          nuvels.add_NU_thermal_speeds(vtherm);
           for(int k = 0; k < 3; k++)
               block[3 * pc + k] = vel_prefac*P.Vel(i,k) + vtherm[k];
           pc++;
@@ -97,7 +99,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
       }
 #else
       if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2)
-          add_NU_thermal_speeds(&block[3 * pc]);
+          nuvels.add_NU_thermal_speeds(&block[3 * pc]);
 #endif //NEUTRINO_PAIRS
 
 #endif //NEUTRINOS

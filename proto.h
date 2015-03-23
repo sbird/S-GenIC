@@ -26,6 +26,22 @@ int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data
 
 gadget_header generate_header(std::valarray<int64_t> & npart);
 
+#define LENGTH_FERMI_DIRAC_TABLE 2000
+#define MAX_FERMI_DIRAC          20.0
+
+#ifdef NEUTRINOS
+class FermiDiracVelNu
+{
+    public:
+        FermiDiracVelNu(double redshift, double NU_PartMass_in_ev);
+        void add_NU_thermal_speeds(float *vel);
+    private:
+        double get_fermi_dirac_vel_nu(void);
+        double fermi_dirac_vel_nu[LENGTH_FERMI_DIRAC_TABLE];
+        double fermi_dirac_cumprob_nu[LENGTH_FERMI_DIRAC_TABLE];
+        const double NU_V0;
+};
+#endif
 
 extern "C" {
 #endif
@@ -50,11 +66,7 @@ double F2_Omega(double a);
 void  read_parameterfile(char *fname);
 double tk_eh(double k);
 
-
 void add_WDM_thermal_speeds(float *vel);
-void add_NU_thermal_speeds(float *vel);
-double get_fermi_dirac_vel_nu(void);
-void fermi_dirac_init_nu(void);
 #ifdef __cplusplus
 }
 #endif
