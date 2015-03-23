@@ -26,22 +26,29 @@ int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data
 
 gadget_header generate_header(std::valarray<int64_t> & npart);
 
+//Class defined in thermalvel.cpp for adding FermiDirac velocities
 #define LENGTH_FERMI_DIRAC_TABLE 2000
-#define MAX_FERMI_DIRAC          20.0
-
-#ifdef NEUTRINOS
-class FermiDiracVelNu
+class FermiDiracVel
 {
     public:
-        FermiDiracVelNu(double redshift, double NU_PartMass_in_ev);
-        void add_NU_thermal_speeds(float *vel);
+        //Single parameter is the amplitude of the random velocities. All the physics is in here.
+        FermiDiracVel(double v_amp);
+        void add_thermal_speeds(float *vel);
     private:
-        double get_fermi_dirac_vel_nu(void);
-        double fermi_dirac_vel_nu[LENGTH_FERMI_DIRAC_TABLE];
-        double fermi_dirac_cumprob_nu[LENGTH_FERMI_DIRAC_TABLE];
-        const double NU_V0;
+        double get_fermi_dirac_vel(void);
+        double fermi_dirac_vel[LENGTH_FERMI_DIRAC_TABLE];
+        double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
+        const double m_vamp;
+        gsl_rng * g_rng;
 };
-#endif
+
+//Amplitude of the random velocity for WDM
+double WDM_V0(double redshift, double WDM_PartMass_in_kev);
+
+#ifdef NEUTRINOS
+//Amplitude of the random velocity for neutrinos
+double NU_V0(double redshift, double NU_PartMass_in_ev);
+#endif //NEUTRINOS
 
 extern "C" {
 #endif
@@ -66,7 +73,6 @@ double F2_Omega(double a);
 void  read_parameterfile(char *fname);
 double tk_eh(double k);
 
-void add_WDM_thermal_speeds(float *vel);
 #ifdef __cplusplus
 }
 #endif
