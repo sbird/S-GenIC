@@ -67,11 +67,11 @@ double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double
      = (1-2^(1-p)) zeta(p) p!
 
     for integer p*/
-    double NU_V0 = BOLEVK*TNU/NU_PartMass_in_ev * (1+ redshift)* (LIGHT / UnitVelocity_in_cm_per_s) * 3 * (7/8.) * (3./4)*pow(M_PI, 4)/90./1.202057;
-    printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",NU_V0);
+    double NU_V0 = BOLEVK*TNU/NU_PartMass_in_ev * (1+ redshift)* (LIGHT / UnitVelocity_in_cm_per_s) * 3 * (7/8.) / (3./4)*pow(M_PI, 4)/90./1.202057;
     NU_V0*=sqrt(1+redshift);
     return NU_V0;
 }
+
 #endif //NEUTRINOS
 
 #define MAX_FERMI_DIRAC          20.0

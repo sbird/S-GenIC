@@ -14,7 +14,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   int64_t written=0, pc;
 #ifdef NEUTRINOS
   //Init structure for neutrino velocities
-  FermiDiracVel nuvels (NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s));
+  const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
+  FermiDiracVel nuvels (v_th);
+  printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
 #endif //NEUTRINOS
   //For WDM thermal velocities
   FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
