@@ -14,10 +14,10 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   int64_t written=0, pc;
 #ifdef NEUTRINOS
   //Init structure for neutrino velocities
-  FermiDiracVel nuvels (NU_V0(Redshift, NU_PartMass_in_ev));
+  FermiDiracVel nuvels (NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s));
 #endif //NEUTRINOS
   //For WDM thermal velocities
-  FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev));
+  FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
 
   const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
