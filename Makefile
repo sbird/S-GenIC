@@ -50,7 +50,7 @@ endif
 CXXFLAGS +=${CFLAGS}
 EXEC   = N-GenIC
 
-OBJS   = main.o power.o allvars.o save.o read_param.o \
+OBJS   = power.o allvars.o save.o read_param.o \
 	 initialise.o print_spec.o thermalvel.o
 
 INCL   = allvars.h proto.h part_data.hpp Makefile
@@ -68,9 +68,11 @@ doc: Doxyfile main.cpp ${INCL}
 allvars.o: allvars.c allvars.h Makefile
 read_param.o: read_param.c $(INCL)
 
-$(EXEC): $(OBJS) 
+$(EXEC): main.o $(OBJS)
 	${LINK} ${LFLAGS} $^ -o  $@  
 
+btest: test.o ${OBJS}
+	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
 clean:
 	rm -f $(OBJS) $(EXEC)
 
