@@ -34,7 +34,11 @@ class FermiDiracVel
         //Single parameter is the amplitude of the random velocities. All the physics is in here.
         FermiDiracVel(double v_amp);
         void add_thermal_speeds(float *vel);
-    private:
+        ~FermiDiracVel()
+        {
+            gsl_rng_free(g_rng);
+        }
+    protected:
         double get_fermi_dirac_vel(void);
         double fermi_dirac_vel[LENGTH_FERMI_DIRAC_TABLE];
         double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
