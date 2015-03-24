@@ -2,6 +2,13 @@
 #include "allvars.h"
 #include <omp.h>
 
+int FatalError(int errnum)
+{
+  printf("FatalError called with number=%d\n", errnum);
+  fflush(stdout);
+  exit(0);
+}
+
 unsigned int * initialize_rng(int Seed)
 {
   gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);

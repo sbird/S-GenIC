@@ -340,15 +340,6 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, co
   return;
 }
 
-
-int FatalError(int errnum)
-{
-  printf("FatalError called with number=%d\n", errnum);
-  fflush(stdout);
-  exit(0);
-}
-
-
 #ifdef CORRECT_CIC
 /* do deconvolution of CIC interpolation */
 double invwindow(int kx,int ky,int kz,int n)
