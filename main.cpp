@@ -50,10 +50,20 @@ int main(int argc, char **argv)
   /*We need to initialise the power spectrum here so that no_gas is set*/
   initialize_powerspectrum();
 
+  std::string extension("");
+  if (ICFormat > 3 || ICFormat < 2) {
+          fprintf(stdout, "Only Gadget format 2 or HDF5 output is supported.\n");
+          exit(1);
+  }
+  if (ICFormat == 3){
+      printf("Outputting HDF5 ICs\n");
+      extension=".hdf5";
+  }
+
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
-  GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase), npart,NumFiles, sizeof(id_type));
+  GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase)+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
   if(osnap.WriteHeaders(generate_header(npart)))
           FatalError(23);

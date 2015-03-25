@@ -1,13 +1,12 @@
 #ifndef __ALLVARS_H
 #define __ALLVARS_H
 
-#include <fftw3.h>
-
 #define  GRAVITY     6.672e-8
 #define  HUBBLE      3.2407789e-18   /* in h/sec */
 
-
 #include <gadgetheader.h>
+
+#include <fftw3.h>
 
 typedef int32_t int4byte;
 typedef uint32_t uint4byte;
@@ -22,6 +21,8 @@ extern int NumFiles;
 extern size_t      Nmesh, Nsample;
 
 extern int      SphereMode;
+
+extern int ICFormat;
 
 extern char     GlassFile[500]; 
 extern char     FileWithInputSpectrum[500];

@@ -53,6 +53,10 @@ void read_parameterfile(char *fname)
   addr[nt] = &Sigma8;
   id[nt++] = FLOAT;
 
+  strcpy(tag[nt], "ICFormat");
+  addr[nt] = &ICFormat;
+  id[nt++] = INT;
+
   strcpy(tag[nt], "PrimordialIndex");
   addr[nt] = &PrimordialIndex;
   id[nt++] = FLOAT;

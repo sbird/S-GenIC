@@ -7,6 +7,8 @@ int SphereMode;
 
 size_t Nmesh, Nsample;
 
+int ICFormat;
+
 char GlassFile[500];
 char FileWithInputSpectrum[500];
 char FileWithTransfer[500];

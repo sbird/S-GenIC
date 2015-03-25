@@ -1,5 +1,5 @@
-#include "proto.h"
 #include "allvars.h"
+#include "proto.h"
 #include <omp.h>
 
 int FatalError(int errnum)
