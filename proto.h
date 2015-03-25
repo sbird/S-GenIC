@@ -27,19 +27,21 @@ int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data
 gadget_header generate_header(std::valarray<int64_t> & npart);
 
 //Class defined in thermalvel.cpp for adding FermiDirac velocities
-#define LENGTH_FERMI_DIRAC_TABLE 2000
+#define LENGTH_FERMI_DIRAC_TABLE 10000
+#define MAX_FERMI_DIRAC          20.0
+
 class FermiDiracVel
 {
     public:
         //Single parameter is the amplitude of the random velocities. All the physics is in here.
         FermiDiracVel(double v_amp);
         void add_thermal_speeds(float *vel);
+        double get_fermi_dirac_vel(double p);
         ~FermiDiracVel()
         {
             gsl_rng_free(g_rng);
         }
     protected:
-        double get_fermi_dirac_vel(void);
         double fermi_dirac_vel[LENGTH_FERMI_DIRAC_TABLE];
         double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
         const double m_vamp;

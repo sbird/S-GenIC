@@ -25,56 +25,24 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 #define BOLEVK 8.61734e-5        /*The Boltzmann constant in units of eV/K*/
 #define  LIGHT           2.9979e10 /*Speed of light in cm/s*/
 
-//Amplitude of the random velocity for neutrinos
+// This function converts the dimensionless units used in the integral to dimensionful units.
+// Unit scaling velocity for neutrinos:
+// This is an arbitrary rescaling of the unit system in the Fermi-Dirac kernel so we can integrate dimensionless quantities.
+// The true thing to integrate is:
+// q^2 /(e^(q c / kT) + 1 ) dq between 0 and q.
+// So we choose x = (q c / kT_0) and integrate between 0 and x_0.
+// The units are restored by multiplying the resulting x by kT/c for q
+// To get a v we then use q = a m v/c^2
+// to get:   v/c =x kT/(m a)
+//NOTE: this m is the mass of a SINGLE neutrino species, not the sum of neutrinos!
 double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s)
 {
-   /* I have this equation for the mean neutrino thermal velocity:
-
-    v = 150 (1+z) \frac{1 eV}{M_\nu} km/s
-
-    which is eq. 94 (page 41) of http://arxiv.org/abs/astro-ph/0603494
-
-    This comes from using
-
-    v = <p> / m \approx c \frac{3 k_B T_\nu^0}{a M_\nu}
-
-    and T_\nu^0 = (4/11)^(1/3)T_\gamma^0
-    where T_\gamma^0 = 2.726 K, the CMB temperature.
-    and using k_B = 8.61734 eV/K the Boltzmann constant.
-
-    When I plug those in and account for the slight change in neutrino temperature
-    due to non-instantaneous decoupling (hep-ph/0506164) ( so T_\nu^0 = 1.00381 * (4/11)^(1/3)T_\gamma^0)
-    I get 151.
-
-    BUT: the above has <a p> = 3 T_\nu^0
-    I say that this comes from this integral (making q = a p):
-
-    < q > = int_0^\infty q n(q) dq / int_0^\infty n(q) dq
-
-    ie, it is the value of q averaged over all states.
-    For a non-relativistic Maxwell-Boltzmann distribution,
-    n(q) = a M q^2 e^-(q/T) and <q> = 3 T.
-
-    But for a Fermi-Dirac distribution (like neutrinos)
-    n(q) = a M q^2 / ( e^(q/T) + 1 ) and the integral gives:
-
-    <q> = 3 zeta(4)/zeta(3) (7/8)/(3/4)  T ~ 3.15 T
-
-    where zeta(n) is the Riemann zeta function and I am applying the property of the Fermi-Dirac integral:
-
-    I(p) = int_0^\infty dx x^(p-1) /(e^x+1)
-
-     = (1-2^(1-p)) zeta(p) p!
-
-    for integer p*/
-    double NU_V0 = BOLEVK*TNU/NU_PartMass_in_ev * (1+ redshift)* (LIGHT / UnitVelocity_in_cm_per_s) * 3 * (7/8.) / (3./4)*pow(M_PI, 4)/90./1.202057;
+    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift)* (LIGHT / UnitVelocity_in_cm_per_s);
     NU_V0*=sqrt(1+redshift);
     return NU_V0;
 }
 
 #endif //NEUTRINOS
-
-#define MAX_FERMI_DIRAC          20.0
 
 //Fermi-Dirac kernel for below
 inline double fermi_dirac_kernel(double x, void * param)
@@ -95,21 +63,19 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
     F.params = NULL;
     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++) {
         fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-        gsl_integration_qags (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,w,&(fermi_dirac_cumprob[i]), &abserr);
+        gsl_integration_qag (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,GSL_INTEG_GAUSS61, w,&(fermi_dirac_cumprob[i]), &abserr);
     //       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
     gsl_integration_workspace_free (w);
 
+    //Normalise total integral to unity
     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
         fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
 }
 
-//Generate a random velocity by drawing from the tabulated relationship between
-//the cumulative probability function and a uniform distribution
-double FermiDiracVel::get_fermi_dirac_vel(void)
+//Given a probability p, find a dimensionless X s.t. P(x< X) = p.
+double FermiDiracVel::get_fermi_dirac_vel(double p)
 {
-    const double p = gsl_rng_uniform (g_rng);
-
     int binlow = 0;
     int binhigh = LENGTH_FERMI_DIRAC_TABLE - 2;
     int i=0;
@@ -132,9 +98,9 @@ double FermiDiracVel::get_fermi_dirac_vel(void)
 void FermiDiracVel::add_thermal_speeds(float *vel)
 {
     double v, phi, theta, vx, vy, vz;
-
-    //Random amplitude of velocity
-    v = m_vamp * get_fermi_dirac_vel();
+    const double p = gsl_rng_uniform (g_rng);
+    //m_vamp multiples by the dimensional factor to get a velocity again.
+    v = m_vamp * get_fermi_dirac_vel(p);
 
     //Random phase
     phi = 2 * M_PI * gsl_rng_uniform (g_rng);
