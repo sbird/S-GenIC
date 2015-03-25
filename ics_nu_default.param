@@ -21,7 +21,7 @@ GlassFile         dummy_glass_3comp_64.dat  % Glass-File
 GlassTileFac     8                % Number of times the glass file is
                                   % tiled in each dimension (must be
                                   % an integer)
-
+ICFormat         2              % 2 for Gadget output, 3 for HDF5
 
 Omega            0.3       % Total matter density  (at z=0)
 OmegaLambda      0.7       % Cosmological constant (at z=0)
