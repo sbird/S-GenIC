@@ -5,14 +5,13 @@
 #include <stdlib.h>
 #include <valarray>
 #include <gadgetreader.hpp>
-#include "allvars.h"
 
 class part_data{
     
     public:
         part_data(GadgetReader::GSnap& snap, int type, int GlassTileFac):
         Nglass(snap.GetNpart(type)), IGlassBox(1./snap.GetHeader().BoxSize), NglassGTile(Nglass*GlassTileFac),
-        NglassG2Tile(Nglass*GlassTileFac*GlassTileFac), BoxGTile(Box/GlassTileFac),
+        NglassG2Tile(Nglass*GlassTileFac*GlassTileFac), BoxGTile(snap.GetHeader().BoxSize/GlassTileFac),
 #ifdef TWOLPT
 #ifdef NEUTRINOS
         /*Do not allocate the 2lpt array for neutrinos*/
