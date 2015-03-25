@@ -25,6 +25,9 @@
 
 #define FLOATS_NEAR_TO(x,y) \
         BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= std::max<float>(fabs(x),fabs(y))/1e5,(x)<<" is not close to "<<(y))
+#define FLOATS_CLOSE_TO(x,y) \
+      BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= std::max<float>(fabs(x),fabs(y))/1e3,(x)<<" is not close to "<<(y))
+
 
 #ifdef PRINT_SPEC
 BOOST_AUTO_TEST_CASE(check_print_spec)
@@ -86,34 +89,89 @@ BOOST_AUTO_TEST_CASE(check_periodic_wrap)
 //
 // }
 
+class TestFermiDirac: public FermiDiracVel
+{
+    public:
+       TestFermiDirac(int vel):FermiDiracVel(vel){}
+       //For testing
+       void reseed(int seed)
+       {
+           gsl_rng_set(g_rng, seed);
+       }
+       double get_fdv(int i)
+       {
+           if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
+                return fermi_dirac_vel[i];
+           return 0;
+       }
+       double get_fdvc(int i)
+       {
+           if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
+                return fermi_dirac_cumprob[i];
+           return 0;
+       }
+};
+
 BOOST_AUTO_TEST_CASE(check_fermi_vel)
 {
-
-//     double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s)
-
-//     FLOATS_NEAR_TO(NU_V0(0, 1, 1e5), );
     //Check has units of velocity
     FLOATS_NEAR_TO(NU_V0(0, 1, 1e3), 100*NU_V0(0, 1, 1e5));
     //Check scales linearly with neutrino mass
     FLOATS_NEAR_TO(NU_V0(0, 0.1, 1e5), 10*NU_V0(0, 1, 1e5));
     //Check scales as z^3/2 (due to gadgets cosmological velocity unit)
     FLOATS_NEAR_TO(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5));
-    //Check it is correct (roughly). This is Q*i(4)/i(3)
-    //where i(p) = zeta(p) Gamma(p) (1-2^(1-p))
-    //and Q = (4/11)^1/3* 2.7255* 1.00381* 8.61734e-5 * 2.99792e5
-    FLOATS_NEAR_TO(NU_V0(0,1, 1e5), 158.98);
+    //Check it is correct (roughly). This is
+    //(4/11)^1/3* 2.7255* 1.00381* 8.61734e-5 * 2.99792e5/(M_nu/3)
+    FLOATS_NEAR_TO(NU_V0(0,1, 1e5), 151.344);
 
+    //Seed table with velocity of 100 km/s
+    TestFermiDirac nuvels(100);
+    nuvels.reseed(23);
+    //Check that the probability table makes sense
+    FLOATS_NEAR_TO(nuvels.get_fdvc(0), 0);
+    FLOATS_NEAR_TO(nuvels.get_fdvc(LENGTH_FERMI_DIRAC_TABLE-2), 1);
+    //Check that the probability table makes sense
+    FLOATS_NEAR_TO(nuvels.get_fdv(0), 0);
+    FLOATS_NEAR_TO(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE-1), MAX_FERMI_DIRAC);
+    FLOATS_NEAR_TO(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE));
+    //Test getting the distribution
+    FLOATS_NEAR_TO(nuvels.get_fermi_dirac_vel(0), 0);
+    FLOATS_NEAR_TO(nuvels.get_fermi_dirac_vel(1), MAX_FERMI_DIRAC);
+    //Number computed by python guessing
+    FLOATS_CLOSE_TO(nuvels.get_fermi_dirac_vel(0.5), 2.839);
+//     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE/2; i+=20)
+//         printf("%g %g\n", nuvels.get_fdv(i), nuvels.get_fdvc(i));
+    //Remember to reseed the rng...
+    float vel[3]={0,0,0};
+    nuvels.add_thermal_speeds(vel);
+    //Check scaling is linear
+    //Remember to reseed the rng...
+    TestFermiDirac nuvels2(200);
+    nuvels2.reseed(23);
+    float vel2[3]={0,0,0};
+    nuvels2.add_thermal_speeds(vel2);
+    FLOATS_NEAR_TO(sqrt(vel2[0]*vel2[0]+vel2[1]*vel2[1]+vel2[2]*vel2[2]), 2*sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]));
+    for(int i=0; i<3; i++)
+        FLOATS_NEAR_TO(vel2[i], 2*vel[i]);
+    //Check some statistical properties (max, min, mean)
+    double mean=0;
+    double max = 0;
+    double min = 1e10;
+    int nsample;
+    for (nsample=0; nsample < 10000; nsample++)
+    {
+        float vvel[3]={0,0,0};
+        nuvels.add_thermal_speeds(vvel);
+        double v2 =sqrt(vvel[0]*vvel[0]+vvel[1]*vvel[1]+vvel[2]*vvel[2]);
+        max = std::max(v2, max);
+        min = std::min(v2, min);
+        mean+=v2;
+    }
+    mean/=nsample;
+    //Mean should be roughly 3*zeta(4)/zeta(3)*7/8/(3/4)* m_vamp
+    FLOATS_CLOSE_TO(mean, 3*pow(M_PI,4)/90./1.202057*(7./8)/(3/4.)*100);
+    BOOST_CHECK_MESSAGE( min > 0,min<<" less than zero");
+    BOOST_CHECK_MESSAGE( max < MAX_FERMI_DIRAC*100,max<<" greater than upper bound");
 
-//     FermiDiracVel nuvels(100);
-//     //Remember to reseed the rng...
-//     float vel[3]={0,0,0};
-//     nuvels.add_thermal_speeds(vel);
-//     FLOATS_NEAR_TO(vel, ???);
-//     //Check scaling is linear
-//     //Remember to reseed the rng...
-//     FermiDiracVel nuvels2(200);
-//     float vel2[3]={0,0,0};
-//     nuvels2.add_thermal_speeds(vel2);
-//     FLOATS_NEAR_TO(vel*2[1] == vel[1]);
-//     //Check some statistical properties (max, min, mean)
+    //     FLOATS_NEAR_TO(vel, ???);
 }

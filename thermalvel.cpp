@@ -56,14 +56,14 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
     //Allocate random number generator
     g_rng = gsl_rng_alloc(gsl_rng_mt19937);
     /*These functions are so smooth that we don't need much space*/
-    gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
+    gsl_integration_workspace * w = gsl_integration_workspace_alloc (100);
     double abserr;
     gsl_function F;
     F.function = &fermi_dirac_kernel;
     F.params = NULL;
     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++) {
         fermi_dirac_vel[i] = MAX_FERMI_DIRAC * i / (LENGTH_FERMI_DIRAC_TABLE - 1.0);
-        gsl_integration_qag (&F, 0, fermi_dirac_vel[i], 0, 1e-4,10,GSL_INTEG_GAUSS61, w,&(fermi_dirac_cumprob[i]), &abserr);
+        gsl_integration_qag (&F, 0, fermi_dirac_vel[i], 0, 1e-6,100,GSL_INTEG_GAUSS61, w,&(fermi_dirac_cumprob[i]), &abserr);
     //       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
     gsl_integration_workspace_free (w);
@@ -77,21 +77,20 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
 double FermiDiracVel::get_fermi_dirac_vel(double p)
 {
     int binlow = 0;
-    int binhigh = LENGTH_FERMI_DIRAC_TABLE - 2;
+    int binhigh = LENGTH_FERMI_DIRAC_TABLE - 1;
     int i=0;
 
     while(binhigh - binlow > 1)
     {
         i = (binhigh + binlow) / 2;
-        if(p > fermi_dirac_cumprob[i + 1])
+        if(p >= fermi_dirac_cumprob[i + 1])
             binlow = i;
         else
             binhigh = i;
     }
 
-    const double u = (p - fermi_dirac_cumprob[i]) / (fermi_dirac_cumprob[i + 1] - fermi_dirac_cumprob[i]);
-
-    return fermi_dirac_vel[i] * (1 - u) + fermi_dirac_vel[i + 1] * u;
+    const double u = (p - fermi_dirac_cumprob[i-1]) / (fermi_dirac_cumprob[i] - fermi_dirac_cumprob[i-1]);
+    return fermi_dirac_vel[i-1] * (1 - u) + fermi_dirac_vel[i] * u;
 }
 
 //Add a randomly generated thermal speed to a 3-velocity

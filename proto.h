@@ -27,7 +27,7 @@ int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data
 gadget_header generate_header(std::valarray<int64_t> & npart);
 
 //Class defined in thermalvel.cpp for adding FermiDirac velocities
-#define LENGTH_FERMI_DIRAC_TABLE 10000
+#define LENGTH_FERMI_DIRAC_TABLE 2000
 #define MAX_FERMI_DIRAC          20.0
 
 class FermiDiracVel
