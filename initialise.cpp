@@ -132,6 +132,12 @@ gadget_header generate_header(std::valarray<int64_t> & npart)
   if(npart[DM_TYPE])
     header.mass[DM_TYPE] = OmegaCDM * scale / npart[DM_TYPE];
 
+  for(int i=0; i< N_TYPE; ++i){
+    header.NallHW[i] = ( npart[i] >> 32);
+    header.npartTotal[i] = npart[i] - ((uint64_t)header.NallHW[i] << 32);
+  }
+
+
   header.time = InitTime;
   header.redshift = 1.0 / InitTime - 1;
 
@@ -147,7 +153,7 @@ gadget_header generate_header(std::valarray<int64_t> & npart)
   header.flag_metals = 0;
   header.flag_entropy_instead_u=0;
   header.flag_doubleprecision=0;
-  header.flag_ic_info=1;        
-  header.lpt_scalingfactor=1;  
+  header.flag_ic_info=1;
+  header.lpt_scalingfactor=1;
   return header;
 }
