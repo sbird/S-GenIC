@@ -9,6 +9,8 @@ OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second 
 OPT   +=  -DTWOLPT  # Use 2LPT instead of ZA. Uses more memory.
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
+#OPT += -DHAVE_HDF5  #Use this if you have HDF5
+HDF_LIB = -lhdf5 -lhdf5_hl
 
 ifeq ($(CC),cc)
 GCCV:=$(shell gcc --version | head -1)
@@ -33,7 +35,7 @@ ifeq ($(CC),cc)
   endif
 endif
 
-LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
+LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
 CFLAGS += -I${GREAD} ${OPT}
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
