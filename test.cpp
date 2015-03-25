@@ -173,5 +173,4 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     BOOST_CHECK_MESSAGE( min > 0,min<<" less than zero");
     BOOST_CHECK_MESSAGE( max < MAX_FERMI_DIRAC*100,max<<" greater than upper bound");
 
-    //     FLOATS_NEAR_TO(vel, ???);
 }
