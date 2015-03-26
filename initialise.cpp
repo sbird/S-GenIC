@@ -2,6 +2,7 @@
 #include "proto.h"
 #include <omp.h>
 #include "gadgetheader.h"
+#include "cosmology.hpp"
 
 int FatalError(int errnum)
 {
@@ -103,6 +104,7 @@ void initialize_ffts(void)
 gadget_header generate_header(std::valarray<int64_t> & npart)
 {
   gadget_header header;
+  //No factor of h^2 because mass is in 10^10 M_sun/h
   double scale = UnitMass_in_g / pow(UnitLength_in_cm, 3) * 3* HUBBLE* HUBBLE / (8 * M_PI * GRAVITY) * pow(Box,3);
   /*Set masses*/
   for(int i = 0; i < N_TYPE; i++)

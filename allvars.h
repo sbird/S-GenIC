@@ -1,9 +1,6 @@
 #ifndef __ALLVARS_H
 #define __ALLVARS_H
 
-#define  GRAVITY     6.672e-8
-#define  HUBBLE      3.2407789e-18   /* in h/sec */
-
 #include <fftw3.h>
 #include <stdint.h>
 

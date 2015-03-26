@@ -1,6 +1,5 @@
+#include "cosmology.hpp"
 #include <math.h>
-#include "allvars.h"
-// #include "proto.h"
 #include <gsl/gsl_integration.h>
 /**This file contains code to compute the Hubble function at arbitrary redshift. Most of the code integrates
  * Omega_Nu for massive neutrinos, taken from the Gadget-3 patches..**/
@@ -20,13 +19,46 @@
 /* We need to include radiation to get the early-time growth factor right,
  * which comes into the Zel'dovich approximation.*/
 /* Omega_g = 4 \sigma_B T_{CMB}^4 8 \pi G / (3 c^3 H^2)*/
-#define OMEGAG (4*STEFAN_BOLTZMANN*8*M_PI*GRAVITY/(3*LIGHTCGS*LIGHTCGS*LIGHTCGS*HUBBLE*HUBBLE)*pow(T_CMB0,4)/HubbleParam/HubbleParam)
+#define OMEGAG (4*STEFAN_BOLTZMANN*8*M_PI*GRAVITY/(3*LIGHTCGS*LIGHTCGS*LIGHTCGS*HUBBLE*HUBBLE)*pow(T_CMB0,4))
 /*Neutrinos are included in the radiation*/
 /*For massless neutrinos, rho_nu/rho_g = 7/8 (T_nu/T_cmb)^4 *N_eff, but we absorbed N_eff into T_nu above*/
 #define OMEGANU (OMEGAG*7/8.*pow(TNU/T_CMB0,4)*3)
 //Neutrino mass splittings
 //Neglect the smaller of the two mass splittings: 7.54e-5 is close enough to zero. #define M21
 #define M32 2.43e-3 //Particle data group: +- 0.06 eV
+
+//Hubble H(z) / H0 in units of 1/T.
+double Cosmology::Hubble(double a)
+{
+        //Begin with matter, curvature and lambda.
+        double hubble_a = Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
+        //Add the radiation
+        hubble_a += OMEGAG/HubbleParam/HubbleParam/(a*a*a*a);
+        //If neutrinos are massless, add them too.
+        if(MNu == 0)
+                hubble_a += OMEGANU/(a*a*a*a);
+        /*Otherwise add massive neutrinos, possibly slightly relativistic, to the evolution*/
+        else
+                hubble_a += OmegaNu(a) - OmegaNu(0)/ (a * a * a);
+        return HUBBLE * sqrt(hubble_a);
+}
+
+/* Return the total matter density in neutrinos.
+* rho_nu and friends are not externally callable*/
+double Cosmology::OmegaNu(double a)
+{
+        double split = M32;
+        //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
+        if (InvertedHierarchy)
+            split *= -1;
+        //This one is the degenerate state with two neutrinos in it.
+        //Solve a quadratic equation in total mass to get:
+        double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
+        double M3 = MNu - 2*M2;
+        double rhonu =2*OmegaNu_single(a,M2)+OmegaNu_single(a,M3);
+        return rhonu;
+}
+
 
 /*Note q carries units of eV/c. kT/c has units of eV/c.
  * M_nu has units of eV  Here c=1. */
@@ -107,8 +139,8 @@ double rho_nu(double a,double mnu)
 }
 
 /* Return the matter density in a single neutrino species.
- * Not externally callable*/
-double OmegaNu_single(double a,double mnu)
+* Not externally callable*/
+double Cosmology::OmegaNu_single(double a,double mnu)
 {
         double rhonu;
         rhonu=rho_nu(a,mnu);
@@ -117,34 +149,31 @@ double OmegaNu_single(double a,double mnu)
         return rhonu;
 }
 
-/* Return the total matter density in neutrinos.
- * rho_nu and friends are not externally callable*/
-double OmegaNu(double a)
+
+double Cosmology::GrowthFactor(double astart, double aend)
 {
-        double split = M32;
-        //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
-        if (InvertedHierarchy)
-            split *= -1;
-        //This one is the degenerate state with two neutrinos in it.
-        //Solve a quadratic equation in total mass to get:
-        double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
-        double M3 = MNu - 2*M2;
-        double rhonu =2*OmegaNu_single(a,M2)+OmegaNu_single(a,M3);
-        return rhonu;
+  return growth(aend) / growth(astart);
 }
 
-//The Hubble H(z) / H0. Thus dimensionless.
-double Hubble_A(double a, double Omega, double OmegaLambda)
+double growth_int(double a, void * param)
 {
-  //Begin with matter, curvature and lambda.
-  double hubble_a = Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
-  //Add the radiation
-  hubble_a += OMEGAG/(a*a*a*a);
-  //If neutrinos are massless, add them too.
-  if(MNu == 0)
-        hubble_a += OMEGANU/(a*a*a*a);
-  /*Otherwise add massive neutrinos, possibly slightly relativistic, to the evolution*/
-  else
-        hubble_a += OmegaNu(a) - OmegaNu(0)/ (a * a * a);
-  return HUBBLE * UnitTime_in_s * sqrt(hubble_a);
+    double Omega = *(double *) param;
+    double OmegaLambda =*((double *) param+1);
+    return pow(a / (Omega + (1 - Omega - OmegaLambda) * a + OmegaLambda * a * a * a), 1.5);
+}
+
+double Cosmology::growth(double a)
+{
+  gsl_integration_workspace * w = gsl_integration_workspace_alloc (GSL_VAL);
+  double hubble_a;
+  double result,abserr;
+  gsl_function F;
+  F.function = &growth_int;
+  double params[2] = {Omega, OmegaLambda};
+  F.params = &params;
+  hubble_a = Hubble(a);
+  gsl_integration_qags (&F, 0, a, 0, 1e-4,GSL_VAL,w,&result, &abserr);
+//   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  gsl_integration_workspace_free (w);
+  return hubble_a * result;
 }

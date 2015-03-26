@@ -1,5 +1,6 @@
 #include "allvars.h"
 #include "proto.h"
+#include "cosmology.hpp"
 #include "part_data.hpp"
 #include <gadgetwriter.hpp>
 
@@ -33,7 +34,8 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   //For WDM thermal velocities
   FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
 
-  const double hubble_a = Hubble_A(InitTime, Omega, OmegaLambda);
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
+  const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
 #ifdef TWOLPT
   const double vel_prefac2 = InitTime * hubble_a * F2_Omega(InitTime) /sqrt(InitTime);

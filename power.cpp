@@ -1,6 +1,7 @@
 #include <math.h>
 #include "allvars.h"
 #include "proto.h"
+#include "cosmology.hpp"
 #include <gsl/gsl_integration.h>
 
 static double R8;
@@ -273,7 +274,8 @@ void initialize_powerspectrum(void)
     Norm = Sigma8 * Sigma8 / res;
 
     printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
-    Dplus = GrowthFactor(InitTime, 1.0);
+    Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
+    Dplus = cosmo.GrowthFactor(InitTime, 1.0);
     printf("Dplus initial redshift =%g  \n\n", Dplus);
   }
 }
@@ -413,41 +415,6 @@ double sigma2_int(double k, void * params)
 
   return x;
 }
-
-
-double GrowthFactor(double astart, double aend)
-{
-  return growth(aend) / growth(astart);
-}
-
-double growth(double a)
-{
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (10);
-  double hubble_a, Omegan=Omega;
-  double result,abserr;
-  gsl_function F;
-  F.function = &growth_int;
-  F.params = NULL;
-  if(neutrinos_ks){
-        Omegan = Omega + OmegaDM_2ndSpecies;
-        printf("\n Omegan %g\n\n",Omegan);
-  }
-  hubble_a = Hubble_A(a, Omegan, OmegaLambda);
-  gsl_integration_qags (&F, 0, a, 0, 1e-4,10,w,&result, &abserr);
-//   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
-  gsl_integration_workspace_free (w);
-  return hubble_a * result;
-}
-
-
-double growth_int(double a, void * param)
-{
-  double Omegan=Omega;
-  if(neutrinos_ks)
-        Omegan +=  OmegaDM_2ndSpecies;
-  return pow(a / (Omegan + (1 - Omegan - OmegaLambda) * a + OmegaLambda * a * a * a), 1.5);
-}
-
 
 double F_Omega(double a)
 {
