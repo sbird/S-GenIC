@@ -157,9 +157,8 @@ double Cosmology::GrowthFactor(double astart, double aend)
 
 double growth_int(double a, void * param)
 {
-    double Omega = *(double *) param;
-    double OmegaLambda =*((double *) param+1);
-    return pow(a / (Omega + (1 - Omega - OmegaLambda) * a + OmegaLambda * a * a * a), 1.5);
+    Cosmology * d_this = (Cosmology *) param;
+    return pow(a* (d_this->Hubble(a)),3);
 }
 
 double Cosmology::growth(double a)
@@ -169,11 +168,26 @@ double Cosmology::growth(double a)
   double result,abserr;
   gsl_function F;
   F.function = &growth_int;
-  double params[2] = {Omega, OmegaLambda};
-  F.params = &params;
+  //Just pass the whole structure as the params pointer, as GSL won't let us make the integrand a member function
+  F.params = this;
   hubble_a = Hubble(a);
   gsl_integration_qags (&F, 0, a, 0, 1e-4,GSL_VAL,w,&result, &abserr);
 //   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
   return hubble_a * result;
 }
+
+double Cosmology::F_Omega(double a)
+{
+  double omega_a;
+  omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
+  return pow(omega_a, 0.6);
+}
+
+double Cosmology::F2_Omega(double a)
+{
+  double omega_a;
+  omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
+  return 2 * pow(omega_a, 4./7.);
+}
+

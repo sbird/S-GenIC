@@ -34,13 +34,16 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   //For WDM thermal velocities
   FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
 
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
+  double Omegan=Omega;
+  if (neutrinos_ks)
+      Omegan+=OmegaDM_2ndSpecies;
+  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, MNu, InvertedHierarchy);
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
-  const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
+  const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
 #ifdef TWOLPT
-  const double vel_prefac2 = InitTime * hubble_a * F2_Omega(InitTime) /sqrt(InitTime);
+  const double vel_prefac2 = InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
 #endif
-  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, F_Omega(InitTime), Omega);
+  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omegan);
 
     
   printf("\nWriting IC-file\n");

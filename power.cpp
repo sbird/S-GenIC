@@ -415,22 +415,3 @@ double sigma2_int(double k, void * params)
 
   return x;
 }
-
-double F_Omega(double a)
-{
-  double omega_a,Omegan=Omega;
-  if(neutrinos_ks)
-        Omegan +=  OmegaDM_2ndSpecies;
-  omega_a = Omegan / (Omegan + a * (1 - Omegan - OmegaLambda) + a * a * a * OmegaLambda);
-  return pow(omega_a, 0.6);
-}
-
-double F2_Omega(double a)
-{
-  double omega_a;
-
-  omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
-
-  return 2 * pow(omega_a, 4./7.);
-}
-

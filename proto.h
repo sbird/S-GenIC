@@ -77,8 +77,6 @@ double PowerSpec_DM_2ndSpecies(double k);
 void   initialize_powerspectrum(void);
 double sigma2_int(double k, void * params);
 double TopHatSigma2(double R);
-double F_Omega(double a);
-double F2_Omega(double a);
 
 void  read_parameterfile(char *fname);
 double tk_eh(double k);
