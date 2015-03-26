@@ -55,9 +55,6 @@ unsigned int * initialize_rng(int Seed)
 void set_units(void)		/* ... set some units */
 {
   UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
-
-  G = GRAVITY / pow(UnitLength_in_cm, 3) * UnitMass_in_g * pow(UnitTime_in_s, 2);
-  Hubble = HUBBLE * UnitTime_in_s;
 }
 
 void initialize_ffts(void)
@@ -106,7 +103,7 @@ void initialize_ffts(void)
 gadget_header generate_header(std::valarray<int64_t> & npart)
 {
   gadget_header header;
-  double scale = 3 * Hubble * Hubble / (8 * M_PI * G) * pow(Box,3);
+  double scale = UnitMass_in_g / pow(UnitLength_in_cm, 3) * 3* HUBBLE* HUBBLE / (8 * M_PI * GRAVITY) * pow(Box,3);
   /*Set masses*/
   for(int i = 0; i < N_TYPE; i++)
       header.mass[i] = 0;

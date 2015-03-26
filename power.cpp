@@ -467,9 +467,3 @@ double F2_Omega(double a)
   return 2 * pow(omega_a, 4./7.);
 }
 
-//The Hubble H(z) / H0. Thus dimensionless.
-double Hubble_A(double a, double Omega, double OmegaLambda)
-{
-  double hubble_a = sqrt(Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda );
-  return hubble_a;
-}

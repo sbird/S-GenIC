@@ -15,6 +15,8 @@ char FileWithTransfer[500];
 
 size_t GlassTileFac;
 
+double MNu;
+int InvertedHierarchy;
 double Box;
 int Seed;
 int RayleighScatter;
@@ -42,7 +44,6 @@ fftwf_complex *Cdata;
 
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 double InputSpectrum_UnitLength_in_cm;
-double G, Hubble;
 
 double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
 double OmegaBaryon, HubbleParam;

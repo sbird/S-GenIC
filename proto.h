@@ -62,6 +62,8 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s);
 #endif //NEUTRINOS
 
+double Hubble_A(double a, double Omega, double OmegaLambda);
+
 extern "C" {
 #endif
 
@@ -81,7 +83,6 @@ double sigma2_int(double k, void * params);
 double TopHatSigma2(double R);
 double F_Omega(double a);
 double F2_Omega(double a);
-double Hubble_A(double a, double Omega, double OmegaLambda);
 
 void  read_parameterfile(char *fname);
 double tk_eh(double k);

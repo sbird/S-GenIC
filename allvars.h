@@ -21,6 +21,11 @@ extern size_t      Nmesh, Nsample;
 
 extern int      SphereMode;
 
+//Total neutrino mass
+extern double MNu;
+//1 if inverted hierarchy, 0 otherwise
+extern int InvertedHierarchy;
+
 extern int ICFormat;
 
 extern char     GlassFile[500]; 
@@ -56,7 +61,6 @@ extern fftwf_complex     *Cdata;
 
 extern double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 extern double InputSpectrum_UnitLength_in_cm;
-extern double G, Hubble;
 
 extern double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
 extern double OmegaBaryon, HubbleParam;
