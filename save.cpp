@@ -12,6 +12,17 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   float *block;
   id_type *blockid;
   int64_t written=0, pc;
+  std::string posstr("POS ");
+  std::string velstr("VEL ");
+  std::string idstr("ID  ");
+  std::string ustr("U   ");
+  //HDF5 has different strings
+  if(ICFormat == 3){
+      posstr = "Coordinates";
+      velstr = "Velocities";
+      idstr = "ParticleIDs";
+      ustr = "InternalEnergy";
+  }
 #ifdef NEUTRINOS
   //Init structure for neutrino velocities
   const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
@@ -63,14 +74,14 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
 #endif //NEUTRINO_PAIRS
 
       if(pc > blockmaxlen){
-	  if(snap.WriteBlocks(string("POS "),type, block, pc,written) != pc)
+	  if(snap.WriteBlocks(posstr,type, block, pc,written) != pc)
                   FatalError(2);
           written+=pc;
 	  pc = 0;
 	}
   }
   if(pc > 0)
-	  if(snap.WriteBlocks(string("POS "),type, block, pc,written) != pc)
+	  if(snap.WriteBlocks(posstr,type, block, pc,written) != pc)
                   FatalError(2);
   /*Done writing POS block*/
   written=0;
@@ -111,14 +122,14 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
       pc++;
 
       if(pc > blockmaxlen){
-          if(snap.WriteBlocks(string("VEL "),type, block, pc,written) != pc)
+          if(snap.WriteBlocks(velstr,type, block, pc,written) != pc)
                   FatalError(2);
           written+=pc;
           pc = 0;
       }
   }
   if(pc > 0)
-	  if(snap.WriteBlocks(string("VEL "),type, block, pc,written) != pc)
+	  if(snap.WriteBlocks(velstr,type, block, pc,written) != pc)
                   FatalError(2);
 
   /* write particle ID */
@@ -137,14 +148,14 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
 #endif //NEUTRINO_PAIRS
 
       if(pc > blockmaxlen){
-	  if(snap.WriteBlocks(string("ID  "),type, block, pc,written) != pc)
+	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc)
                   FatalError(2);
           written+=pc;
 	  pc = 0;
       }
   }
   if(pc > 0)
-	  if(snap.WriteBlocks(string("ID  "),type, block, pc,written) != pc)
+	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc)
                   FatalError(2);
 
   /*Done writing IDs*/
@@ -157,14 +168,14 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
           block[pc] = 0;
           pc++;
           if(pc > blockmaxlen){
-              if(snap.WriteBlocks(string("U   "),type, block, pc,written) != pc)
+              if(snap.WriteBlocks(ustr,type, block, pc,written) != pc)
                   FatalError(2);
               written+=pc;
               pc = 0;
           }
       }
       if(pc > 0)
-         if(snap.WriteBlocks(string("U   "),type, block, pc,written) != pc)
+         if(snap.WriteBlocks(ustr,type, block, pc,written) != pc)
                   FatalError(2);
   }
   /*Done writing temperatures*/
