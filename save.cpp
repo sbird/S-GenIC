@@ -1,5 +1,6 @@
 #include "allvars.h"
 #include "proto.h"
+#include "part_data.hpp"
 #include <gadgetwriter.hpp>
 
 using namespace GadgetWriter;

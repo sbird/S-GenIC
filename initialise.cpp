@@ -1,6 +1,7 @@
 #include "allvars.h"
 #include "proto.h"
 #include <omp.h>
+#include "gadgetheader.h"
 
 int FatalError(int errnum)
 {

@@ -4,9 +4,15 @@
 #include <gsl/gsl_rng.h>
 
 #ifdef __cplusplus
-#include <gadgetreader.hpp>
-#include <gadgetwriter.hpp>
-#include "part_data.hpp"
+
+#include <valarray>
+#include <gadgetheader.h>
+
+//Forward type declarations to save header include
+namespace GadgetWriter{
+    class GWriteSnap;
+}
+class part_data;
 
 #ifdef PRINT_SPEC
 void   print_spec(int type);
