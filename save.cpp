@@ -32,7 +32,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   //For WDM thermal velocities
   FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
 
-  const double hubble_a = Hubble * sqrt(Omega / pow(InitTime, 3) + (1 - Omega - OmegaLambda) / pow(InitTime, 2) + OmegaLambda);
+  const double hubble_a = Hubble * Hubble_A(InitTime, Omega, OmegaLambda);
   const double vel_prefac = InitTime * hubble_a * F_Omega(InitTime) /sqrt(InitTime);
 #ifdef TWOLPT
   const double vel_prefac2 = InitTime * hubble_a * F2_Omega(InitTime) /sqrt(InitTime);

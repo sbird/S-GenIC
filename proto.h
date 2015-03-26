@@ -75,6 +75,7 @@ double sigma2_int(double k, void * params);
 double TopHatSigma2(double R);
 double F_Omega(double a);
 double F2_Omega(double a);
+double Hubble_A(double a, double Omega, double OmegaLambda);
 
 void  read_parameterfile(char *fname);
 double tk_eh(double k);

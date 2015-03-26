@@ -109,7 +109,6 @@ void read_power_table(void)
       fflush(stdout);
 
 
-
 sprintf(buf, FileWithInputSpectrum);
   if(!(fd = fopen(buf, "r")))
     {
@@ -433,7 +432,7 @@ double growth(double a)
         Omegan = Omega + OmegaDM_2ndSpecies;
         printf("\n Omegan %g\n\n",Omegan);
   }
-  hubble_a = sqrt(Omegan / (a * a * a) + (1 - Omegan - OmegaLambda) / (a * a) + OmegaLambda);
+  hubble_a = Hubble_A(a, Omegan, OmegaLambda);
   gsl_integration_qags (&F, 0, a, 0, 1e-4,10,w,&result, &abserr);
 //   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
@@ -468,3 +467,9 @@ double F2_Omega(double a)
   return 2 * pow(omega_a, 4./7.);
 }
 
+//The Hubble H(z) / H0. Thus dimensionless.
+double Hubble_A(double a, double Omega, double OmegaLambda)
+{
+  double hubble_a = sqrt(Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda );
+  return hubble_a;
+}

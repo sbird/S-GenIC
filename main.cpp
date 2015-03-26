@@ -73,7 +73,7 @@ int main(int argc, char **argv)
       if(npart[type] == 0)
               continue;
       try{
-        part_data P(snap, type, GlassTileFac);
+        part_data P(snap, type, GlassTileFac, Box);
         NumPart = P.GetNumPart();
         displacement_fields(type, NumPart, P, Nmesh, RayleighScatter);
         FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
