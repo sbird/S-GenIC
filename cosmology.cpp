@@ -248,7 +248,7 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
  * By differentiating the growth function we get:
  * f = H' / H + 5/2 Omega /(a^3 H^2 D1)
  * and 2H H' = -3 Omega/a^3 - 4 Omega_R/a^4 - 2 OmegaK/a^2
- * NOTE Assume neutrinos are matter or radiation here.
+ * The derivative of the neutrino density is solved numerically
  */
 double Cosmology::F_Omega(double a)
 {
@@ -264,10 +264,16 @@ double Cosmology::F_Omega(double a)
   return ff;
 }
 
+/* The 2LPT prefactor, f2 = d ln D2/dlna.
+ * This is an approximation rather than the exact result, and not strictly valid for closed universes.
+ */
 double Cosmology::F2_Omega(double a)
 {
   double omega_a;
   omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
-  return 2 * pow(omega_a, 4./7.);
+  if (1 - Omega - OmegaLambda > 0)
+      return 2 * pow(omega_a, 4./7.);
+  else
+      return 2 * pow(omega_a, 6./11.);
 }
 
