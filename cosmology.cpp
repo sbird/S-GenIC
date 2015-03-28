@@ -39,7 +39,7 @@ double Cosmology::Hubble(double a)
                 hubble_a += OMEGANU/(a*a*a*a);
         /*Otherwise add massive neutrinos, possibly slightly relativistic, to the evolution*/
         else
-                hubble_a += OmegaNu(a) - OmegaNu(0)/ (a * a * a);
+                hubble_a += OmegaNu(a) - OmegaNu(1)/ (a * a * a);
         return HUBBLE * sqrt(hubble_a);
 }
 
@@ -47,15 +47,22 @@ double Cosmology::Hubble(double a)
 * rho_nu and friends are not externally callable*/
 double Cosmology::OmegaNu(double a)
 {
-        double split = M32;
-        //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
-        if (InvertedHierarchy)
-            split *= -1;
-        //This one is the degenerate state with two neutrinos in it.
-        //Solve a quadratic equation in total mass to get:
-        double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
-        double M3 = MNu - 2*M2;
-        double rhonu =2*OmegaNu_single(a,M2)+OmegaNu_single(a,M3);
+        double rhonu;
+        if (MNu >= M32) {
+            double split = M32;
+            //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
+            if (InvertedHierarchy)
+                split *= -1;
+            //This one is the degenerate state with two neutrinos in it.
+            //Solve a quadratic equation in total mass to get:
+            double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
+            double M3 = MNu - 2*M2;
+            rhonu =2*OmegaNu_single(a,M2)+OmegaNu_single(a,M3);
+        }
+        else {
+            //For smaller masses, just assume that only one neutrino is massive.
+            rhonu = OmegaNu_single(a,MNu);
+        }
         return rhonu;
 }
 
@@ -161,6 +168,12 @@ double growth_int(double a, void * param)
     return pow(a* (d_this->Hubble(a)),3);
 }
 
+/** The growth function is given as a 2nd order DE in Peacock 1999, Cosmological Physics.
+ * Here we use an integral form: D1(a) = H integral(1/a^3 H^3 da)
+ * Note there is a free proportionality constant, which Eisenstein takes to be 5/2 Omega_m
+ * so that D(a) -> a as a-> 0
+ * See astro-ph/9709054
+ */
 double Cosmology::growth(double a)
 {
   gsl_integration_workspace * w = gsl_integration_workspace_alloc (GSL_VAL);
@@ -174,14 +187,81 @@ double Cosmology::growth(double a)
   gsl_integration_qags (&F, 0, a, 0, 1e-4,GSL_VAL,w,&result, &abserr);
 //   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
-  return hubble_a * result;
+  return 5./2*Omega*hubble_a * result;
 }
 
+/*Note q carries units of eV/c. kT/c has units of eV/c.
+ * M_nu has units of eV  Here c=1.
+ * This has 1/epsilon instead of epsilon as in rho_nu_int*/
+double rho_nuprime_int(double q, void * params)
+{
+        double amnu = *((double *)params);
+        double epsilon = sqrt(q*q+amnu*amnu);
+        double f0 = 1./(exp(q/(BOLEVK*TNU))+1);
+        return q*q*f0/epsilon;
+}
+
+/* Return the total matter density in neutrinos.
+* rho_nu and friends are not externally callable*/
+double Cosmology::OmegaNuPrimed(double a)
+{
+        double rhonu;
+        if (MNu >= M32) {
+            double split = M32;
+            //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
+            if (InvertedHierarchy)
+                split *= -1;
+            //This one is the degenerate state with two neutrinos in it.
+            //Solve a quadratic equation in total mass to get:
+            double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
+            double M3 = MNu - 2*M2;
+            rhonu =2*OmegaNuPrimed_single(a,M2)+OmegaNuPrimed_single(a,M3);
+        }
+        else {
+            //For smaller masses, just assume that only one neutrino is massive.
+            rhonu = OmegaNuPrimed_single(a,MNu);
+        }
+        return rhonu;
+}
+
+/** Do the integral of the derivative of OmegaNu wrt log a, which is
+ *  -4 OmegaNu(a) + M_nu/a^2 q^2 f0(q) / epsilon da
+ *  Neglect mass splitting for this one.
+ */
+double Cosmology::OmegaNuPrimed_single(double a, double mnu)
+{
+     double abserr;
+     double amnu = a*mnu;
+     gsl_function F;
+     gsl_integration_workspace * w = gsl_integration_workspace_alloc (GSL_VAL);
+     F.function = &rho_nuprime_int;
+     F.params = &amnu;
+     double rhonu;
+     gsl_integration_qag (&F, 0, 500*BOLEVK*TNU,0 , 1e-9,GSL_VAL,6,w,&rhonu, &abserr);
+     rhonu=-4*OmegaNu(a)+mnu*rhonu/pow(a,2)*get_rho_nu_conversion();
+     gsl_integration_workspace_free (w);
+     return rhonu;
+}
+
+/*
+ * This is the Zeldovich approximation prefactor, f1 = d ln D1 / dlna.
+ * By differentiating the growth function we get:
+ * f = H' / H + 5/2 Omega /(a^3 H^2 D1)
+ * and 2H H' = -3 Omega/a^3 - 4 Omega_R/a^4 - 2 OmegaK/a^2
+ * NOTE Assume neutrinos are matter or radiation here.
+ */
 double Cosmology::F_Omega(double a)
 {
-  double omega_a;
-  omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
-  return pow(omega_a, 0.6);
+  double Hprime = -3 * Omega/(a*a*a) -4 * OMEGAG/(a*a*a*a) - 2* (1-Omega-OmegaLambda)/(a*a);
+  //Add the derivative of the neutrino mass to H'
+  //d Omega_nu /da = - 4 Omega_nu + (derivative function)
+  //With massive neutrinos OmegaNu is added twice
+  if(MNu > 0)
+      Hprime += -3*OmegaNu(1)/(a*a*a);
+  Hprime += OmegaNuPrimed(a);
+  double HH = Hubble(a);
+  double ff = Hprime/HH + 5.*Omega/(2*a*a*a*HH*HH*growth(a));
+  return ff;
 }
 
 double Cosmology::F2_Omega(double a)
