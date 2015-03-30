@@ -7,7 +7,6 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 {
         //Not actually sure where this equation comes from: the fiducial values are from Bode, Ostriker & Turok 2001.
         double WDM_V0 = 0.012 * (1 + redshift) * pow(Omega_CDM / 0.3, 1.0 / 3) * pow(HubbleParam / 0.65, 2.0 / 3) * pow(1.0 /WDM_PartMass_in_kev,4.0 / 3);
-        printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * WDM_V0);
         WDM_V0 *= 1.0e5 / UnitVelocity_in_cm_per_s;
         /* convert from peculiar velocity to gadget's cosmological velocity */
         WDM_V0 *= sqrt(1 + redshift);

@@ -29,10 +29,15 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   //Init structure for neutrino velocities
   const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
   FermiDiracVel nuvels (v_th);
-  printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
+  if(NU_On == 1 && NU_Vtherm_On == 1) {
+    printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
+  }
 #endif //NEUTRINOS
   //For WDM thermal velocities
-  FermiDiracVel WDMvels (WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s));
+  const double wdm_vth = WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s);
+  FermiDiracVel WDMvels (wdm_vth);
+  if(WDM_On == 1 && WDM_Vtherm_On == 1)
+        printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
 
   double Omegan=Omega;
   if (neutrinos_ks)
