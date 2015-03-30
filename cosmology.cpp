@@ -19,7 +19,7 @@
 /* We need to include radiation to get the early-time growth factor right,
  * which comes into the Zel'dovich approximation.*/
 /* Omega_g = 4 \sigma_B T_{CMB}^4 8 \pi G / (3 c^3 H^2)*/
-#define OMEGAG (4*STEFAN_BOLTZMANN*8*M_PI*GRAVITY/(3*LIGHTCGS*LIGHTCGS*LIGHTCGS*HUBBLE*HUBBLE)*pow(T_CMB0,4))
+#define OMEGAG (4*STEFAN_BOLTZMANN*8*M_PI*GRAVITY/(3*LIGHTCGS*LIGHTCGS*LIGHTCGS*HUBBLE*HUBBLE*HubbleParam*HubbleParam)*pow(T_CMB0,4))
 /*Neutrinos are included in the radiation*/
 /*For massless neutrinos, rho_nu/rho_g = 7/8 (T_nu/T_cmb)^4 *N_eff, but we absorbed N_eff into T_nu above*/
 #define OMEGANU (OMEGAG*7/8.*pow(TNU/T_CMB0,4)*3)
@@ -33,7 +33,7 @@ double Cosmology::Hubble(double a)
         //Begin with matter, curvature and lambda.
         double hubble_a = Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
         //Add the radiation
-        hubble_a += OMEGAG/HubbleParam/HubbleParam/(a*a*a*a);
+        hubble_a += OMEGAG/(a*a*a*a);
         //If neutrinos are massless, add them too.
         if(MNu == 0)
                 hubble_a += OMEGANU/(a*a*a*a);
@@ -61,7 +61,7 @@ double Cosmology::OmegaNu(double a)
         }
         else {
             //For smaller masses, just assume that only one neutrino is massive.
-            rhonu = OmegaNu_single(a,MNu);
+            rhonu = OmegaNu_single(a,MNu)+2*OmegaNu_single(a,0);
         }
         return rhonu;
 }
@@ -246,8 +246,8 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
 /*
  * This is the Zeldovich approximation prefactor, f1 = d ln D1 / dlna.
  * By differentiating the growth function we get:
- * f = H' / H + 5/2 Omega /(a^3 H^2 D1)
- * and 2H H' = -3 Omega/a^3 - 4 Omega_R/a^4 - 2 OmegaK/a^2
+ * f = H' / H + 5/2 Omega /(a^2 H^2 D1)
+ * and 2H H' = H0^2 * (-3 Omega/a^3 - 4 Omega_R/a^4 - 2 OmegaK/a^2)
  * The derivative of the neutrino density is solved numerically
  */
 double Cosmology::F_Omega(double a)
@@ -256,11 +256,14 @@ double Cosmology::F_Omega(double a)
   //Add the derivative of the neutrino mass to H'
   //d Omega_nu /da = - 4 Omega_nu + (derivative function)
   //With massive neutrinos OmegaNu is added twice
-  if(MNu > 0)
+  if(MNu > 0) {
       Hprime += -3*OmegaNu(1)/(a*a*a);
-  Hprime += OmegaNuPrimed(a);
+      Hprime += OmegaNuPrimed(a);
+  }
+  else
+      Hprime += -4*OMEGANU/(a*a*a*a);
   double HH = Hubble(a);
-  double ff = Hprime/HH + 5.*Omega/(2*a*a*a*HH*HH*growth(a));
+  double ff = HUBBLE*HUBBLE*Hprime/HH/HH/2. + 5.*Omega/(2*a*a*HH*HH*growth(a));
   return ff;
 }
 
