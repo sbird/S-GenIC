@@ -57,7 +57,10 @@ OBJS   = power.o allvars.o save.o read_param.o \
 
 INCL   = allvars.h proto.h part_data.hpp Makefile
 
-.PHONY : clean all
+.PHONY : clean all test
+
+test: btest
+	./$^
 
 all: $(EXEC)
 
