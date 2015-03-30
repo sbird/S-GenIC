@@ -19,6 +19,7 @@
 #include "allvars.h"
 #include "proto.h"
 #include "part_data.hpp"
+#include "cosmology.hpp"
 #include <math.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
@@ -173,4 +174,24 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     BOOST_CHECK_MESSAGE( min > 0,min<<" less than zero");
     BOOST_CHECK_MESSAGE( max < MAX_FERMI_DIRAC*100,max<<" greater than upper bound");
 
+}
+
+BOOST_AUTO_TEST_CASE(check_cosmology)
+{
+    //Check that we get the right scalings for total matter domination.
+    //Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu),
+    Cosmology cosmo(0.7, 1., 0., 0., false);
+    FLOATS_CLOSE_TO(cosmo.Hubble(1), HUBBLE);
+    FLOATS_CLOSE_TO(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.));
+    FLOATS_CLOSE_TO(cosmo.growth(0.5)/cosmo.growth(1), 0.5);
+    //Check that massless neutrinos work
+    FLOATS_NEAR_TO(cosmo.OmegaNu(1), cosmo.OmegaR(1)*7./8.*pow(pow(4/11.,1/3.)*1.00381,4)*3);
+    FLOATS_NEAR_TO(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4));
+    //Check that the velocity correction d ln D1/d lna is constant
+    FLOATS_CLOSE_TO(1.0, cosmo.F_Omega(1.5));
+    FLOATS_CLOSE_TO(1.0, cosmo.F_Omega(2));
+
+    //More observationally relevant tests
+    Cosmology cosmo2(0.7, 0.3, 0.7, 0., false);
+    FLOATS_CLOSE_TO(0.01*log(cosmo2.growth(0.01+1e-3)/cosmo2.growth(0.01-1e-3))/2e-3, cosmo2.F_Omega(0.01));
 }

@@ -33,7 +33,7 @@ double Cosmology::Hubble(double a)
         //Begin with matter, curvature and lambda.
         double hubble_a = Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
         //Add the radiation
-        hubble_a += OMEGAG/(a*a*a*a);
+        hubble_a += OmegaR(a);
         //If neutrinos are massless, add them too.
         if(MNu == 0)
                 hubble_a += OMEGANU/(a*a*a*a);
@@ -66,7 +66,10 @@ double Cosmology::OmegaNu(double a)
         return rhonu;
 }
 
-
+double Cosmology::OmegaR(double a)
+{
+    return OMEGAG/(a*a*a*a);
+}
 /*Note q carries units of eV/c. kT/c has units of eV/c.
  * M_nu has units of eV  Here c=1. */
 double rho_nu_int(double q, void * params)
@@ -252,7 +255,7 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
  */
 double Cosmology::F_Omega(double a)
 {
-  double Hprime = -3 * Omega/(a*a*a) -4 * OMEGAG/(a*a*a*a) - 2* (1-Omega-OmegaLambda)/(a*a);
+  double Hprime = -3 * Omega/(a*a*a) -4 * OmegaR(a) - 2* (1-Omega-OmegaLambda)/(a*a);
   //Add the derivative of the neutrino mass to H'
   //d Omega_nu /da = - 4 Omega_nu + (derivative function)
   //With massive neutrinos OmegaNu is added twice
