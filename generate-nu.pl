@@ -201,7 +201,7 @@ close($outhandle);
 # pyscript datafile dir O_M box hub redshift
 gen_plot_script($PYPlotScript, $ICFile, $Directory,$Prefix,$Omega_M, $Omega_Nu, $boxsize, $hub, $Redshift,$Omega_B, $kspace);
 #Execute the script
-print `python $PYPlotScript`;
+print `python2 $PYPlotScript`;
 
 # paramfile newparams output_root omega_nu omega_b omega_cdm hubble redshift
 sub gen_camb_file{
