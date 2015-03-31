@@ -222,7 +222,7 @@ double Cosmology::OmegaNuPrimed(double a)
         }
         else {
             //For smaller masses, just assume that only one neutrino is massive.
-            rhonu = OmegaNuPrimed_single(a,MNu);
+            rhonu = OmegaNuPrimed_single(a,MNu)+2*OmegaNuPrimed_single(a,0);
         }
         return rhonu;
 }
@@ -241,9 +241,12 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
      F.params = &amnu;
      double rhonu;
      gsl_integration_qag (&F, 0, 500*BOLEVK*TNU,0 , 1e-9,GSL_VAL,6,w,&rhonu, &abserr);
-     rhonu=-4*OmegaNu(a)+mnu*rhonu/pow(a,2)*get_rho_nu_conversion();
+     rhonu = mnu*mnu*rhonu/pow(a,2)*get_rho_nu_conversion();
+     //rhonu has units of g/cm^3
+     rhonu /= (3* HUBBLE* HUBBLE / (8 * M_PI * GRAVITY));
+     rhonu /= HubbleParam*HubbleParam;
      gsl_integration_workspace_free (w);
-     return rhonu;
+     return rhonu-4*OmegaNu_single(a,mnu);
 }
 
 /*
@@ -260,7 +263,7 @@ double Cosmology::F_Omega(double a)
   //d Omega_nu /da = - 4 Omega_nu + (derivative function)
   //With massive neutrinos OmegaNu is added twice
   if(MNu > 0) {
-      Hprime += -3*OmegaNu(1)/(a*a*a);
+      Hprime += 3*OmegaNu(1)/(a*a*a);
       Hprime += OmegaNuPrimed(a);
   }
   else

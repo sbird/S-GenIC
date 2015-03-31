@@ -194,10 +194,17 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     //More observationally relevant tests
     Cosmology cosmo2(0.7, 0.3, 0.7, 0., false);
     FLOATS_CLOSE_TO(0.01*log(cosmo2.growth(0.01+1e-5)/cosmo2.growth(0.01-1e-5))/2e-5, cosmo2.F_Omega(0.01));
+    FLOATS_CLOSE_TO(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01));
 
     //Massive neutrinos
     Cosmology nuc(0.7, 0.3, 0.7, 1.0, false);
     FLOATS_CLOSE_TO(0.01*log(nuc.growth(0.01+1e-5)/nuc.growth(0.01-1e-5))/2e-5, nuc.F_Omega(0.01));
     FLOATS_CLOSE_TO(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125);
     FLOATS_CLOSE_TO(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4));
+
+    FLOATS_CLOSE_TO(0.01*(nuc.OmegaNu(0.01+1e-5)-nuc.OmegaNu(0.01-1e-5))/2e-5, nuc.OmegaNuPrimed(0.01));
+    FLOATS_CLOSE_TO(0.02*(nuc.OmegaNu(0.02+1e-5)-nuc.OmegaNu(0.02-1e-5))/2e-5, nuc.OmegaNuPrimed(0.02));
+    FLOATS_CLOSE_TO(0.0002*(nuc.OmegaNu(0.0002+1e-8)-nuc.OmegaNu(0.0002-1e-8))/2e-8, nuc.OmegaNuPrimed(0.0002));
+    FLOATS_CLOSE_TO((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1));
+    FLOATS_CLOSE_TO(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1));
 }
