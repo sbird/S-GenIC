@@ -1,8 +1,7 @@
-#include "allvars.h"
 #include "proto.h"
-#include <omp.h>
 #include "gadgetheader.h"
 #include "cosmology.hpp"
+#include <fftw3.h>
 
 int FatalError(int errnum)
 {
@@ -11,47 +10,7 @@ int FatalError(int errnum)
   exit(0);
 }
 
-unsigned int * initialize_rng(int Seed)
-{
-  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
-  gsl_rng_set(random_generator, Seed);
-  unsigned int * seedtable;
-
-  if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
-    FatalError(4);
-
-  for(size_t i = 0; i < Nmesh / 2; i++)
-    {
-      size_t j;
-      for(j = 0; j < i; j++)
-	seedtable[i * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[j * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[(Nmesh - 1 - i) * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[(Nmesh - 1 - j) * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[i * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[j * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i; j++)
-	seedtable[(Nmesh - 1 - i) * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-
-      for(j = 0; j < i + 1; j++)
-	seedtable[(Nmesh - 1 - j) * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
-    }
-
-  gsl_rng_free(random_generator);
-  return seedtable;
-
-}
+#include "allvars.h"
 
 void set_units(void)		/* ... set some units */
 {
@@ -59,48 +18,6 @@ void set_units(void)		/* ... set some units */
     UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
 }
 
-void initialize_ffts(void)
-{
-  size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
-  Disp = (float *) fftwf_malloc(bytes);
-  if(Disp)
-        printf("Nmesh = %lu. Allocated %lu MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
-  else{
-      fprintf(stderr, "Nmesh = %lu. Failed to allocate %lu MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
-      FatalError(1);
-  }
-  Cdata = (fftwf_complex *) Disp;	/* transformed array */
-
-#ifdef TWOLPT
-  twosrc = (float *) fftwf_malloc(bytes);
-  ctwosrc = (fftwf_complex *) twosrc;
-  for(int i=0; i<3; i++){
-     cdigrad[i] = (fftwf_complex *) malloc(bytes);
-     digrad[i] = (float *) cdigrad[i];
-  }
-  /*Check memory allocation*/
-  if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
-        printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
-  else{
-      fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
-      FatalError(1);
-  }
-#endif
-
-  if(!fftwf_init_threads()){
-  		  fprintf(stderr,"Error initialising fftw threads\n");
-  		  exit(1);
-  }
-  fftwf_plan_with_nthreads(omp_get_num_procs());
-  Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
-#ifdef TWOLPT
-  Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
-  for(int i=0; i<3; i++){
-          Inverse_plan_grad[i] = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad[i],digrad[i], FFTW_ESTIMATE);
-  }
-#endif
-  return;
-}
 
 gadget_header generate_header(std::valarray<int64_t> & npart)
 {

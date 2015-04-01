@@ -1,14 +1,77 @@
+#include "displacement.hpp"
+
 #include <math.h>
 #include <stdlib.h>
 #include <fftw3.h>
 #include <gsl/gsl_rng.h>
+#include <exception>
 //For memset
 #include <string.h>
+#include <omp.h>
 
 #include "power.hpp"
 #include "part_data.hpp"
-#include "allvars.h"
-#include "proto.h"
+// #include "proto.h"
+
+/**Initialise the memory for the FFTs*/
+DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box): Nmesh(Nmesh), Nsample(Nsample), Seed(Seed), Box(Box)
+{
+  size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
+  Disp = (float *) fftwf_malloc(bytes);
+  if(Disp)
+        printf("Nmesh = %lu. Allocated %lu MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
+  else{
+      fprintf(stderr, "Nmesh = %lu. Failed to allocate %lu MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
+      throw std::bad_alloc();
+  }
+  Cdata = (fftwf_complex *) Disp;	/* transformed array */
+
+#ifdef TWOLPT
+  twosrc = (float *) fftwf_malloc(bytes);
+  ctwosrc = (fftwf_complex *) twosrc;
+  for(int i=0; i<3; i++){
+     cdigrad[i] = (fftwf_complex *) malloc(bytes);
+     digrad[i] = (float *) cdigrad[i];
+  }
+  /*Check memory allocation*/
+  if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
+        printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+  else{
+      fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+      throw std::bad_alloc();
+  }
+#endif
+
+  if(!fftwf_init_threads()){
+  		  fprintf(stderr,"Error initialising fftw threads\n");
+  		  exit(1);
+  }
+  fftwf_plan_with_nthreads(omp_get_num_procs());
+  Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
+#ifdef TWOLPT
+  Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
+  for(int i=0; i<3; i++){
+          Inverse_plan_grad[i] = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad[i],digrad[i], FFTW_ESTIMATE);
+  }
+#endif
+}
+
+//Free the memory in the FFTs
+DisplacementFields::~DisplacementFields()
+{
+    fftwf_free(Disp);
+    fftwf_destroy_plan(Inverse_plan);
+    #ifdef TWOLPT
+    /* Free  */
+    fftwf_free(twosrc);
+    fftwf_destroy_plan(Forward_plan2);
+    for(int i=0;i<3;i++){
+            fftwf_free(cdigrad[i]);
+            fftwf_destroy_plan(Inverse_plan_grad[i]);
+    }
+    #endif
+}
+
 
 /**Little macro to work the storage order of the FFT.*/
 inline int KVAL(const size_t n, const size_t Nmesh)
@@ -16,10 +79,79 @@ inline int KVAL(const size_t n, const size_t Nmesh)
     return (n < Nmesh / 2 ? n : n - Nmesh);
 }
 
-void displacement_fields(const int type, const int64_t NumPart, part_data& P, PowerSpec * PSpec, const size_t Nmesh, bool RayleighScatter=true)
+
+#ifdef CORRECT_CIC
+/* do deconvolution of CIC interpolation */
+double invwindow(int kx,int ky,int kz,int n)
+{
+	double iwx=1.0,iwy=1.0,iwz=1.0;
+        if(!n)
+                return 0;
+	if(kx){
+		iwx=M_PI*kx/static_cast<float>(n);
+		iwx=iwx/sin(iwx);
+        }
+	if(ky){
+		iwy=M_PI*ky/static_cast<float>(n);
+		iwy=iwy/sin(iwy);
+        }
+	if(kz){
+		iwz=M_PI*kz/static_cast<float>(n);
+		iwz=iwz/sin(iwz);
+        }
+	return pow(iwx*iwy*iwz,2);
+}
+#endif
+
+/**Initialise a table of seeds for the random number generator*/
+unsigned int * initialize_rng(int Seed, size_t Nmesh)
+{
+  gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
+  gsl_rng_set(random_generator, Seed);
+  unsigned int * seedtable;
+
+  if(!(seedtable =(unsigned int *) malloc(Nmesh * Nmesh * sizeof(unsigned int))))
+    throw std::bad_alloc();
+
+  for(size_t i = 0; i < Nmesh / 2; i++)
+    {
+      size_t j;
+      for(j = 0; j < i; j++)
+	seedtable[i * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i + 1; j++)
+	seedtable[j * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i; j++)
+	seedtable[(Nmesh - 1 - i) * Nmesh + j] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i + 1; j++)
+	seedtable[(Nmesh - 1 - j) * Nmesh + i] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i; j++)
+	seedtable[i * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i + 1; j++)
+	seedtable[j * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i; j++)
+	seedtable[(Nmesh - 1 - i) * Nmesh + (Nmesh - 1 - j)] = 0x7fffffff * gsl_rng_uniform(random_generator);
+
+      for(j = 0; j < i + 1; j++)
+	seedtable[(Nmesh - 1 - j) * Nmesh + (Nmesh - 1 - i)] = 0x7fffffff * gsl_rng_uniform(random_generator);
+    }
+
+  gsl_rng_free(random_generator);
+  return seedtable;
+
+}
+
+/**Function to compute Zeldovich displacement fields using a double Fourier transform*/
+void DisplacementFields::displacement_fields(const int type, const int64_t NumPart, part_data& P, PowerSpec * PSpec, bool RayleighScatter, bool SphereMode)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
-  const unsigned int *seedtable = initialize_rng(Seed);
+  //Re-initialize every time this is called, so each particle type has the same phases
+  unsigned int *seedtable = initialize_rng(Seed, Nmesh);
   double maxdisp;
   const size_t fftsize = 2*Nmesh*Nmesh*(Nmesh/2+1);
 
@@ -61,7 +193,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, Po
 			  kmag = sqrt(kmag2);
 
                           /* select a sphere in k-space */
-			  if(SphereMode == 1){
+			  if(SphereMode){
 			      if(kmag * Box / (2 * M_PI) > Nsample / 2)
                                       continue;
                           }
@@ -181,7 +313,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, Po
 #endif
 	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
 	  /* read-out Zeldovich displacements into P.Vel*/
-      maxdisp=displacement_read_out(Disp, 1, NumPart, P, Nmesh,axes);
+      maxdisp=displacement_read_out(1, NumPart, P, axes);
 	}
 
 #ifdef TWOLPT
@@ -229,7 +361,7 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, Po
               /* Cdata now contains the FFT of the 2LPT term */
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
-              maxdisp2=displacement_read_out(Disp, 2, NumPart, P, Nmesh,axes);
+              maxdisp2=displacement_read_out(2, NumPart, P, axes);
       	}
 #ifdef NEUTRINOS
     } //type !=2
@@ -245,33 +377,11 @@ void displacement_fields(const int type, const int64_t NumPart, part_data& P, Po
   printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp2, maxdisp2 / (Box / Nmesh));
 #endif
+  free(seedtable);
   return;
 }
 
-#ifdef CORRECT_CIC
-/* do deconvolution of CIC interpolation */
-double invwindow(int kx,int ky,int kz,int n)
-{
-	double iwx=1.0,iwy=1.0,iwz=1.0;
-        if(!n)
-                return 0;
-	if(kx){
-		iwx=M_PI*kx/static_cast<float>(n);
-		iwx=iwx/sin(iwx);
-        }
-	if(ky){
-		iwy=M_PI*ky/static_cast<float>(n);
-		iwy=iwy/sin(iwy);
-        }
-	if(kz){
-		iwz=M_PI*kz/static_cast<float>(n);
-		iwz=iwz/sin(iwz);
-        }
-	return pow(iwx*iwy*iwz,2);
-}
-#endif
-
-double displacement_read_out(float * Disp, const int order, const int64_t NumPart, part_data& P, const size_t Nmesh, const int axes)
+double DisplacementFields::displacement_read_out(const int order, const int64_t NumPart, part_data& P, const int axes)
 {
    double maxx=0;
    const double Nmesh3 = pow(1.*Nmesh, 3);

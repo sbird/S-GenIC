@@ -1,6 +1,5 @@
 #include "allvars.h"
 
-
 int WhichSpectrum;
 
 int SphereMode;
@@ -27,20 +26,6 @@ double InitTime;
 double Redshift;
 
 char OutputDir[1000], FileBase[1000];
-
-fftwf_plan Inverse_plan;
-float *Disp;
-fftwf_complex *Cdata;
-
-#ifdef TWOLPT
-  fftwf_plan Forward_plan2;
-  fftwf_plan Inverse_plan_grad[3];
-  float *twosrc;
-  fftwf_complex *ctwosrc;
-  fftwf_complex *(cdigrad[3]);
-  float *(digrad[3]);
-#endif
-
 
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 double InputSpectrum_UnitLength_in_cm;

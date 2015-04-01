@@ -1,8 +1,8 @@
 #ifndef __ALLVARS_H
 #define __ALLVARS_H
 
-#include <fftw3.h>
 #include <stdint.h>
+#include <stddef.h>
 
 typedef int32_t int4byte;
 typedef uint32_t uint4byte;
@@ -38,23 +38,6 @@ extern double InitTime;
 extern double Redshift;
 
 extern char OutputDir[1000], FileBase[1000];
-
-extern fftwf_plan Inverse_plan;
-extern float        *Disp;
-extern fftwf_complex     *Cdata;
-
-#ifdef TWOLPT
-  extern fftwf_plan Forward_plan2;
-  extern fftwf_plan Inverse_plan_grad[3];
-  extern fftwf_plan Inverse_plan2;
-  extern fftwf_complex *cdisp2; /* 2nd order displacements */
-  extern float *disp2;
-  extern float *twosrc;
-  extern fftwf_complex *ctwosrc;
-  extern fftwf_complex *(cdigrad[3]);
-  extern float *(digrad[3]);
-#endif
-
 
 extern double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 extern double InputSpectrum_UnitLength_in_cm;

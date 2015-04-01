@@ -3,6 +3,7 @@
 #include "part_data.hpp"
 #include "cosmology.hpp"
 #include "power.hpp"
+#include "displacement.hpp"
 
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
@@ -30,7 +31,7 @@ int main(int argc, char **argv)
     printf("Nmesh must be even or correct output is not guaranteed.\n");
     exit(1);
   }
-  initialize_ffts();
+  DisplacementFields displace(Nmesh, Nsample, Seed, Box);
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
   /*Set particle numbers*/
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
       try{
         part_data P(snap, type, GlassTileFac, Box);
         NumPart = P.GetNumPart();
-        displacement_fields(type, NumPart, P, PSpec, Nmesh, RayleighScatter);
+        displace.displacement_fields(type, NumPart, P, PSpec, SphereMode, RayleighScatter);
         FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
       }
       catch (std::bad_alloc& ba)
@@ -111,19 +112,7 @@ int main(int argc, char **argv)
 #endif
   }
 
-  fftwf_free(Disp);
-  fftwf_destroy_plan(Inverse_plan);
-  delete PSpec;
-#ifdef TWOLPT
-  /* Free  */
-  fftwf_free(twosrc);
-  fftwf_destroy_plan(Forward_plan2);
-  for(int i=0;i<3;i++){
-        fftwf_free(cdigrad[i]);
-        fftwf_destroy_plan(Inverse_plan_grad[i]);
-  }
-#endif
-
+    delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
   return 0;
