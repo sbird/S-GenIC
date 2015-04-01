@@ -113,6 +113,7 @@ int main(int argc, char **argv)
 
   fftwf_free(Disp);
   fftwf_destroy_plan(Inverse_plan);
+  delete PSpec;
 #ifdef TWOLPT
   /* Free  */
   fftwf_free(twosrc);

@@ -7,6 +7,8 @@
 class PowerSpec
 {
     public:
+        virtual ~PowerSpec() {}
+    public:
         virtual double power(double k, int Type)=0;
 };
 
@@ -32,6 +34,7 @@ class PowerSpec_Tabulated: public PowerSpec
     PowerSpec_Tabulated(char * FileWithTransfer, char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks);
     virtual double power(double k, int Type);
+    virtual ~PowerSpec_Tabulated() {}
     private:
         int NPowerTable;
         double scale;
@@ -54,6 +57,7 @@ class PowerSpec_Efstathiou: public PowerSpec
         {
             return k / pow(1 + pow(AA * k + pow(BB * k, 1.5) + CC * CC * k * k, nu), 2 / nu);
         }
+        virtual ~PowerSpec_Efstathiou() {}
     private:
         double AA, BB, CC;
         double nu;
@@ -71,6 +75,7 @@ class PowerSpec_EH: public PowerSpec
             if(OmegaBaryon == 0)
                 ombh2 = 0.04 * HubbleParam * HubbleParam;
         }
+        virtual ~PowerSpec_EH() {}
         virtual double power(double k, int Type)
         {
               return k * pow(tk_eh(k), 2);
@@ -111,6 +116,10 @@ class NormalizedPowerSpec: public PowerSpec
             power *= pow(k, PrimordialIndex - 1.0);
             return power/ (Dplus*Dplus);
         }
+        ~NormalizedPowerSpec()
+        {
+            delete PSpec;
+        }
         //public as is used in the integrator function, which is not in this class
         double R8;
     private:
@@ -129,6 +138,10 @@ class WDMPowerSpec: public PowerSpec
         {
             /* Eqn. (A9) in Bode, Ostriker & Turok (2001), assuming gX=1.5  */
             alpha =  0.048 * pow((Omega - OmegaBaryon) / 0.4, 0.15) * pow(HubbleParam / 0.65,1.3) * pow(1.0 / WDM_PartMass_in_kev, 1.15);
+        }
+        ~WDMPowerSpec()
+        {
+            delete PSpec;
         }
         virtual double power(double k, int Type)
         {
