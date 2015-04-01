@@ -16,10 +16,10 @@
 /** \file
  * Test suite using boost::test*/
 #define BOOST_TEST_MODULE NGENIC
-#include "allvars.h"
 #include "proto.h"
 #include "part_data.hpp"
 #include "cosmology.hpp"
+#include "thermalvel.hpp"
 #include <math.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>

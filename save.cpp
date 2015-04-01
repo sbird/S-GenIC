@@ -2,6 +2,7 @@
 #include "proto.h"
 #include "cosmology.hpp"
 #include "part_data.hpp"
+#include "thermalvel.hpp"
 #include <gadgetwriter.hpp>
 
 using namespace GadgetWriter;

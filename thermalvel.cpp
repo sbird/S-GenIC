@@ -1,4 +1,4 @@
-#include "proto.h"
+#include "thermalvel.hpp"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_rng.h>
 
