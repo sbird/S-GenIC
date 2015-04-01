@@ -55,7 +55,8 @@ unsigned int * initialize_rng(int Seed)
 
 void set_units(void)		/* ... set some units */
 {
-  UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
+    InitTime = 1 / (1 + Redshift);
+    UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
 }
 
 void initialize_ffts(void)
