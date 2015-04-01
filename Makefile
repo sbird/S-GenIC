@@ -59,10 +59,10 @@ INCL   = allvars.h proto.h part_data.hpp Makefile
 
 .PHONY : clean all test
 
+all: $(EXEC)
+
 test: btest
 	./$^
-
-all: $(EXEC)
 
 doc: Doxyfile main.cpp ${INCL}
 	doxygen $<
