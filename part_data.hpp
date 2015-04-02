@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <valarray>
+#include <cstdio>
 #include <gadgetreader.hpp>
 
 class part_data{
