@@ -61,6 +61,9 @@ INCL   = allvars.h proto.h part_data.hpp thermalvel.hpp power.hpp displacement.h
 
 all: $(EXEC)
 
+createnu: createnu.o $(OBJS)
+	${LINK}${LFLAGS} -lhdf5_hl -lhdf5 $^ -o $@
+
 test: btest
 	./$^
 
