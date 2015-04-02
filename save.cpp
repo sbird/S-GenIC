@@ -10,7 +10,7 @@ using namespace std;
 
 #define BUFFER 48
 
-int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t NumPart, int64_t FirstId)
+int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t NumPart, int64_t FirstId, bool twolpt)
 {
   float *block;
   id_type *blockid;
@@ -46,10 +46,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
   const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
-#ifdef TWOLPT
+  //Only used if twolpt is on
   //This is slightly approximate: we are assuming that D2 ~ -3/7 Da^2 Omega_m^{-1/143} (Bouchet, F 1995, A&A 296)
   const double vel_prefac2 = -3./7.*pow(Omegan, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
-#endif
   printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omegan);
 
     
@@ -67,12 +66,8 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   for(int64_t i = 0; i < NumPart; i++){
       for(int k = 0; k < 3; k++){
           block[3 * pc + k] = P.Pos(i,k) + P.Vel(i,k);
-#ifdef TWOLPT
-#ifdef NEUTRINOS
-          if(type !=2)
-#endif
-              block[3 * pc + k] -= 3./7. * P.Vel2(i,k);
-#endif
+          if(twolpt)
+                block[3 * pc + k] -= 3./7. * P.Vel2(i,k);
           block[3 * pc + k] = periodic_wrap(block[3*pc+k], Box);
       }
       pc++;
@@ -104,12 +99,8 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   for(int64_t i = 0; i < NumPart; i++) {
       for(int k = 0; k < 3; k++){
           block[3 * pc + k] = vel_prefac*P.Vel(i,k);
-#ifdef TWOLPT
-#ifdef NEUTRINOS
-      if(type !=2)
-#endif
-          block[3 * pc + k] += vel_prefac2* P.Vel2(i,k);
-#endif
+          if(twolpt)
+                block[3 * pc + k] += vel_prefac2* P.Vel2(i,k);
       }
 
       //Add thermal velocities

@@ -17,6 +17,8 @@ extern int      SphereMode;
 
 extern int ICFormat;
 
+extern int twolpt;
+
 extern char     GlassFile[500]; 
 extern char     FileWithInputSpectrum[500];
 extern  char     FileWithTransfer[500];

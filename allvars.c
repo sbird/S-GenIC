@@ -18,6 +18,8 @@ double Box;
 int Seed;
 int RayleighScatter;
 
+int twolpt;
+
 int NumFiles;
 
 double InitTime;

@@ -169,6 +169,11 @@ void read_parameterfile(char *fname)
   strcpy(tag[nt], "NU_PartMass_in_ev");
   addr[nt] = &NU_PartMass_in_ev;
   id[nt++] = FLOAT;
+
+  strcpy(tag[nt], "TWOLPT");
+  addr[nt] = &twolpt;
+  id[nt++] = INT;
+
   if((fd = fopen(fname, "r")))
     {
       while(!feof(fd))

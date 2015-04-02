@@ -6,7 +6,6 @@ LIBDIR =
 #OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
 #OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
 OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second DM component
-OPT   +=  -DTWOLPT  # Use 2LPT instead of ZA. Uses more memory.
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
 #OPT += -DHAVE_HDF5  #Use this if you have HDF5

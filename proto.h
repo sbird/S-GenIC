@@ -23,7 +23,7 @@ void   set_units(void);
 
 double periodic_wrap(double x, double box);
 
-int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data&  P, int64_t NumPart, int64_t FirstId);
+int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, part_data&  P, int64_t NumPart, int64_t FirstId, bool twolpt);
 
 gadget_header generate_header(std::valarray<int64_t> & npart);
 

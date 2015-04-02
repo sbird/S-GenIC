@@ -14,7 +14,7 @@
 // #include "proto.h"
 
 /**Initialise the memory for the FFTs*/
-DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box): Nmesh(Nmesh), Nsample(Nsample), Seed(Seed), Box(Box)
+DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box, bool twolpt): Nmesh(Nmesh), Nsample(Nsample), twolpt(twolpt), Seed(Seed), Box(Box)
 {
   size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (float *) fftwf_malloc(bytes);
@@ -26,21 +26,21 @@ DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, d
   }
   Cdata = (fftwf_complex *) Disp;	/* transformed array */
 
-#ifdef TWOLPT
-  twosrc = (float *) fftwf_malloc(bytes);
-  ctwosrc = (fftwf_complex *) twosrc;
-  for(int i=0; i<3; i++){
-     cdigrad[i] = (fftwf_complex *) malloc(bytes);
-     digrad[i] = (float *) cdigrad[i];
+  if (twolpt) {
+        twosrc = (float *) fftwf_malloc(bytes);
+        ctwosrc = (fftwf_complex *) twosrc;
+        for(int i=0; i<3; i++){
+            cdigrad[i] = (fftwf_complex *) malloc(bytes);
+            digrad[i] = (float *) cdigrad[i];
+        }
+        /*Check memory allocation*/
+        if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
+                printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+        else{
+            fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+            throw std::bad_alloc();
+        }
   }
-  /*Check memory allocation*/
-  if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
-        printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
-  else{
-      fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
-      throw std::bad_alloc();
-  }
-#endif
 
   if(!fftwf_init_threads()){
   		  fprintf(stderr,"Error initialising fftw threads\n");
@@ -48,12 +48,12 @@ DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, d
   }
   fftwf_plan_with_nthreads(omp_get_num_procs());
   Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
-#ifdef TWOLPT
-  Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
-  for(int i=0; i<3; i++){
-          Inverse_plan_grad[i] = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad[i],digrad[i], FFTW_ESTIMATE);
+  if(twolpt) {
+    Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
+    for(int i=0; i<3; i++){
+            Inverse_plan_grad[i] = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,cdigrad[i],digrad[i], FFTW_ESTIMATE);
+    }
   }
-#endif
 }
 
 //Free the memory in the FFTs
@@ -61,15 +61,15 @@ DisplacementFields::~DisplacementFields()
 {
     fftwf_free(Disp);
     fftwf_destroy_plan(Inverse_plan);
-    #ifdef TWOLPT
-    /* Free  */
-    fftwf_free(twosrc);
-    fftwf_destroy_plan(Forward_plan2);
-    for(int i=0;i<3;i++){
+    if (twolpt) {
+        /* Free  */
+        fftwf_free(twosrc);
+        fftwf_destroy_plan(Forward_plan2);
+        for(int i=0;i<3;i++){
             fftwf_free(cdigrad[i]);
             fftwf_destroy_plan(Inverse_plan_grad[i]);
+        }
     }
-    #endif
 }
 
 
@@ -155,10 +155,9 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
   double maxdisp;
   const size_t fftsize = 2*Nmesh*Nmesh*(Nmesh/2+1);
 
-#ifdef TWOLPT
-  double maxdisp2;
-  memset(twosrc, 0, fftsize*sizeof(float));
-#endif
+  double maxdisp2=0;
+  if(twolpt)
+    memset(twosrc, 0, fftsize*sizeof(float));
 
   for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting Zeldovich axis %d.\n", axes);
@@ -264,59 +263,58 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
 
           }
         }
-
         gsl_rng_free(random_generator);
         #pragma omp barrier
      } //omp_parallel
-#ifdef TWOLPT
-      /* At this point, Cdata contains the complex Zeldovich displacement for this axis */
+     if (twolpt ) {
+            /* At this point, Cdata contains the complex Zeldovich displacement for this axis */
 
-      /* Compute displacement gradient
-       * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
-      for(int ax=2;ax>=axes; ax--){
-#ifdef NEUTRINOS
-          if(type == 2)
-              break;
-#endif
-          #pragma omp parallel for
-          for(size_t i = 0; i < Nmesh; i++) {
-            for(size_t j = 0; j < Nmesh; j++) {
-              for(size_t k = 0; k <= Nmesh / 2; k++){
-                  double kvec[3];
-                  size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
-                  kvec[0] = KVAL(i, Nmesh) * 2 * M_PI / Box;
-                  kvec[1] = KVAL(j, Nmesh) * 2 * M_PI / Box;
-                  kvec[2] = KVAL(k, Nmesh) * 2 * M_PI / Box;
-                  /*Note that unlike Scoccimaro et al, we do not have
-                   * memory to waste, so we only do one axis at a time */
-                  /* Derivatives of ZA displacement  */
-                  /* d(dis_i)/d(q_j)  -> sqrt(-1) k_j dis_i */
-                  (cdigrad[axes][coord])[0] = -(Cdata[coord])[1] * kvec[ax]; /* disp0,0 */
-                  (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
-              }
+            /* Compute displacement gradient
+            * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
+            for(int ax=2;ax>=axes; ax--){
+        #ifdef NEUTRINOS
+                if(type == 2)
+                    break;
+        #endif
+                #pragma omp parallel for
+                for(size_t i = 0; i < Nmesh; i++) {
+                    for(size_t j = 0; j < Nmesh; j++) {
+                    for(size_t k = 0; k <= Nmesh / 2; k++){
+                        double kvec[3];
+                        size_t coord = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
+                        kvec[0] = KVAL(i, Nmesh) * 2 * M_PI / Box;
+                        kvec[1] = KVAL(j, Nmesh) * 2 * M_PI / Box;
+                        kvec[2] = KVAL(k, Nmesh) * 2 * M_PI / Box;
+                        /*Note that unlike Scoccimaro et al, we do not have
+                        * memory to waste, so we only do one axis at a time */
+                        /* Derivatives of ZA displacement  */
+                        /* d(dis_i)/d(q_j)  -> sqrt(-1) k_j dis_i */
+                        (cdigrad[axes][coord])[0] = -(Cdata[coord])[1] * kvec[ax]; /* disp0,0 */
+                        (cdigrad[axes][coord])[1] = (Cdata[coord])[0] * kvec[ax];
+                    }
+                    }
+                }
+                /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
+        //           printf("Finding gradient FT component (%d,%d)\n",ax,axes);
+                fftwf_execute(Inverse_plan_grad[axes]);	/** FFT of cdigrad[axes] **/
+
+                /* Compute second order source and store it in twosrc*/
+                if(ax != axes)
+                    #pragma omp parallel for
+                    for(size_t i = 0; i < Nmesh; i++)
+                        for(size_t j = 0; j < Nmesh; j++)
+                        for(size_t k = 0; k < Nmesh; k++){
+                            size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
+                            twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
+                        }
             }
-          }
-          /*At this point, cdigrad[i] contains FT(phi,ii). For grad^2 phi, want the FT. */
-//           printf("Finding gradient FT component (%d,%d)\n",ax,axes);
-          fftwf_execute(Inverse_plan_grad[axes]);	/** FFT of cdigrad[axes] **/
+     } //end twolpt
+     fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
+     /* read-out Zeldovich displacements into P.Vel*/
+     maxdisp=displacement_read_out(1, NumPart, P, axes);
+    }
 
-          /* Compute second order source and store it in twosrc*/
-          if(ax != axes)
-              #pragma omp parallel for
-              for(size_t i = 0; i < Nmesh; i++)
-                for(size_t j = 0; j < Nmesh; j++)
-                  for(size_t k = 0; k < Nmesh; k++){
-                      size_t coord = (i * Nmesh + j) * (2 * (Nmesh / 2 + 1)) + k;
-                      twosrc[coord] -= digrad[axes][coord]*digrad[axes][coord];
-                  }
-      }
-#endif
-	  fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
-	  /* read-out Zeldovich displacements into P.Vel*/
-      maxdisp=displacement_read_out(1, NumPart, P, axes);
-	}
-
-#ifdef TWOLPT
+    if (twolpt) {
 #ifdef NEUTRINOS
     if(type != 2){
 #endif
@@ -362,21 +360,15 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
               maxdisp2=displacement_read_out(2, NumPart, P, axes);
-      	}
+          }
 #ifdef NEUTRINOS
     } //type !=2
 #endif
-#endif
+    } //end twolpt
 
   printf("\nMaximum Zeldovich displacement: %g kpc/h, in units of the part-spacing= %g\n",
          maxdisp, maxdisp / (Box / Nmesh));
-#ifdef TWOLPT
-#ifdef NEUTRINOS
-          if(type != 2)
-#endif
-  printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",
-         maxdisp2, maxdisp2 / (Box / Nmesh));
-#endif
+  printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",maxdisp2, maxdisp2 / (Box / Nmesh));
   free(seedtable);
   return;
 }
@@ -423,7 +415,6 @@ double DisplacementFields::displacement_read_out(const int order, const int64_t 
 		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
 		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
-#ifdef TWOLPT
           /*Read out the 2lpt velocity if this is
            * being called from the 2lpt part of the code*/
           if(order == 2){
@@ -431,7 +422,6 @@ double DisplacementFields::displacement_read_out(const int order, const int64_t 
               P.Set2Vel(dis, n,axes);
           }
           else
-#endif
               P.SetVel(dis, n,axes);
           if(dis > maxdisp)
             maxdisp = dis;

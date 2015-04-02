@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     printf("Nmesh must be even or correct output is not guaranteed.\n");
     exit(1);
   }
-  DisplacementFields displace(Nmesh, Nsample, Seed, Box);
+  DisplacementFields displace(Nmesh, Nsample, Seed, Box, twolpt);
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
   /*Set particle numbers*/
@@ -90,20 +90,24 @@ int main(int argc, char **argv)
       if(npart[type] == 0)
               continue;
       try{
-        part_data P(snap, type, GlassTileFac, Box);
-        NumPart = P.GetNumPart();
-        displace.displacement_fields(type, NumPart, P, PSpec, SphereMode, RayleighScatter);
-        FirstId = write_particle_data(osnap, type,P, NumPart,FirstId);
+          bool tlptpart = twolpt;
+#ifdef NEUTRINOS
+          if (type==2)
+              tlptpart = false;
+#endif
+          part_data P(snap, type, GlassTileFac, Box, tlptpart);
+          NumPart = P.GetNumPart();
+          displace.displacement_fields(type, NumPart, P, PSpec, SphereMode, RayleighScatter);
+          FirstId = write_particle_data(osnap, type,P, NumPart,FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
       {
          size_t mem = sizeof(float)*snap.GetNpart(type)*3*GlassTileFac*GlassTileFac*GlassTileFac/1024/1024;
-#ifdef TWOLPT
+         if(twolpt)
 #ifdef NEUTRINOS
-         if (type != 2)
+            if (type != 2)
 #endif
-             mem*=2;
-#endif
+                mem*=2;
          fprintf(stderr, "Could not allocate %ld MB for particle velocities\n", mem);
          FatalError(24);
       }
