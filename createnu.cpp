@@ -267,27 +267,33 @@ int main(int argc, char **argv)
           printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : neutrino mass in eV\n");
           exit(0);
     }
-    std::ostringstream snapnum_f;
-    snapnum_f << std::setfill('0')<<std::setw(3)<<snapnum;
+    std::ostringstream formatter;
+    formatter << std::setfill('0')<<std::setw(3)<<snapnum;
+    //Contains the formatter snapshot number
+    const std::string snapnum_f( formatter.str() );
+    formatter.str("");
+    formatter << std::string(BaseDir)<<"/snapdir_"<<snapnum_f;
     //Contains the snapshot directory
-    std::ostringstream snapdir;
-    snapdir << std::string(BaseDir)<<"/snapdir_"<<snapnum_f;
+    const std::string snapdir( formatter.str() );
     //Contains the power spectrum file
-    std::ostringstream powerfile;
-    powerfile << std::string(BaseDir)<<"/powerspec_nu_"<< snapnum_f <<".txt";
+    formatter.str("");
+    formatter << std::string(BaseDir)<<"/powerspec_nu_"<< snapnum_f <<".txt";
+    const std::string powerfile ( formatter.str() );
     //Open the first file of the simulation snapshots and read metadata from there
-    std::ostringstream SnapFile;
-    SnapFile << snapdir;
+    formatter.str("");
+    formatter << snapdir;
     //Check for single file snapshot sets
-    SnapFile << "/snap_"<<snapnum_f<<".hdf5";
-    if (file_exists(SnapFile.str())) {
+    formatter << "/snap_"<<snapnum_f <<".hdf5";
+    std::string SnapFile ( formatter.str() );
+    if ( file_exists(SnapFile) ) {
         numfiles = 1;
     }
     else {
-        SnapFile.clear();
-        SnapFile << snapdir << "/snap_"<<snapnum_f<<".0.hdf5";
-        if (!file_exists(SnapFile.str())) {
-            std::cout <<"Neither " << SnapFile.str() << "nor the single-file version exist. Your snapshot set must be HDF5."<<std::endl;
+        formatter.str("");
+        formatter << snapdir << "/snap_"<<snapnum_f<<".0.hdf5";
+        SnapFile = formatter.str();
+        if (!file_exists(SnapFile)) {
+            std::cout <<"Neither " << SnapFile << "nor the single-file version exist. Your snapshot set must be HDF5."<<std::endl;
             exit(1);
         }
     }
@@ -296,7 +302,7 @@ int main(int argc, char **argv)
     size_t Nmesh, NNeutrinos;
     {
         uint32_t npart[N_TYPE];
-        hid_t handle = H5Fopen(SnapFile.str().c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+        hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
         hid_t hdf_group =H5Gopen(handle,"/Header",H5P_DEFAULT);
         /*Get the total number of particles*/
         H5LTget_attribute(hdf_group,".","NumPart_Total",H5T_NATIVE_INT, &npart);
@@ -305,10 +311,10 @@ int main(int argc, char **argv)
         H5LTget_attribute(hdf_group,".","NumPart_Total_HighWord",H5T_NATIVE_INT, &npart);
         for(int i = 0; i< N_TYPE; i++)
                 Npart[i]+=(1L<<32)*npart[i];
-        Nmesh = 2*Npart[1];
         //FIXME: The output will have as many neutrino particles as there are CDM particles.
         //Ultimately we want to reduce this
-        NNeutrinos = Npart[1];
+        NNeutrinos = pow(Npart[1], 1./3);
+        Nmesh = 2*NNeutrinos;
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
         H5LTget_attribute_int(hdf_group,".","NumFilesPerSnapshot",&numfiles);
@@ -329,17 +335,18 @@ int main(int argc, char **argv)
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     //This does the FFT
-    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile.str(), NNeutrinos, Nmesh, Box, seed);
+    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, NNeutrinos, Nmesh, Box, seed);
     //Choose a high ID number
     int64_t FirstId = NNeutrinos*8;
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
-    size_t startPart = write_neutrino_data(SnapFile.str(), P, 0, NNeutrinos,FirstId, vel_prefac, nupartmass);
+    size_t startPart = write_neutrino_data(SnapFile, P, 0, NNeutrinos,FirstId, vel_prefac, nupartmass);
     for(int i=1; i<numfiles; ++i)
     {
-        SnapFile.clear();
-        SnapFile << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
+        formatter.str("");
+        formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
+        SnapFile = formatter.str();
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile.str(), P, startPart, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
+        startPart += write_neutrino_data(SnapFile, P, startPart, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
     }
     return 0;
 }
