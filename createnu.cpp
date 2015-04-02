@@ -122,10 +122,10 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     std::cout<<"Initialising pre-IC file "<< GlassFile<<std::endl;
     GadgetReader::GSnap glass(GlassFile);
     printf("Nmesh = %lu Nsample = %lu\n",Nmesh,NNeutrinos);
-    DisplacementFields displace(Nmesh, NNeutrinos, Seed, Box);
+    DisplacementFields displace(Nmesh, NNeutrinos, Seed, Box, false);
     //Output is neutrino particles
     int GlassTileFac = NNeutrinos/glass.GetNpart(2);
-    part_data P(glass, 2, GlassTileFac, Box);
+    part_data P(glass, 2, GlassTileFac, Box, false);
     displace.displacement_fields(2, NNeutrinos, P, &PSpec, SphereMode, RayleighScatter);
     return P;
 }
@@ -326,11 +326,9 @@ int main(int argc, char **argv)
     //Note no hierarchy right now.
     Cosmology cosmo(HubbleParam, Omega0, OmegaLambda, NUmass, false);
     //Find the desired mass of each neutrino particle
-//       omega =
-//     masstot / (All.BoxSize * All.BoxSize * All.BoxSize) / (3 * All.Hubble * All.Hubble / (8 * M_PI * All.G));
     // OmegaNu is dimensionless. Box is in kpc, H in h/s, G in cm^-3 g^-1 s^-2
     // so this is in g kpc^3 cm^-3
-    //So the conversion factor is
+    //So the conversion factor is (kpc/cm)^3 * g/Msun)
     const double nupartmass = cosmo.OmegaNu(atime) * pow(Box, 3) * 3 * pow(HUBBLE*HubbleParam, 2) / (8 * M_PI * GRAVITY) * pow(UnitLength_in_cm, 3) / UnitMass_in_g;
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
