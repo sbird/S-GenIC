@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef int32_t int4byte;
-typedef uint32_t uint4byte;
-
 extern int      WhichSpectrum;
 
 extern int NumFiles;
@@ -17,11 +14,6 @@ extern int NumFiles;
 extern size_t      Nmesh, Nsample;
 
 extern int      SphereMode;
-
-//Total neutrino mass
-extern double MNu;
-//1 if inverted hierarchy, 0 otherwise
-extern int InvertedHierarchy;
 
 extern int ICFormat;
 
@@ -47,8 +39,6 @@ extern double OmegaBaryon, HubbleParam;
 extern double PrimordialIndex;
 extern double ShapeGamma;
 
-extern double Dplus; /* growth factor */
-
 #ifdef NO64BITID
         typedef int32_t id_type;
 #else
@@ -67,7 +57,11 @@ extern int    neutrinos_ks;
 extern int    no_gas;
 extern int    NU_On;
 extern int    NU_Vtherm_On;
+//Total neutrino mass
 extern double NU_PartMass_in_ev;
+//1 if inverted hierarchy, 0 otherwise
+extern int InvertedHierarchy;
+
 
 #endif /* __ALLVARS_H*/
 

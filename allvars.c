@@ -14,8 +14,6 @@ char FileWithTransfer[500];
 
 size_t GlassTileFac;
 
-double MNu;
-int InvertedHierarchy;
 double Box;
 int Seed;
 int RayleighScatter;
@@ -34,7 +32,6 @@ double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
 double OmegaBaryon, HubbleParam;
 double ShapeGamma;
 double PrimordialIndex;
-double Dplus;			/* growth factor */
 
 int ReNormalizeInputSpectrum;
 
@@ -49,4 +46,4 @@ int neutrinos_ks;
 int no_gas;
 int NU_Vtherm_On;
 double NU_PartMass_in_ev;
-
+int InvertedHierarchy;

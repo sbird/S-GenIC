@@ -1,7 +1,7 @@
 #include "proto.h"
 #include "gadgetheader.h"
 #include "cosmology.hpp"
-#include <fftw3.h>
+#include "allvars.h"
 
 int FatalError(int errnum)
 {
@@ -9,8 +9,6 @@ int FatalError(int errnum)
   fflush(stdout);
   exit(0);
 }
-
-#include "allvars.h"
 
 void set_units(void)		/* ... set some units */
 {

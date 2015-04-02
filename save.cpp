@@ -43,7 +43,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t N
   double Omegan=Omega;
   if (neutrinos_ks)
       Omegan+=OmegaDM_2ndSpecies;
-  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, MNu, InvertedHierarchy);
+  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
   const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
 #ifdef TWOLPT

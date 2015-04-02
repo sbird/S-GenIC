@@ -61,7 +61,7 @@ int main(int argc, char **argv)
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {
-      Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
+      Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
       PSpec = new NormalizedPowerSpec(PSpec, Sigma8, PrimordialIndex, cosmo.GrowthFactor(InitTime, 1.0), UnitLength_in_cm);
   }
   if(WDM_On)
