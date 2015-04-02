@@ -124,7 +124,7 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     printf("Nmesh = %lu Nsample = %lu\n",Nmesh,NNeutrinos);
     DisplacementFields displace(Nmesh, NNeutrinos, Seed, Box, false);
     //Output is neutrino particles
-    int GlassTileFac = NNeutrinos/glass.GetNpart(2);
+    int GlassTileFac = NNeutrinos/pow(glass.GetNpart(2),1./3.);
     part_data P(glass, 2, GlassTileFac, Box, false);
     displace.displacement_fields(2, NNeutrinos, P, &PSpec, SphereMode, RayleighScatter);
     return P;
@@ -313,7 +313,7 @@ int main(int argc, char **argv)
                 Npart[i]+=(1L<<32)*npart[i];
         //FIXME: The output will have as many neutrino particles as there are CDM particles.
         //Ultimately we want to reduce this
-        NNeutrinos = pow(Npart[1], 1./3);
+        NNeutrinos = round(pow(Npart[1], 1./3));
         Nmesh = 2*NNeutrinos;
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
