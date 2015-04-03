@@ -95,7 +95,7 @@ double PowerSpec_NuTabulated::power(double k, int Type)
         return 0;
     double logP = gsl_interp_eval(power_interp, kvals, pvals, logk, power_accel);
     double Delta2 = pow(10.0, logP);
-    return Delta2 / (4 * M_PI * k * k * k);
+    return Delta2;
 }
 
 
