@@ -338,7 +338,7 @@ int main(int argc, char **argv)
     // OmegaNu is dimensionless. Box is in kpc, H in h/s, G in cm^-3 g^-1 s^-2
     // so this is in g kpc^3 cm^-3
     //So the conversion factor is (kpc/cm)^3 * g/Msun)
-    const double nupartmass = cosmo.OmegaNu(atime) * pow(Box, 3) * 3 * pow(HUBBLE*HubbleParam, 2) / (8 * M_PI * GRAVITY) * pow(UnitLength_in_cm, 3) / UnitMass_in_g;
+    const double nupartmass = cosmo.OmegaNu(atime) * pow(Box, 3) * 3 * pow(HUBBLE*HubbleParam, 2) / (8 * M_PI * GRAVITY) * pow(UnitLength_in_cm, 3) / UnitMass_in_g / NNeutrinos;
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     //This does the FFT
