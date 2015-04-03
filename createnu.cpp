@@ -109,7 +109,6 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     //Load the neutrino power spectrum from the powerspec file
     PowerSpec_NuTabulated PSpec(SimSpecFile, atime);
 
-    printf("Power spec is: %g\n", PSpec.power(0.01, 2));
     //Open the glass file: this should be a regular grid and will provide the phase information for the neutrinos
     //FIXME: Get phase information from the snapshot somehow?
     std::cout<<"Initialising pre-IC file "<< GlassFile<<std::endl;
@@ -179,7 +178,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,int64_t FirstId, const double vel_prefac, const double nupartmass)
+int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass)
 {
     //Open the HDF5 file
     hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
@@ -219,6 +218,17 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     H5LTget_attribute_double(handle,"Header","MassTable", masses);
     masses[2] = nupartmass;
     H5LTset_attribute_double(handle, "Header", "MassTable", masses, N_TYPE);
+    //Set the neutrino particle numbers
+    uint32_t npart[N_TYPE];
+    H5LTget_attribute_uint(handle,"Header","NumPart_ThisFile", npart);
+    npart[2] = NNeutrinos;
+    H5LTset_attribute_uint(handle, "Header", "NumPart_ThisFile", npart, N_TYPE);
+    H5LTget_attribute_uint(handle,"Header","NumPart_Total", npart);
+    npart[2] = NNuTotal - ((uint64_t)(NNuTotal >> 32) << 32);
+    H5LTset_attribute_uint(handle, "Header", "NumPart_Total", npart, N_TYPE);
+    H5LTget_attribute_uint(handle,"Header","NumPart_HighWord", npart);
+    npart[2] = (NNuTotal >> 32);
+    H5LTset_attribute_uint(handle, "Header", "NumPart_Total", npart, N_TYPE);
     H5Fclose(handle);
     return NNeutrinos;
 }
@@ -338,14 +348,19 @@ int main(int argc, char **argv)
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
     FermiDiracVel nuvels (v_th);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
-    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, NNeutrinos,FirstId, vel_prefac, nupartmass);
+    uint32_t Nthisfile = NNeutrinos/numfiles;
+    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass);
     for(int i=1; i<numfiles; ++i)
     {
+        //If this is the last file, write all remaining particles
+        if (i == numfiles -1) {
+            Nthisfile = NNeutrinos - startPart;
+        }
         formatter.str("");
         formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
         SnapFile = formatter.str();
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
+        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, Nthisfile, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
     }
     return 0;
 }
