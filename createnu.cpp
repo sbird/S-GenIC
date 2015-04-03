@@ -143,27 +143,43 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
         if (size[1] > 1) {
                 rank = 2;
         }
+        /* I don't totally understand why the below works (it is not clear to me from the documentation).
+         * I gleaned it from a posting to the HDF5 mailing list and a related stack overflow thread here:
+         * http://stackoverflow.com/questions/24883461/hdf5-updating-a-cell-in-a-table-of-integers
+         * http://lists.hdfgroup.org/pipermail/hdf-forum_lists.hdfgroup.org/2014-July/007966.html
+         * The important thing seems to be that we have a dataspace for the whole array and create a hyperslab on that dataspace.
+         * Then we need another dataspace with the size of the stuff we want to write.*/
+        //Create a dataspace corresponding the the whole extent in the file
+        size[0] = npart;
+        hid_t full_space_id = H5Screate_simple(rank, size, NULL);
         //If this is the first write, create the dataset
         if (begin==0) {
-            size[0] = npart;
-            hid_t space_id = H5Screate_simple(rank, size, NULL);
-            H5Dcreate(group,BlockName.c_str(),d_type, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-            H5Sclose(space_id);
+            //Create a hyperslab that we will write to
+            hid_t herr = H5Dcreate(group,BlockName.c_str(),d_type, full_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+            if (herr < 0) {
+                std::cerr << "Could not create dataset: " <<BlockName<<std::endl;
+                throw std::bad_exception();
+            }
+
+            H5Dclose(herr);
         }
         hid_t dset = H5Dopen(group,BlockName.c_str(),H5P_DEFAULT);
         if (dset < 0)
             return dset;
         size[0] = np_write;
-        hsize_t begins[2]={begin,0};
-        //Create a hyperslab that we will write to
         hid_t space_id = H5Screate_simple(rank, size, NULL);
+        hsize_t begins[2]={begin,0};
         //Select the hyperslab of elements we are about to write to
-        H5Sselect_hyperslab(space_id, H5S_SELECT_SET, begins, NULL, size, NULL);
+        H5Sselect_hyperslab(full_space_id, H5S_SELECT_SET, begins, NULL, size, NULL);
         /* Write to the dataset */
-        herr = H5Dwrite(dset, d_type, H5S_ALL, space_id, H5P_DEFAULT, data);
+        herr = H5Dwrite(dset, d_type, space_id, full_space_id, H5P_DEFAULT, data);
         H5Dclose(dset);
-        if (herr < 0)
-            return herr;
+        H5Sclose(space_id);
+        H5Sclose(full_space_id);
+        if (herr < 0) {
+            std::cerr << "Could not write dataset: " <<BlockName<<std::endl;
+            throw std::bad_exception();
+        }
         return np_write;
 }
 
@@ -197,12 +213,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
             for(int k = 0; k < 3; k++)
                 buffer[3 * i + k] = P.Pos(startPart+i,k) + P.Vel(startPart+i,k);
         //Do the writing
-        int64_t written = WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
-        if (written < 0) {
-            printf("Could not write particles\n");
-            exit(5);
-        }
-        curpart += written;
+        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
     //Velocities next : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
@@ -214,12 +225,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
                 nuvels.add_thermal_speeds(&buffer[3 * i]);
             }
         //Do the writing
-        int64_t written = WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
-        if (written < 0) {
-            printf("Could not write particles\n");
-            exit(5);
-        }
-        curpart += written;
+        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
     delete[] buffer;
     H5Gclose(group);
