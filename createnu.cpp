@@ -226,9 +226,9 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     H5LTget_attribute_uint(handle,"Header","NumPart_Total", npart);
     npart[2] = NNuTotal - ((uint64_t)(NNuTotal >> 32) << 32);
     H5LTset_attribute_uint(handle, "Header", "NumPart_Total", npart, N_TYPE);
-    H5LTget_attribute_uint(handle,"Header","NumPart_HighWord", npart);
+    H5LTget_attribute_uint(handle,"Header","NumPart_Total_HighWord", npart);
     npart[2] = (NNuTotal >> 32);
-    H5LTset_attribute_uint(handle, "Header", "NumPart_Total", npart, N_TYPE);
+    H5LTset_attribute_uint(handle, "Header", "NumPart_Total_HighWord", npart, N_TYPE);
     H5Fclose(handle);
     return NNeutrinos;
 }
@@ -329,8 +329,9 @@ int main(int argc, char **argv)
     }
     //FIXME: The output will have as many neutrino particles as there are CDM particles.
     //Ultimately we want to reduce this
-    const size_t NNeutrinos = round(pow(Npart[1], 1./3));
-    const size_t Nmesh = NNeutrinos;
+    const size_t Nsample = round(pow(Npart[1], 1./3));
+    const size_t NNeutrinos = Npart[1];
+    const size_t Nmesh = Nsample;
 
     //Note no hierarchy right now.
     Cosmology cosmo(HubbleParam, Omega0, OmegaLambda, NUmass, false);
@@ -342,7 +343,7 @@ int main(int argc, char **argv)
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     //This does the FFT
-    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, NNeutrinos, Nmesh, Box, seed, atime);
+    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, Nsample, Nmesh, Box, seed, atime);
     //Choose a high ID number
     int64_t FirstId = NNeutrinos*8;
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
