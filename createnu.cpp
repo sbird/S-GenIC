@@ -228,6 +228,17 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
         curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
     delete[] buffer;
+    int64_t* idbuffer = new int64_t[blockwrite];
+    //Now do Particle IDs
+    for (uint32_t curpart=0; curpart < NNeutrinos; ) {
+        // Buffer initialization.
+        for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
+                idbuffer[i] = FirstId+i;
+        //Do the writing
+        curpart += WriteBlock("ParticleIDs", group, 2, idbuffer, H5T_NATIVE_LLONG, 1, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+    }
+
+
     H5Gclose(group);
     //Set the neutrino particle mass
     double masses[N_TYPE];
