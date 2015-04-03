@@ -22,7 +22,7 @@
 class PowerSpec_NuTabulated: public PowerSpec
 {
     public:
-    PowerSpec_NuTabulated(const std::string& FileWithInputSpectrum);
+    PowerSpec_NuTabulated(const std::string& FileWithInputSpectrum, double atime);
     virtual double power(double k, int Type);
     virtual ~PowerSpec_NuTabulated(){
         delete[] pvals;
@@ -36,7 +36,7 @@ class PowerSpec_NuTabulated: public PowerSpec
         double *pvals;
 };
 
-PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum)
+PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum, double atime)
 {
     //Note there is no need to convert units as we both power spectrum and snapshot come from the same place
     //Open power spectrum file
@@ -44,18 +44,25 @@ PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSp
     file.open(FileWithInputSpectrum.c_str());
     if(!file.is_open() ) {
       std::cerr<<"Can't read input power in file "<<FileWithInputSpectrum<<std::endl;
-      exit(17);
+      throw std::bad_exception();
     }
     NPowerTable = 0;
     std::string line;
-    while( std::getline(file, line) ) {
+    //Read first two lines with metadata
+    {
+        std::getline(file, line);
         std::stringstream tokeniser;
-        double value;
-        tokeniser << line;
-        tokeniser >> value;
-        tokeniser >> value;
-        if (! tokeniser.fail())
-            NPowerTable++;
+        double newatime;
+        tokeniser.str(line);
+        tokeniser >> newatime;
+        if (fabs(newatime/atime-1) > 0.01){
+            std::cerr<<"Power spectrum file "<<FileWithInputSpectrum<<" is at a="<<newatime<<" not a="<<atime<<std::endl;
+            throw std::bad_exception();
+        }
+        std::getline(file, line);
+        tokeniser.clear();
+        tokeniser.str(line);
+        tokeniser >> NPowerTable;
     }
     std::cerr<<"Found "<<NPowerTable<<" rows in power spectrum "<<FileWithInputSpectrum<<std::endl;
     if (NPowerTable == 0) {
@@ -63,20 +70,17 @@ PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSp
     }
     pvals = new double[NPowerTable];
     kvals = new double [NPowerTable];
-    file.clear();
-    file.seekg(0);
     /* define matter array */
-    int count=0;
-    while( std::getline(file, line) && count < NPowerTable) {
+    for(int count=0; count < NPowerTable; count++) {
+        std::getline(file, line);
         std::stringstream tokeniser;
         double kmat, pmat;
-        tokeniser << line;
+        tokeniser.str(line);
         tokeniser >> kmat;
         tokeniser >> pmat;
         if (!tokeniser.fail()) {
             kvals[count] = log10(kmat);
             pvals[count] = log10(pmat);
-            count++;
         }
     }
     power_interp = gsl_interp_alloc(gsl_interp_cspline,NPowerTable);
@@ -95,7 +99,7 @@ double PowerSpec_NuTabulated::power(double k, int Type)
 }
 
 
-part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpecFile, size_t NNeutrinos, size_t Nmesh, double Box, int Seed)
+part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpecFile, size_t NNeutrinos, size_t Nmesh, double Box, int Seed, double atime)
 {
     //For the neutrinos we don't want this; the modes that we have are the modes that exist
     bool RayleighScatter = false;
@@ -103,8 +107,9 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     bool SphereMode = true;
 
     //Load the neutrino power spectrum from the powerspec file
-    PowerSpec_NuTabulated PSpec(SimSpecFile);
+    PowerSpec_NuTabulated PSpec(SimSpecFile, atime);
 
+    printf("Power spec is: %g\n", PSpec.power(0.01, 2));
     //Open the glass file: this should be a regular grid and will provide the phase information for the neutrinos
     //FIXME: Get phase information from the snapshot somehow?
     std::cout<<"Initialising pre-IC file "<< GlassFile<<std::endl;
@@ -327,7 +332,7 @@ int main(int argc, char **argv)
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     //This does the FFT
-    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, NNeutrinos, Nmesh, Box, seed);
+    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, NNeutrinos, Nmesh, Box, seed, atime);
     //Choose a high ID number
     int64_t FirstId = NNeutrinos*8;
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
