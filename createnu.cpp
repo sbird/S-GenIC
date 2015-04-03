@@ -197,7 +197,12 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
             for(int k = 0; k < 3; k++)
                 buffer[3 * i + k] = P.Pos(startPart+i,k) + P.Vel(startPart+i,k);
         //Do the writing
-        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        int64_t written = WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        if (written < 0) {
+            printf("Could not write particles\n");
+            exit(5);
+        }
+        curpart += written;
     }
     //Velocities next : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
@@ -209,7 +214,12 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
                 nuvels.add_thermal_speeds(&buffer[3 * i]);
             }
         //Do the writing
-        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        int64_t written = WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        if (written < 0) {
+            printf("Could not write particles\n");
+            exit(5);
+        }
+        curpart += written;
     }
     delete[] buffer;
     H5Gclose(group);
