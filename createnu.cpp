@@ -8,6 +8,7 @@
 #include "power.hpp"
 #include "displacement.hpp"
 #include "cosmology.hpp"
+#include "thermalvel.hpp"
 //For getopt
 #include <unistd.h>
 #include <hdf5.h>
@@ -173,7 +174,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data P, size_t startPart, uint32_t NNeutrinos,int64_t FirstId, const double vel_prefac, const double nupartmass)
+int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,int64_t FirstId, const double vel_prefac, const double nupartmass)
 {
     //Open the HDF5 file
     hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
@@ -183,25 +184,28 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data P, size_t st
         return group;
     //We now want to create Coordinates, ParticleIDs and Velocities and write particles to them
     //Make a buffer of about 100 MB
-    const uint32_t blockwrite = 3*(1<<26);
-    float * buffer = new float[blockwrite];
+    const uint32_t blockwrite = (1<<22);
+    float * buffer = new float[3*blockwrite];
     //Coordinates first : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
         // Buffer initialization.
-        for (uint32_t i = 0; i < blockwrite; ++i)
+        for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
             for(int k = 0; k < 3; k++)
                 buffer[3 * i + k] = P.Pos(startPart+i,k) + P.Vel(startPart+i,k);
         //Do the writing
-        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blockwrite, curpart);
+        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
     //Velocities next : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
         // Buffer initialization
-        for (uint32_t i = 0; i < blockwrite; ++i)
-            for(int k = 0; k < 3; k++)
+        for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
+            for(int k = 0; k < 3; k++) {
                 buffer[3 * i + k] = vel_prefac * P.Vel(startPart+i,k);
+                //Add thermal velocities
+                nuvels.add_thermal_speeds(&buffer[3 * i]);
+            }
         //Do the writing
-        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blockwrite, curpart);
+        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
     delete[] buffer;
     H5Gclose(group);
@@ -326,15 +330,17 @@ int main(int argc, char **argv)
     part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, NNeutrinos, Nmesh, Box, seed);
     //Choose a high ID number
     int64_t FirstId = NNeutrinos*8;
+    const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
+    FermiDiracVel nuvels (v_th);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
-    size_t startPart = write_neutrino_data(SnapFile, P, 0, NNeutrinos,FirstId, vel_prefac, nupartmass);
+    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, NNeutrinos,FirstId, vel_prefac, nupartmass);
     for(int i=1; i<numfiles; ++i)
     {
         formatter.str("");
         formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
         SnapFile = formatter.str();
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile, P, startPart, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
+        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
     }
     return 0;
 }
