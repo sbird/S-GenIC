@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include <hdf5.h>
 #include <hdf5_hl.h>
+#include <gsl/gsl_interp.h>
+#include <fstream>
 
 #include <gadgetreader.hpp>
 
@@ -21,89 +23,74 @@ class PowerSpec_NuTabulated: public PowerSpec
     public:
     PowerSpec_NuTabulated(const std::string& FileWithInputSpectrum);
     virtual double power(double k, int Type);
-    virtual ~PowerSpec_NuTabulated(){}
+    virtual ~PowerSpec_NuTabulated(){
+        delete[] pvals;
+        delete [] kvals;
+    }
     private:
         int NPowerTable;
-        double scale;
-        struct pow_matter *PowerMatter;
+        gsl_interp * power_interp;
+        gsl_interp_accel * power_accel;
+        double *kvals;
+        double *pvals;
 };
 
 PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum)
 {
     //Note there is no need to convert units as we both power spectrum and snapshot come from the same place
-    FILE *fd;
-    if(!(fd = fopen(FileWithInputSpectrum.c_str(), "r"))) {
-      printf("can't read input in file '%s'\n", FileWithInputSpectrum.c_str());
+    //Open power spectrum file
+    std::ifstream file;
+    file.open(FileWithInputSpectrum.c_str());
+    if(!file.is_open() ) {
+      std::cerr<<"Can't read input power in file "<<FileWithInputSpectrum<<std::endl;
       exit(17);
     }
     NPowerTable = 0;
-    while(true) {
-      double ktab, Pktab;
-      /* read TOTAL matter power spectrum from internal integrator*/
-      if(fscanf(fd, " %lg %lg ", &ktab, &Pktab) != 2)
-          break;
-      NPowerTable++;
+    std::string line;
+    while( std::getline(file, line) ) {
+        std::stringstream tokeniser;
+        double value;
+        tokeniser << line;
+        tokeniser >> value;
+        tokeniser >> value;
+        if (! tokeniser.fail())
+            NPowerTable++;
     }
-    rewind(fd);
+    std::cerr<<"Found "<<NPowerTable<<" rows in power spectrum "<<FileWithInputSpectrum<<std::endl;
     if (NPowerTable == 0) {
-      printf("Empty power spectrum file\n");
-      exit(17);
+      throw std::bad_alloc();
     }
-    printf("found %d rows in input SPECTRUM table\n", NPowerTable);
-    PowerMatter = (pow_matter *) malloc(NPowerTable * sizeof(struct pow_matter));
-    if (!PowerMatter){
-        fprintf(stderr, "Could not allocate memory for table");
-        exit(23);
-    }
+    pvals = new double[NPowerTable];
+    kvals = new double [NPowerTable];
+    file.clear();
+    file.seekg(0);
     /* define matter array */
-    for (int count=0; count < NPowerTable; count++ ) {
+    int count=0;
+    while( std::getline(file, line) && count < NPowerTable) {
+        std::stringstream tokeniser;
         double kmat, pmat;
-        if(fscanf(fd, " %lg %lg", &kmat, &pmat) != 2)
-            break;
-        PowerMatter[count].kmat = log10(kmat);
-        PowerMatter[count].pmat = log10(pmat);
+        tokeniser << line;
+        tokeniser >> kmat;
+        tokeniser >> pmat;
+        if (!tokeniser.fail()) {
+            kvals[count] = log10(kmat);
+            pvals[count] = log10(pmat);
+            count++;
+        }
     }
-    fclose(fd);
+    power_interp = gsl_interp_alloc(gsl_interp_cspline,NPowerTable);
+    power_accel = gsl_interp_accel_alloc();
+    gsl_interp_init(power_interp,kvals, pvals,NPowerTable);
 }
 
 double PowerSpec_NuTabulated::power(double k, int Type)
 {
-  double logk, logD,  kold, u, dlogk, Delta2;
-  int binlow, binhigh, binmid;
-
-  kold = k;
-
-  k *= scale;	/* convert to h/Mpc */
-
-  logk = log10(k);
-
-  if(logk < PowerMatter[0].kmat || logk > PowerMatter[NPowerTable - 1].kmat)
-    return 0;
-
-  binlow = 0;
-  binhigh = NPowerTable - 1;
-
-  while(binhigh - binlow > 1)
-    {
-      binmid = (binhigh + binlow) / 2;
-      if(logk < PowerMatter[binmid].kmat)
-      	binhigh = binmid;
-      else
-      	binlow = binmid;
-    }
-
-  dlogk = PowerMatter[binhigh].kmat - PowerMatter[binlow].kmat;
-
-  if(dlogk == 0)
-    exit(777);
-
-  u = (logk - PowerMatter[binlow].kmat) / dlogk;
-
-  logD = (1 - u) * PowerMatter[binlow].pmat + u * PowerMatter[binhigh].pmat;
-
-  Delta2 = pow(10.0, logD);
-
-  return Delta2 / (4 * M_PI * kold * kold * kold);
+    double logk = log10(k);
+    if (logk < kvals[0] || logk > kvals[NPowerTable-1])
+        return 0;
+    double logP = gsl_interp_eval(power_interp, kvals, pvals, logk, power_accel);
+    double Delta2 = pow(10.0, logP);
+    return Delta2 / (4 * M_PI * k * k * k);
 }
 
 
@@ -299,7 +286,7 @@ int main(int argc, char **argv)
     }
     double Box, HubbleParam, Omega0, OmegaLambda, atime;
     size_t Npart[N_TYPE];
-    size_t Nmesh, NNeutrinos;
+
     {
         uint32_t npart[N_TYPE];
         hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -311,10 +298,6 @@ int main(int argc, char **argv)
         H5LTget_attribute(hdf_group,".","NumPart_Total_HighWord",H5T_NATIVE_INT, &npart);
         for(int i = 0; i< N_TYPE; i++)
                 Npart[i]+=(1L<<32)*npart[i];
-        //FIXME: The output will have as many neutrino particles as there are CDM particles.
-        //Ultimately we want to reduce this
-        NNeutrinos = round(pow(Npart[1], 1./3));
-        Nmesh = 2*NNeutrinos;
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
         H5LTget_attribute_double(hdf_group,".","BoxSize", &Box);
         H5LTget_attribute_int(hdf_group,".","NumFilesPerSnapshot",&numfiles);
@@ -322,7 +305,14 @@ int main(int argc, char **argv)
         H5LTget_attribute_double(hdf_group,".","Omega0", &Omega0);
         H5LTget_attribute_double(hdf_group,".","OmegaLambda", &OmegaLambda);
         H5LTget_attribute_double(hdf_group,".","Time",&atime);
+        H5Gclose(hdf_group);
+        H5Fclose(handle);
     }
+    //FIXME: The output will have as many neutrino particles as there are CDM particles.
+    //Ultimately we want to reduce this
+    const size_t NNeutrinos = round(pow(Npart[1], 1./3));
+    const size_t Nmesh = NNeutrinos;
+
     //Note no hierarchy right now.
     Cosmology cosmo(HubbleParam, Omega0, OmegaLambda, NUmass, false);
     //Find the desired mass of each neutrino particle
