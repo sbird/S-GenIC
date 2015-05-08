@@ -1,6 +1,9 @@
 #include "power.hpp"
-#include <math.h>
+#include <cmath>
 #include <cstdio>
+#include <fstream>
+#include <iostream>
+#include <limits>
 //For the normalized power spectrum
 #include <gsl/gsl_integration.h>
 
@@ -16,163 +19,122 @@ int compare_logk(const void *a, const void *b)
   return 0;
 }
 
+struct pow_matter
+{
+  double kmat,pmat;
+};
 
-PowerSpec_Tabulated::PowerSpec_Tabulated(char * FileWithTransfer, char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
+
+PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks)
 {
   //Set up conversion factor between internal units and CAMB units
   scale = (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);
-  FILE *fd;
-  char buf[500];
-  double k;
-
-  sprintf(buf, FileWithTransfer);
-  if(!(fd = fopen(buf, "r")))
-    {
-      printf("can't read input TRANSFER in file '%s'\n", buf);
+  std::vector<pow_matter> PowerMatter;
+  std::fstream matpow;
+  matpow.open(FileWithInputSpectrum, std::fstream::in);
+  if ( ! matpow.is_open() ) {
+      std::cerr<<"Can't open matter power spectrum in file: "<< FileWithInputSpectrum<<std::endl;
       exit(17);
-    }
+  }
 
-  NPowerTable = 0;
-  do
-    {
-      double T_cdm, T_b, dummy, T_nu, T_tot;
-
-      /* read transfer function file from CAMB */
-      if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &dummy, &T_nu, &T_tot) == 7)
-	NPowerTable++;
-      else
-	break;
-    }
-  while(1);
-  fclose(fd);
-      printf("found %d rows in input TRANSFER table\n", NPowerTable);
-      fflush(stdout);
-
-
-sprintf(buf, FileWithInputSpectrum);
-  if(!(fd = fopen(buf, "r")))
-    {
-      printf("can't read input SPECTRUM in file '%s'\n", buf);
-      exit(17);
-    }
-  NPowerTable = 0;
-  do
-    {
-      double ktab, Pktab;
-      /* read TOTAL matter power spectrum from CAMB*/
-      if(fscanf(fd, " %lg %lg ", &ktab, &Pktab) == 2)
-	NPowerTable++;
-      else
-	break;
-    }
-  while(1);
-  fclose(fd);
-  printf("found %d rows in input SPECTRUM table\n", NPowerTable);
-  fflush(stdout);
-  PowerTable = (pow_table *) malloc(NPowerTable * sizeof(struct pow_table));  
-  PowerMatter = (pow_matter *) malloc(NPowerTable * sizeof(struct pow_matter)); 
   /* define matter array */
-  sprintf(buf, FileWithInputSpectrum);
-  if(!(fd = fopen(buf, "r")))
-    {
-      printf("can't read input SPECTRUM in file '%s'\n", buf);
-      exit(18);
-    }
+  while ( matpow.good() ) {
+    pow_matter tmp;
+    matpow >> tmp.kmat;
+    matpow >> tmp.pmat;
+    PowerMatter.push_back(tmp);
+  }
+  std::cerr<<"Found "<<PowerMatter.size()<<" rows in input spectrum table\n"<<std::endl;
+  matpow.close();
 
-  NPowerTable = 0;
-  do
-    {
-      double kmat, pmat;
-      if(fscanf(fd, " %lg %lg", &kmat, &pmat) == 2)
-	{
-	  PowerMatter[NPowerTable].kmat = kmat;
-	  PowerMatter[NPowerTable].pmat = pmat;
-	  NPowerTable++;
-	}
-      else
-	break;
-    }
-  while(1);
+  std::fstream transfer;
+  transfer.open(FileWithTransfer, std::fstream::in);
+  if ( ! transfer.is_open() ) {
+      std::cerr<<"Can't open transfer function in file: "<< FileWithTransfer<<std::endl;
+      exit(17);
+  }
 
-  fclose(fd);
-
-  qsort(PowerMatter, NPowerTable, sizeof(struct pow_matter), compare_logk);
-
-   sprintf(buf, FileWithTransfer);
-   if(!(fd = fopen(buf, "r")))
-    {
-      printf("can't read input spectrum in file '%s'\n", buf);
-      exit(18);
-    }
-
-  NPowerTable = 0;
-  do
-    {
+  while ( transfer.good() ) {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
+      double k;
       double delta_cdm, delta_nu, delta_nu_2nd,delta_tot, delta_b;
-
-      if(fscanf(fd, " %lg %lg %lg %lg %lg %lg %lg", &k, &T_cdm, &T_b, &dummy, &T_nu2, &T_nu, &T_tot) == 7)
-	{
-          if(fabs(PowerMatter[NPowerTable].kmat - k) > 0.01 *k){
-                  fprintf(stderr, "Error: Input spectrum row %d has k=%g, transfer has k=%g.\n",NPowerTable,PowerMatter[NPowerTable].kmat,k);
-                  fprintf(stderr, "Remember you need transfer_k_interp_matterpower = F in CAMB\n");
-                  exit(47);
-          }
-	  PowerTable[NPowerTable].logk = log10(k);
-
-          /* The dark matter may incorporate other particle types as well, eg,
-           * fake neutrinos, or baryons.
-           * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)
-           * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
-           * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
-           * so instead of summing the transfer functions, use the total transfer function and
-           * optionally subtract the baryons.
-           * We want to incorporate neutrinos into the dark matter if we are changing the transfer function,
-           * but not if we are using the full kspace method. */
-          if(neutrinos_ks){
-                T_cdm = T_tot;
-                /*If we have separate gas particles, subtract
-                 * the baryon transfer function */
-                if(!no_gas){
-                    T_cdm = (Omega*T_tot - T_b*OmegaBaryon)/(Omega-OmegaBaryon);
-                }
-          }
-          /*Add baryons to the CDM if there are no gas particles*/
-          else if(no_gas){
-//                     T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
-                T_cdm = (T_cdm*(Omega-OmegaNu - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaNu);
-          }
-          /*This should be equivalent to the above in almost all cases,
-           * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/
-          if(no_gas && OmegaNu == 0){
-                  T_cdm = T_tot;
-          }
+      //Read the row.
+      transfer >> k;
+      transfer >> T_cdm;
+      transfer >> T_b;
+      //radiation
+      transfer >> dummy;
+      transfer >> T_nu2;
+      transfer >> T_nu;
+      transfer >> T_tot;
+      //Ignore the rest of the line
+      transfer.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      /* The dark matter may incorporate other particle types as well, eg,
+       * fake neutrinos, or baryons.
+       * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)
+       * HOWEVER, when relativistic (ie, in the early universe), neutrinos will redshift
+       * like radiation. The CAMB transfer function takes this into account when calculating T_tot,
+       * so instead of summing the transfer functions, use the total transfer function and
+       * optionally subtract the baryons.
+       * We want to incorporate neutrinos into the dark matter if we are changing the transfer function,
+       * but not if we are using the full kspace method. */
+      if(neutrinos_ks){
+            T_cdm = T_tot;
+            /*If we have separate gas particles, subtract
+             * the baryon transfer function */
+            if(!no_gas){
+                T_cdm = (Omega*T_tot - T_b*OmegaBaryon)/(Omega-OmegaBaryon);
+            }
+      }
+      /*Add baryons to the CDM if there are no gas particles*/
+      else if(no_gas){
+//                 T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
+            T_cdm = (T_cdm*(Omega-OmegaNu - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaNu);
+      }
+      /*This should be equivalent to the above in almost all cases,
+       * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/
+      if(no_gas && OmegaNu == 0){
+              T_cdm = T_tot;
+      }
 	  /* obtain P(k) from transfer function ratios like suggested by JL*/
 	  /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
-	  delta_b   = k * k * k * pow(T_b/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
+      size_t NPowerTable = PowerTable.size();
+	  delta_b   = k * k * k * pow(T_b/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
 	  delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
 	  delta_tot = k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
 
-          PowerTable[NPowerTable].logD = log10(delta_cdm);
+      //Assign row to structure
+      pow_table tmp;
+      tmp.logk = log10(k);
+      tmp.logD = log10(delta_cdm);
 	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
-	  PowerTable[NPowerTable].logD2nd = log10(delta_nu);
-	  PowerTable[NPowerTable].logD3rd = log10(delta_nu_2nd);
-          PowerTable[NPowerTable].logDtot = log10(delta_tot);
-	  PowerTable[NPowerTable].logDb = log10(delta_b);
+	  tmp.logD2nd = log10(delta_nu);
+	  tmp.logD3rd = log10(delta_nu_2nd);
+      tmp.logDtot = log10(delta_tot);
+	  tmp.logDb = log10(delta_b);
+      PowerTable.push_back(tmp);
+  }
+  transfer.close();
 
-	  NPowerTable++;
-	}
-      else
-	break;
-    }
-  while(1);
-
-  fclose(fd);
-
-  qsort(PowerTable, NPowerTable, sizeof(struct pow_table), compare_logk);
+  //Do some basic checks on the read input files.
+  if (PowerTable.size() != PowerMatter.size() ) {
+      std::cerr << "Transfer function was "<<PowerTable.size()<<" lines long, but input power spectrum was "<<PowerMatter.size()<<std::endl;
+      exit(47);
+  }
+  for(size_t i=0; i < PowerTable.size(); ++i) {
+      if(fabs(PowerMatter[i].kmat - pow(10,PowerTable[i].logk)) > 0.01 * PowerMatter[i].kmat ) {
+              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,PowerMatter[i].kmat,pow(10,PowerTable[i].logk));
+              std::cerr<<"Remember you need transfer_k_interp_matterpower = F in CAMB"<<std::endl;
+              exit(47);
+      }
+      if(i >0 && PowerTable[i].logk < PowerTable[i-1].logk) {
+              std::cerr<<"CAMB power table is not increasing in k."<<std::endl;
+              exit(48);
+      }
+  }
 }
 
 double PowerSpec_Tabulated::power(double k, int Type)
@@ -186,11 +148,11 @@ double PowerSpec_Tabulated::power(double k, int Type)
 
   logk = log10(k);
 
-  if(logk < PowerTable[0].logk || logk > PowerTable[NPowerTable - 1].logk)
+  if(logk < PowerTable[0].logk || logk > PowerTable[PowerTable.size() - 1].logk)
     return 0;
 
   binlow = 0;
-  binhigh = NPowerTable - 1;
+  binhigh = PowerTable.size() - 1;
 
   while(binhigh - binlow > 1)
     {

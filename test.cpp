@@ -21,6 +21,7 @@
 #include "cosmology.hpp"
 #include "thermalvel.hpp"
 #include <math.h>
+#include "power.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
@@ -84,11 +85,19 @@ BOOST_AUTO_TEST_CASE(check_periodic_wrap)
 //
 // }
 
-// BOOST_AUTO_TEST_CASE(check_power_spec_camb)
-// {
-// double PowerSpec_Tabulated(double k, int Type);
-//
-// }
+//     PowerSpec_Tabulated(char * FileWithTransfer, char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
+//                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks);
+BOOST_AUTO_TEST_CASE(check_power_spec_camb)
+{
+    std::string trans = "testdata/cambv1_transfer_99.dat";
+    std::string matpow = "testdata/cambv1_matterpow_99.dat";
+    PowerSpec_Tabulated pspec(trans.c_str(), matpow.c_str(), 0.222+0.0449, 0.7331, 0.0449,0.,3.085678e24, 3.085678e21, false, false);
+    BOOST_CHECK_EQUAL(pspec.size(),336);
+    std::string trans2 = "testdata/cambv2_transfer_99.dat";
+    std::string matpow2 = "testdata/cambv2_matterpow_99.dat";
+    PowerSpec_Tabulated pspec2(trans2.c_str(), matpow2.c_str(), 0.233+0.0463, 0.7331, 0.0463,0.,3.085678e24, 3.085678e21, false, false);
+    BOOST_CHECK_EQUAL(pspec2.size(),336);
+}
 
 class TestFermiDirac: public FermiDiracVel
 {
@@ -208,3 +217,4 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     FLOATS_CLOSE_TO((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1));
     FLOATS_CLOSE_TO(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1));
 }
+

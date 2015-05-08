@@ -2,6 +2,8 @@
 #define POWERSPEC_H
 //For pow
 #include <cmath>
+#include <cstddef>
+#include <vector>
 
 //Abstract base class to allow calling of different types of power spectrum
 class PowerSpec
@@ -22,24 +24,21 @@ struct pow_table
   double logDtot;
 };
 
-struct pow_matter
-{
-  double kmat,pmat;
- };
-
 //Derived class for a tabulated power spectrum
 class PowerSpec_Tabulated: public PowerSpec
 {
     public:
-    PowerSpec_Tabulated(char * FileWithTransfer, char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
+    PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks);
     virtual double power(double k, int Type);
     virtual ~PowerSpec_Tabulated() {}
+    size_t size()
+    {
+        return PowerTable.size();
+    }
     private:
-        int NPowerTable;
         double scale;
-        struct pow_table *PowerTable;
-        struct pow_matter *PowerMatter;
+        std::vector<pow_table> PowerTable;
 };
 
 //Derived class for the Efstathiou power spectrum
