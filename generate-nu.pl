@@ -45,8 +45,8 @@ GetOptions ('seed:i'=>\$seed, 'box:f'=>\$boxsize, 'npart:i'=>\$npart,'om:f'=>\$O
 if($help){
         print "Usage: 
                --seed 250       => Seed value for the noise.
-               --box  60        => Boxsize in Mpc/h
-               --npart 400      => Number of particles.
+               --box  512        => Boxsize in Mpc/h
+               --npart 512      => Number of particles.
                --om   f         => Omega_matter
                --ol   f         => Omega_Lambda
                --ob   f         => Omega_Baryons
@@ -55,27 +55,27 @@ if($help){
                --redshift n     => Starting redshift
                --output  path   => Directory to output files to
                --glass   path   => Glass file to use
-               --nglass  100    => Number of particles in glass file
+               --nglass  128    => Number of particles in glass file
                --help           => This message";
                die;
        }
-       #Parameters are WMAP 7-year.
-if(!$Omega_M){$Omega_M=0.222;}
-if(!$Omega_B){$Omega_B=0.0449;}
+       #Parameters are WMAP 9-year.
+if(!$Omega_M){$Omega_M=0.233;}
+if(!$Omega_B){$Omega_B=0.0463;}
 if(!$Omega_L){$Omega_L = 1-$Omega_M-$Omega_B;}
 if(!$hub){$hub=0.70;}
 if(!$Redshift){$Redshift=99;}
 if(!$M_Nu){$M_Nu = 0;}
 if(!$kspace){$kspace = 0;}
-if(!$NS){$NS=1.0;}
-if(!$A_prim){$A_prim=2.43e-9;}
+if(!$NS){$NS=0.972;}
+if(!$A_prim){$A_prim=2.41e-9;}
 my $Omega_Nu = 3*$M_Nu / 93.14/$hub/$hub;
 $Omega_M -= $Omega_Nu;
 #Keep the seed the same as in the best-fit case.
 if(!$seed){$seed=181170;}
-if(!$boxsize){$boxsize=60;}
-if(!$GlassPart){$GlassPart=100;}
-if(!$npart){$npart=400;}
+if(!$boxsize){$boxsize=512;}
+if(!$GlassPart){$GlassPart=128;}
+if(!$npart){$npart=512;}
 if(!$Prefix){$Prefix="ics";}
 #Add the prefix onto the end of the output directory. 
 $Directory= "$Directory";
