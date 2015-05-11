@@ -83,7 +83,6 @@ int main(int argc, char **argv)
   GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase)+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, neutrinos_ks);
-  printf("npart %ld mass %g Box %g Hubb %g Um %g Ul%g\n",header.npart[1], header.mass[1], Box, HubbleParam,UnitMass_in_g, UnitLength_in_cm);
 
   if(osnap.WriteHeaders(header))
           FatalError(23);
