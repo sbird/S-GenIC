@@ -1,7 +1,6 @@
 #include "proto.h"
 #include "gadgetheader.h"
 #include "cosmology.hpp"
-#include "allvars.h"
 
 int FatalError(int errnum)
 {
@@ -10,39 +9,33 @@ int FatalError(int errnum)
   exit(0);
 }
 
-void set_units(void)		/* ... set some units */
-{
-    InitTime = 1 / (1 + Redshift);
-    UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
-}
 
-
-gadget_header generate_header(std::valarray<int64_t> & npart)
+gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool neutrinos_ks)
 {
   gadget_header header;
   //No factor of h^2 because mass is in 10^10 M_sun/h
-  double scale = UnitMass_in_g / pow(UnitLength_in_cm, 3) * 3* HUBBLE* HUBBLE / (8 * M_PI * GRAVITY) * pow(Box,3);
+  double scale = 3* HUBBLE* HUBBLE / (UnitMass_in_g / pow(UnitLength_in_cm, 3) * 8 * M_PI * GRAVITY) * pow(Box,3);
   /*Set masses*/
   for(int i = 0; i < N_TYPE; i++)
       header.mass[i] = 0;
   /*Don't forget to set masses correctly when the CDM actually incorporates other species*/
   double OmegaCDM = Omega;
-  if(npart[BARYON_TYPE]){
+  if(npart[BARYON_TYPE]) {
     header.mass[BARYON_TYPE] = OmegaBaryon * scale / npart[BARYON_TYPE];
-    OmegaCDM -=OmegaBaryon;
+    OmegaCDM -= OmegaBaryon;
   }
 
   if(npart[NEUTRINO_TYPE]){
-    header.mass[NEUTRINO_TYPE] = OmegaDM_2ndSpecies * scale / npart[NEUTRINO_TYPE];
+    header.mass[NEUTRINO_TYPE] = OmegaNuPart * scale / npart[NEUTRINO_TYPE];
 #ifdef NEUTRINO_PAIRS
     header.mass[NEUTRINO_TYPE] /= 2;
 #endif //NEUTRINO_PAIRS
-    OmegaCDM -=OmegaDM_2ndSpecies;
+    OmegaCDM -=OmegaNuPart;
   }
   /*For the "edit the transfer function" neutrino simulation method, we would *not* want to do this.
    * For true kspace neutrinos, we do. */
   else if (!neutrinos_ks){
-          OmegaCDM-=OmegaDM_2ndSpecies;
+          OmegaCDM-=OmegaNuPart;
   }
 
   if(npart[DM_TYPE])

@@ -4,6 +4,11 @@
 #include "allvars.h"
 #include "proto.h"
 
+void set_units(void)		/* ... set some units */
+{
+    InitTime = 1 / (1 + Redshift);
+    UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
+}
 
 void read_parameterfile(char *fname)
 {
