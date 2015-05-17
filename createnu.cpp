@@ -233,7 +233,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
         // Buffer initialization.
         for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
-                idbuffer[i] = FirstId+i;
+                idbuffer[i] = FirstId+i+curpart;
         //Do the writing
         curpart += WriteBlock("ParticleIDs", group, 2, idbuffer, H5T_NATIVE_LLONG, 1, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }
@@ -373,7 +373,7 @@ int main(int argc, char **argv)
     //This does the FFT
     part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, Nsample, Nmesh, Box, seed, atime);
     //Choose a high ID number
-    int64_t FirstId = NNeutrinos*8;
+    int64_t FirstId = (Npart[0]+Npart[1]+Npart[3]+Npart[4]+Npart[5])*8;
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
     FermiDiracVel nuvels (v_th);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
