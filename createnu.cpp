@@ -292,12 +292,12 @@ int main(int argc, char **argv)
             NUmass = atof(optarg);
             break;
         default:
-            printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : neutrino mass in eV\n");
+            printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : mass of single neutrino species in eV\n");
             exit(0);
         }
     }
     if (BaseDir == NULL || GlassFile == NULL || snapnum == -1 || NUmass < 0.005) {
-          printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : neutrino mass in eV\n");
+          printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : mass of single neutrino species in eV\n");
           exit(0);
     }
     std::ostringstream formatter;
