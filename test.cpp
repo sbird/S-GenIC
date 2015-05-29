@@ -3,7 +3,7 @@
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
  * copyright notice and this permission notice appear in all copies.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
  * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
@@ -25,11 +25,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-#define FLOATS_NEAR_TO(x,y) \
-        BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= std::max<float>(fabs(x),fabs(y))/1e5,(x)<<" is not close to "<<(y))
-#define FLOATS_CLOSE_TO(x,y) \
-      BOOST_CHECK_MESSAGE( fabs((x) - (y)) <= std::max<float>(fabs(x),fabs(y))/1e3,(x)<<" is not close to "<<(y))
-
 
 #ifdef PRINT_SPEC
 BOOST_AUTO_TEST_CASE(check_print_spec)
@@ -41,12 +36,12 @@ BOOST_AUTO_TEST_CASE(check_print_spec)
                 pos[i]=i/3.;
         fieldize(10, dims,field,10,10,pos,1);
         //Check off-diagonal elements are zero
-        FLOATS_NEAR_TO(field[0],10.7638874);
+        BOOST_CHECK_CLOSE_FRACTION(field[0],10.7638874,1e-5);
         BOOST_CHECK_EQUAL(field[3],0);
         BOOST_CHECK_EQUAL(field[20],0);
         BOOST_CHECK_EQUAL(field[125],0);
         //Check on-diagonals
-        FLOATS_NEAR_TO(field[124],2.08333);
+        BOOST_CHECK_CLOSE_FRACTION(field[124],2.08333,1e-5);
 
 }
 #endif
@@ -66,13 +61,13 @@ BOOST_AUTO_TEST_CASE(check_generate_header)
     BOOST_CHECK_EQUAL(header.BoxSize, 512000);
     BOOST_CHECK_EQUAL(header.npartTotal[1], pow(512,3));
     //This is the most non-trivial quantity
-    FLOATS_NEAR_TO(header.mass[1],7.47830444);
+    BOOST_CHECK_CLOSE_FRACTION(header.mass[1],7.47830444,1e-5);
     //Does it have the right dimensions? If we change mass units, is it proportional?
     gadget_header header2 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512000, 0.01, 1.989e33, 3.085678e21, false);
-    FLOATS_NEAR_TO(header.mass[1], header2.mass[1]/1e10);
+    BOOST_CHECK_CLOSE_FRACTION(header.mass[1], header2.mass[1]/1e10,1e-5);
     //It should not depend on length units.
     gadget_header header3 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512, 0.01, 1.989e43, 3.085678e24, false);
-    FLOATS_NEAR_TO(header.mass[1], header3.mass[1]);
+    BOOST_CHECK_CLOSE_FRACTION(header.mass[1], header3.mass[1],1e-5);
 }
 
 // BOOST_AUTO_TEST_CASE(check_displacement_read_out)
@@ -84,10 +79,10 @@ BOOST_AUTO_TEST_CASE(check_generate_header)
 
 BOOST_AUTO_TEST_CASE(check_periodic_wrap)
 {
-    FLOATS_NEAR_TO(periodic_wrap(15000, 25000), 15000);
-    FLOATS_NEAR_TO(periodic_wrap(65000, 25000), 15000);
-    FLOATS_NEAR_TO(periodic_wrap(-10000, 25000), 15000);
-    FLOATS_NEAR_TO(periodic_wrap(-60000, 25000), 15000);
+    BOOST_CHECK_CLOSE_FRACTION(periodic_wrap(15000, 25000), 15000,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(periodic_wrap(65000, 25000), 15000,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(periodic_wrap(-10000, 25000), 15000,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(periodic_wrap(-60000, 25000), 15000,1e-5);
 }
 
 // BOOST_AUTO_TEST_CASE(check_writing_data)
@@ -136,30 +131,30 @@ class TestFermiDirac: public FermiDiracVel
 BOOST_AUTO_TEST_CASE(check_fermi_vel)
 {
     //Check has units of velocity
-    FLOATS_NEAR_TO(NU_V0(0, 1, 1e3), 100*NU_V0(0, 1, 1e5));
+    BOOST_CHECK_CLOSE_FRACTION(NU_V0(0, 1, 1e3), 100*NU_V0(0, 1, 1e5),1e-5);
     //Check scales linearly with neutrino mass
-    FLOATS_NEAR_TO(NU_V0(0, 0.1, 1e5), 10*NU_V0(0, 1, 1e5));
+    BOOST_CHECK_CLOSE_FRACTION(NU_V0(0, 0.1, 1e5), 10*NU_V0(0, 1, 1e5),1e-5);
     //Check scales as z^3/2 (due to gadgets cosmological velocity unit)
-    FLOATS_NEAR_TO(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5));
+    BOOST_CHECK_CLOSE_FRACTION(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5),1e-5);
     //Check it is correct (roughly). This is
     //(4/11)^1/3* 2.7255* 1.00381* 8.61734e-5 * 2.99792e5/(M_nu/3)
-    FLOATS_NEAR_TO(NU_V0(0,1, 1e5), 151.344);
+    BOOST_CHECK_CLOSE_FRACTION(NU_V0(0,1, 1e5), 151.344,1e-5);
 
     //Seed table with velocity of 100 km/s
     TestFermiDirac nuvels(100);
     nuvels.reseed(23);
     //Check that the probability table makes sense
-    FLOATS_NEAR_TO(nuvels.get_fdvc(0), 0);
-    FLOATS_NEAR_TO(nuvels.get_fdvc(LENGTH_FERMI_DIRAC_TABLE-2), 1);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fdvc(0), 0,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fdvc(LENGTH_FERMI_DIRAC_TABLE-2), 1,1e-5);
     //Check that the probability table makes sense
-    FLOATS_NEAR_TO(nuvels.get_fdv(0), 0);
-    FLOATS_NEAR_TO(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE-1), MAX_FERMI_DIRAC);
-    FLOATS_NEAR_TO(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE));
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fdv(0), 0,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE-1), MAX_FERMI_DIRAC,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE),1e-5);
     //Test getting the distribution
-    FLOATS_NEAR_TO(nuvels.get_fermi_dirac_vel(0), 0);
-    FLOATS_NEAR_TO(nuvels.get_fermi_dirac_vel(1), MAX_FERMI_DIRAC);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fermi_dirac_vel(0), 0,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fermi_dirac_vel(1), MAX_FERMI_DIRAC,1e-5);
     //Number computed by python guessing
-    FLOATS_CLOSE_TO(nuvels.get_fermi_dirac_vel(0.5), 2.839);
+    BOOST_CHECK_CLOSE_FRACTION(nuvels.get_fermi_dirac_vel(0.5), 2.839,1e-3);
 //     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE/2; i+=20)
 //         printf("%g %g\n", nuvels.get_fdv(i), nuvels.get_fdvc(i));
     //Remember to reseed the rng...
@@ -171,9 +166,9 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     nuvels2.reseed(23);
     float vel2[3]={0,0,0};
     nuvels2.add_thermal_speeds(vel2);
-    FLOATS_NEAR_TO(sqrt(vel2[0]*vel2[0]+vel2[1]*vel2[1]+vel2[2]*vel2[2]), 2*sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]));
+    BOOST_CHECK_CLOSE_FRACTION(sqrt(vel2[0]*vel2[0]+vel2[1]*vel2[1]+vel2[2]*vel2[2]), 2*sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]),1e-5);
     for(int i=0; i<3; i++)
-        FLOATS_NEAR_TO(vel2[i], 2*vel[i]);
+        BOOST_CHECK_CLOSE_FRACTION(vel2[i], 2*vel[i],1e-5);
     //Check some statistical properties (max, min, mean)
     double mean=0;
     double max = 0;
@@ -190,7 +185,7 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     }
     mean/=nsample;
     //Mean should be roughly 3*zeta(4)/zeta(3)*7/8/(3/4)* m_vamp
-    FLOATS_CLOSE_TO(mean, 3*pow(M_PI,4)/90./1.202057*(7./8)/(3/4.)*100);
+    BOOST_CHECK_CLOSE_FRACTION(mean, 3*pow(M_PI,4)/90./1.202057*(7./8)/(3/4.)*100,1e-3);
     BOOST_CHECK_MESSAGE( min > 0,min<<" less than zero");
     BOOST_CHECK_MESSAGE( max < MAX_FERMI_DIRAC*100,max<<" greater than upper bound");
 
@@ -201,31 +196,30 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     //Check that we get the right scalings for total matter domination.
     //Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu),
     Cosmology cosmo(0.7, 1., 0., 0., false);
-    FLOATS_CLOSE_TO(cosmo.Hubble(1), HUBBLE);
-    FLOATS_CLOSE_TO(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.));
-    FLOATS_CLOSE_TO(cosmo.growth(0.5)/cosmo.growth(1), 0.5);
+    BOOST_CHECK_CLOSE_FRACTION(cosmo.Hubble(1), HUBBLE,1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(cosmo.growth(0.5)/cosmo.growth(1), 0.5,1e-3);
     //Check that massless neutrinos work
-    FLOATS_NEAR_TO(cosmo.OmegaNu(1), cosmo.OmegaR(1)*7./8.*pow(pow(4/11.,1/3.)*1.00381,4)*3);
-    FLOATS_NEAR_TO(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4));
+    BOOST_CHECK_CLOSE_FRACTION(cosmo.OmegaNu(1), cosmo.OmegaR(1)*7./8.*pow(pow(4/11.,1/3.)*1.00381,4)*3,1e-5);
+    BOOST_CHECK_CLOSE_FRACTION(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4),1e-5);
     //Check that the velocity correction d ln D1/d lna is constant
-    FLOATS_CLOSE_TO(1.0, cosmo.F_Omega(1.5));
-    FLOATS_CLOSE_TO(1.0, cosmo.F_Omega(2));
+    BOOST_CHECK_CLOSE_FRACTION(1.0, cosmo.F_Omega(1.5),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(1.0, cosmo.F_Omega(2),1e-3);
 
     //More observationally relevant tests
     Cosmology cosmo2(0.7, 0.3, 0.7, 0., false);
-    FLOATS_CLOSE_TO(0.01*log(cosmo2.growth(0.01+1e-5)/cosmo2.growth(0.01-1e-5))/2e-5, cosmo2.F_Omega(0.01));
-    FLOATS_CLOSE_TO(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01));
+    BOOST_CHECK_CLOSE_FRACTION(0.01*log(cosmo2.growth(0.01+1e-5)/cosmo2.growth(0.01-1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01),1e-3);
 
     //Massive neutrinos
     Cosmology nuc(0.7, 0.3, 0.7, 1.0, false);
-    FLOATS_CLOSE_TO(0.01*log(nuc.growth(0.01+1e-5)/nuc.growth(0.01-1e-5))/2e-5, nuc.F_Omega(0.01));
-    FLOATS_CLOSE_TO(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125);
-    FLOATS_CLOSE_TO(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4));
+    BOOST_CHECK_CLOSE_FRACTION(0.01*log(nuc.growth(0.01+1e-5)/nuc.growth(0.01-1e-5))/2e-5, nuc.F_Omega(0.01),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125,1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4),1e-3);
 
-    FLOATS_CLOSE_TO(0.01*(nuc.OmegaNu(0.01+1e-5)-nuc.OmegaNu(0.01-1e-5))/2e-5, nuc.OmegaNuPrimed(0.01));
-    FLOATS_CLOSE_TO(0.02*(nuc.OmegaNu(0.02+1e-5)-nuc.OmegaNu(0.02-1e-5))/2e-5, nuc.OmegaNuPrimed(0.02));
-    FLOATS_CLOSE_TO(0.0002*(nuc.OmegaNu(0.0002+1e-8)-nuc.OmegaNu(0.0002-1e-8))/2e-8, nuc.OmegaNuPrimed(0.0002));
-    FLOATS_CLOSE_TO((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1));
-    FLOATS_CLOSE_TO(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1));
+    BOOST_CHECK_CLOSE_FRACTION(0.01*(nuc.OmegaNu(0.01+1e-5)-nuc.OmegaNu(0.01-1e-5))/2e-5, nuc.OmegaNuPrimed(0.01),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(0.02*(nuc.OmegaNu(0.02+1e-5)-nuc.OmegaNu(0.02-1e-5))/2e-5, nuc.OmegaNuPrimed(0.02),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(0.0002*(nuc.OmegaNu(0.0002+1e-8)-nuc.OmegaNu(0.0002-1e-8))/2e-8, nuc.OmegaNuPrimed(0.0002),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1),1e-3);
+    BOOST_CHECK_CLOSE_FRACTION(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1),1e-3);
 }
-
