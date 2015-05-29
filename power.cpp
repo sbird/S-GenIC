@@ -94,11 +94,11 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       /* obtain P(k) from transfer function ratios like suggested by JL*/
       /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
       size_t cursize = ktransfer_vector.size();
-      delta_b   = k * k * k * pow(T_b/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* pmatter[cursize]/(2*M_PI*M_PI);
-      delta_nu = k * k * k * pow(T_nu/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_tot = k * k * k * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_b   = pow(T_b/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_cdm = pow(T_cdm/T_tot,2)* pmatter[cursize]/(2*M_PI*M_PI);
+      delta_nu = pow(T_nu/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_nu_2nd = pow(T_nu2/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_tot = pmatter[cursize]/(2*M_PI*M_PI);
       //Assign row to structures
       ktransfer_vector.push_back(k);
       transfer_vector[0].push_back(delta_b);
@@ -153,11 +153,8 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
 
 double PowerSpec_Tabulated::power(double k, int Type)
 {
-  double kold = k;
 
-  k *= scale;	/* convert to h/Mpc */
-
-  double logk = log10(k);
+  double logk = log10(k*scale);
 
   if(logk < ktransfer_table[0] || logk > ktransfer_table[NPowerTable - 1])
     return 0;
@@ -170,7 +167,7 @@ double PowerSpec_Tabulated::power(double k, int Type)
 
   double Delta2 = pow(10.0, logD);
 
-  double P = Delta2 / (4 * M_PI * kold * kold * kold);
+  double P = Delta2 * scale * scale * scale / (4 * M_PI );
   //  printf(" k,P,u,logD,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD %g %g %g %g %g %g %d %d %g %g\n",k,P,u,logD,Delta2,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD);
   return P;
 }
