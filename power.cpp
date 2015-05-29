@@ -19,18 +19,14 @@ int compare_logk(const void *a, const void *b)
   return 0;
 }
 
-struct pow_matter
-{
-  double kmat,pmat;
-};
-
-
 PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks)
 {
   //Set up conversion factor between internal units and CAMB units
   scale = (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);
-  std::vector<pow_matter> PowerMatter;
+  std::vector<double> kmatter;
+  std::vector<double> pmatter;
+
   std::fstream matpow;
   matpow.open(FileWithInputSpectrum, std::fstream::in);
   if ( ! matpow.is_open() ) {
@@ -40,12 +36,13 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
 
   /* define matter array */
   while ( matpow.good() ) {
-    pow_matter tmp;
-    matpow >> tmp.kmat;
-    matpow >> tmp.pmat;
-    PowerMatter.push_back(tmp);
+    double ktmp,ptmp;
+    matpow >> ktmp;
+    kmatter.push_back(ktmp);
+    matpow >> ptmp;
+    pmatter.push_back(ptmp);
   }
-  std::cerr<<"Found "<<PowerMatter.size()<<" rows in input spectrum table\n"<<std::endl;
+  std::cerr<<"Found "<<pmatter.size()<<" rows in input spectrum table\n"<<std::endl;
   matpow.close();
 
   std::fstream transfer;
@@ -97,14 +94,14 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       if(no_gas && OmegaNu == 0){
               T_cdm = T_tot;
       }
-	  /* obtain P(k) from transfer function ratios like suggested by JL*/
-	  /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
+      /* obtain P(k) from transfer function ratios like suggested by JL*/
+      /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
       size_t NPowerTable = PowerTable.size();
-	  delta_b   = k * k * k * pow(T_b/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	  delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
-	  delta_nu = k * k * k * pow(T_nu/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
-	  delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI); 
-	  delta_tot = k * k * k * PowerMatter[NPowerTable].pmat/(2*M_PI*M_PI);
+      delta_b   = k * k * k * pow(T_b/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
+      delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* pmatter[NPowerTable]/(2*M_PI*M_PI);
+      delta_nu = k * k * k * pow(T_nu/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
+      delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
+      delta_tot = k * k * k * pmatter[NPowerTable]/(2*M_PI*M_PI);
 
       //Assign row to structure
       pow_table tmp;
@@ -120,13 +117,13 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   transfer.close();
 
   //Do some basic checks on the read input files.
-  if (PowerTable.size() != PowerMatter.size() ) {
-      std::cerr << "Transfer function was "<<PowerTable.size()<<" lines long, but input power spectrum was "<<PowerMatter.size()<<std::endl;
+  if (PowerTable.size() != pmatter.size() ) {
+      std::cerr << "Transfer function was "<<PowerTable.size()<<" lines long, but input power spectrum was "<<pmatter.size()<<std::endl;
       exit(47);
   }
   for(size_t i=0; i < PowerTable.size(); ++i) {
-      if(fabs(PowerMatter[i].kmat - pow(10,PowerTable[i].logk)) > 0.01 * PowerMatter[i].kmat ) {
-              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,PowerMatter[i].kmat,pow(10,PowerTable[i].logk));
+      if(fabs(kmatter[i]- pow(10,PowerTable[i].logk)) > 0.01 * kmatter[i]) {
+              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,kmatter[i],pow(10,PowerTable[i].logk));
               std::cerr<<"Remember you need transfer_k_interp_matterpower = F in CAMB"<<std::endl;
               exit(47);
       }
