@@ -4,6 +4,8 @@
 #include <cmath>
 #include <cstddef>
 #include <vector>
+#include <gsl/gsl_interp.h>
+
 
 //Abstract base class to allow calling of different types of power spectrum
 class PowerSpec
@@ -11,18 +13,19 @@ class PowerSpec
     public:
         virtual ~PowerSpec() {}
     public:
-        virtual double power(double k, int Type)=0;
+        /** Returns the power spectrum.
+         * Units are L^3. L is N-GenIC internal units (usually kpc/h)
+         * Fourier convention differs from CAMB by 1/(2 pi^3).
+         * k should be 1/L in  and is not log.
+         * Type specifies the type of particle and follows Gadget conventions. In practice it is ignored for everything apart
+         * from PowerSpec_Tabulated, in which case:
+         * 0 -> baryons. 1-> CDM, 2-> Neutrinos 3-> massless neutrinos 4 (or higher) -> total power
+         */
+       virtual double power(double k, int Type)=0;
 };
 
-/*Structure for matter power table*/
-struct pow_table
-{
-  double logk, logD,logDb;
-  double logD2nd;
-  /*For a second neutrino species: type 3*/
-  double logD3rd;
-  double logDtot;
-};
+//Number of types of particle defined in the tabulated power spectrum.
+#define N_TYPES 5
 
 //Derived class for a tabulated power spectrum
 class PowerSpec_Tabulated: public PowerSpec
@@ -34,11 +37,15 @@ class PowerSpec_Tabulated: public PowerSpec
     virtual ~PowerSpec_Tabulated() {}
     size_t size()
     {
-        return PowerTable.size();
+        return NPowerTable;
     }
     private:
         double scale;
-        std::vector<pow_table> PowerTable;
+        size_t NPowerTable;
+        double * ktransfer_table;
+        double * transfer_table[N_TYPES];
+        gsl_interp * trans_interp[N_TYPES];
+        gsl_interp_accel * trans_interp_accel[N_TYPES];
 };
 
 //Derived class for the Efstathiou power spectrum

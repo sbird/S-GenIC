@@ -4,20 +4,9 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <cassert>
 //For the normalized power spectrum
 #include <gsl/gsl_integration.h>
-
-//Define the various functions for the tabulated power spectrum
-int compare_logk(const void *a, const void *b)
-{
-  if(((struct pow_table *) a)->logk < (((struct pow_table *) b)->logk))
-    return -1;
-
-  if(((struct pow_table *) a)->logk > (((struct pow_table *) b)->logk))
-    return +1;
-
-  return 0;
-}
 
 PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks)
@@ -53,6 +42,10 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       std::cerr<<"Can't open transfer function in file: "<< FileWithTransfer<<std::endl;
       exit(17);
   }
+
+  //Temporary arrays which can be resized so we don't have to read the file twice
+  std::vector<double> ktransfer_vector;
+  std::vector<double> transfer_vector[N_TYPES];
 
   while ( transfer.good() ) {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
@@ -100,98 +93,84 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       }
       /* obtain P(k) from transfer function ratios like suggested by JL*/
       /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
-      size_t NPowerTable = PowerTable.size();
-      delta_b   = k * k * k * pow(T_b/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
-      delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* pmatter[NPowerTable]/(2*M_PI*M_PI);
-      delta_nu = k * k * k * pow(T_nu/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
-      delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * pmatter[NPowerTable]/(2*M_PI*M_PI);
-      delta_tot = k * k * k * pmatter[NPowerTable]/(2*M_PI*M_PI);
+      size_t cursize = ktransfer_vector.size();
+      delta_b   = k * k * k * pow(T_b/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_cdm = k * k * k * pow(T_cdm/T_tot,2)* pmatter[cursize]/(2*M_PI*M_PI);
+      delta_nu = k * k * k * pow(T_nu/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_nu_2nd = k * k * k * pow(T_nu2/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
+      delta_tot = k * k * k * pmatter[cursize]/(2*M_PI*M_PI);
+      //Assign row to structures
+      ktransfer_vector.push_back(k);
+      transfer_vector[0].push_back(delta_b);
+      transfer_vector[1].push_back(delta_cdm);
+      transfer_vector[2].push_back(delta_nu);
+      transfer_vector[3].push_back(delta_nu_2nd);
+      transfer_vector[4].push_back(delta_tot);
 
-      //Assign row to structure
-      pow_table tmp;
-      tmp.logk = log10(k);
-      tmp.logD = log10(delta_cdm);
-	  // printf("NT,d_cdm,log10(d_cdm),k %d %g %g %g \n",NPowerTable,delta_cdm,log10(delta_cdm),k);
-	  tmp.logD2nd = log10(delta_nu);
-	  tmp.logD3rd = log10(delta_nu_2nd);
-      tmp.logDtot = log10(delta_tot);
-	  tmp.logDb = log10(delta_b);
-      PowerTable.push_back(tmp);
   }
   transfer.close();
 
   //Do some basic checks on the read input files.
-  if (PowerTable.size() != pmatter.size() ) {
-      std::cerr << "Transfer function was "<<PowerTable.size()<<" lines long, but input power spectrum was "<<pmatter.size()<<std::endl;
+  if (ktransfer_vector.size() != pmatter.size() ) {
+      std::cerr << "Transfer function was "<<ktransfer_vector.size()<<" lines long, but input power spectrum was "<<pmatter.size()<<std::endl;
       exit(47);
   }
-  for(size_t i=0; i < PowerTable.size(); ++i) {
-      if(fabs(kmatter[i]- pow(10,PowerTable[i].logk)) > 0.01 * kmatter[i]) {
-              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,kmatter[i],pow(10,PowerTable[i].logk));
+  //Allocate arrays for the gsl interpolation (which must be raw arrays, unfortunately)
+  //Then allocate the interpolation objects
+  ktransfer_table = new double[ktransfer_vector.size()];
+  //Copy over the k values
+  for (size_t i=0; i<ktransfer_vector.size(); i++) {
+        ktransfer_table[i] = log10(ktransfer_vector[i]);
+        if(fabs(kmatter[i]- ktransfer_vector[i]) > 0.01 * kmatter[i]) {
+              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,kmatter[i],ktransfer_vector[i]);
               std::cerr<<"Remember you need transfer_k_interp_matterpower = F in CAMB"<<std::endl;
               exit(47);
-      }
-      if(i >0 && PowerTable[i].logk < PowerTable[i-1].logk) {
-              std::cerr<<"CAMB power table is not increasing in k."<<std::endl;
+        }
+        if(i >0 && ktransfer_table[i] <= ktransfer_table[i-1]) {
+              std::cerr<<"Transfer table is not increasing in k: i = "<<i<<", k = "<<ktransfer_table[i]<<" <= "<<ktransfer_table[i-1]<<std::endl;
               exit(48);
-      }
+        }
   }
+  for(int type=0; type < N_TYPES; type++){
+      //Check everything is the same size
+      assert( ktransfer_vector.size() == transfer_vector[type].size());
+      transfer_table[type] = new double[transfer_vector[type].size()];
+      //Copy data from the temporary vectors to the statically sized C-arrays
+      for (size_t i=0; i<transfer_vector[type].size(); i++) {
+          //Make sure we do not take log(0)
+          transfer_table[type][i] = log10(std::max(transfer_vector[type][i],1e-90));
+      }
+      //Set up the interpolation structures
+      trans_interp[type] = gsl_interp_alloc(gsl_interp_cspline,transfer_vector[type].size());
+      trans_interp_accel[type] = gsl_interp_accel_alloc();
+      //Initialise the interpolator; same k values for each one, different T values.
+      //Size asserted to be the same.
+      gsl_interp_init(trans_interp[type],ktransfer_table, transfer_table[type],transfer_vector[type].size());
+  }
+  //Store the size of the arrays
+  NPowerTable = ktransfer_vector.size();
 }
 
 double PowerSpec_Tabulated::power(double k, int Type)
 {
-  double logk, logD, P, kold, u, dlogk, Delta2;
-  int binlow, binhigh, binmid;
-
-  kold = k;
+  double kold = k;
 
   k *= scale;	/* convert to h/Mpc */
 
-  logk = log10(k);
+  double logk = log10(k);
 
-  if(logk < PowerTable[0].logk || logk > PowerTable[PowerTable.size() - 1].logk)
+  if(logk < ktransfer_table[0] || logk > ktransfer_table[NPowerTable - 1])
     return 0;
 
-  binlow = 0;
-  binhigh = PowerTable.size() - 1;
+  //Clamp the requested type.
+  if (Type > N_TYPES-1 || Type < 0)
+      Type = N_TYPES-1;
 
-  while(binhigh - binlow > 1)
-    {
-      binmid = (binhigh + binlow) / 2;
-      if(logk < PowerTable[binmid].logk)
-      	binhigh = binmid;
-      else
-      	binlow = binmid;
-    }
+  double logD = gsl_interp_eval(trans_interp[Type], ktransfer_table, transfer_table[Type], logk, trans_interp_accel[Type]);
 
-  dlogk = PowerTable[binhigh].logk - PowerTable[binlow].logk;
+  double Delta2 = pow(10.0, logD);
 
-  if(dlogk == 0)
-    exit(777);
-
-  u = (logk - PowerTable[binlow].logk) / dlogk;
-
-  /*Choose which value to return based on Type*/
-  switch (Type){
-          case 0:
-                logD = (1 - u) * PowerTable[binlow].logDb + u * PowerTable[binhigh].logDb;
-                break;
-          case 1:
-                logD = (1 - u) * PowerTable[binlow].logD + u * PowerTable[binhigh].logD;
-                break;
-          case 2:
-                logD = (1 - u) * PowerTable[binlow].logD2nd + u * PowerTable[binhigh].logD2nd;
-                break;
-          case 3:
-                logD = (1 - u) * PowerTable[binlow].logD3rd + u * PowerTable[binhigh].logD3rd;
-                break;
-          default:
-                logD = (1 - u) * PowerTable[binlow].logDtot + u * PowerTable[binhigh].logDtot;
-  }
-
-  Delta2 = pow(10.0, logD);
-
-  P = Delta2 / (4 * M_PI * kold * kold * kold);
+  double P = Delta2 / (4 * M_PI * kold * kold * kold);
   //  printf(" k,P,u,logD,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD %g %g %g %g %g %g %d %d %g %g\n",k,P,u,logD,Delta2,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD);
   return P;
 }
