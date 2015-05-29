@@ -38,8 +38,10 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   while ( matpow.good() ) {
     double ktmp,ptmp;
     matpow >> ktmp;
-    kmatter.push_back(ktmp);
     matpow >> ptmp;
+    if (!matpow.good() )
+        break;
+    kmatter.push_back(ktmp);
     pmatter.push_back(ptmp);
   }
   std::cerr<<"Found "<<pmatter.size()<<" rows in input spectrum table\n"<<std::endl;
@@ -67,6 +69,8 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       transfer >> T_tot;
       //Ignore the rest of the line
       transfer.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      if ( ! transfer.good() )
+          break;
       /* The dark matter may incorporate other particle types as well, eg,
        * fake neutrinos, or baryons.
        * NOTE that CAMB defines T_tot = (T_CDM M_CDM + T_b M_b +T_nu M_nu) / (M_CDM + M_b +M_nu)

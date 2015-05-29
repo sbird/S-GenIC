@@ -96,11 +96,11 @@ BOOST_AUTO_TEST_CASE(check_power_spec_camb)
     std::string trans = "testdata/cambv1_transfer_99.dat";
     std::string matpow = "testdata/cambv1_matterpow_99.dat";
     PowerSpec_Tabulated pspec(trans.c_str(), matpow.c_str(), 0.222+0.0449, 0.7331, 0.0449,0.,3.085678e24, 3.085678e21, false, false);
-    BOOST_CHECK_EQUAL(pspec.size(),336);
+    BOOST_CHECK_EQUAL(pspec.size(),335);
     std::string trans2 = "testdata/cambv2_transfer_99.dat";
     std::string matpow2 = "testdata/cambv2_matterpow_99.dat";
     PowerSpec_Tabulated pspec2(trans2.c_str(), matpow2.c_str(), 0.233+0.0463, 0.7331, 0.0463,0.,3.085678e24, 3.085678e21, false, false);
-    BOOST_CHECK_EQUAL(pspec2.size(),336);
+    BOOST_CHECK_EQUAL(pspec2.size(),335);
     //Check that the tabulated power spectrum gives the right answer
     //First check ranges: these should both be out of range.
     //Should be the same k as in the file (but /10^3 for Mpc -> kpc)
