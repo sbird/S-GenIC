@@ -113,8 +113,8 @@ BOOST_AUTO_TEST_CASE(check_power_spec_camb)
     //Check that it gives reasonable results when interpolating
     for (int k = 1; k < 100; k++) {
         double newk = 0.10022E+01/1e3+ k*(0.10362E+01-0.10022E+01)/1e3/100;
-        BOOST_CHECK_LT(pspec.power(newk,6), 0.13121E-01*1e9/(pow(2*M_PI,3)));
-        BOOST_CHECK_GT(pspec.power(newk,6), 0.12154E-01*1e9/(pow(2*M_PI,3)));
+        BOOST_CHECK_LT(pspec.power(newk,6), pspec.power(0.10022E+01/1e3,6));
+        BOOST_CHECK_GT(pspec.power(newk,6), pspec.power(0.10362E+01/1e3,6));
     }
     //Now check transfer functions: ratio of total to species should be ratio of T_s to T_tot squared: large scales where T~ 1
     BOOST_CHECK_CLOSE(pspec.power(0.208152E-02/1e3,0)/pspec.power(0.208152E-02/1e3,6), pow(0.255362E+06/0.255697E+06,2),1e-6);
