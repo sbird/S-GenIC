@@ -25,7 +25,7 @@ class PowerSpec
 };
 
 //Number of types of particle defined in the tabulated power spectrum.
-#define N_TYPES 5
+#define N_TYPES 4
 
 //Derived class for a tabulated power spectrum
 class PowerSpec_Tabulated: public PowerSpec
@@ -41,11 +41,17 @@ class PowerSpec_Tabulated: public PowerSpec
     }
     private:
         double scale;
-        size_t NPowerTable;
+        size_t NPowerTable, NTransferTable;
+        //Data tables for the transfer function
         double * ktransfer_table;
         double * transfer_table[N_TYPES];
         gsl_interp * trans_interp[N_TYPES];
         gsl_interp_accel * trans_interp_accel[N_TYPES];
+        //Data table for the power spectrum
+        double * kmatter_table;
+        double * pmatter_table;
+        gsl_interp * pmat_interp;
+        gsl_interp_accel * pmat_interp_accel;
 };
 
 //Derived class for the Efstathiou power spectrum

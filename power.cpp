@@ -13,8 +13,8 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
 {
   //Set up conversion factor between internal units and CAMB units
   scale = (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);
-  std::vector<double> kmatter;
-  std::vector<double> pmatter;
+  std::vector<double> kmatter_vector;
+  std::vector<double> pmatter_vector;
 
   std::fstream matpow;
   matpow.open(FileWithInputSpectrum, std::fstream::in);
@@ -30,11 +30,32 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
     matpow >> ptmp;
     if (!matpow.good() )
         break;
-    kmatter.push_back(ktmp);
-    pmatter.push_back(ptmp);
+    kmatter_vector.push_back(ktmp);
+    pmatter_vector.push_back(ptmp);
   }
-  std::cerr<<"Found "<<pmatter.size()<<" rows in input spectrum table\n"<<std::endl;
+  std::cerr<<"Found "<<pmatter_vector.size()<<" rows in input spectrum table\n"<<std::endl;
   matpow.close();
+
+  //Allocate arrays for the gsl interpolation (which must be raw arrays, unfortunately)
+  //Then allocate the interpolation objects
+  kmatter_table = new double[kmatter_vector.size()];
+  pmatter_table = new double[pmatter_vector.size()];
+  assert(kmatter_vector.size() == pmatter_vector.size());
+  //Copy over the k values and convert Fourier convention
+  for (size_t i=0; i<kmatter_vector.size(); i++) {
+        kmatter_table[i] = log10(kmatter_vector[i]);
+        pmatter_table[i] = log10(pmatter_vector[i]/pow(2*M_PI,3));
+        if(i >0 && kmatter_table[i] <= kmatter_table[i-1]) {
+              std::cerr<<"Matter power table is not increasing in k: i = "<<i<<", k = "<<kmatter_table[i]<<" <= "<<kmatter_table[i-1]<<std::endl;
+              exit(48);
+        }
+  }
+  //Set up the interpolation structures for the matter power
+  pmat_interp = gsl_interp_alloc(gsl_interp_cspline,kmatter_vector.size());
+  pmat_interp_accel = gsl_interp_accel_alloc();
+  //Initialise the interpolator; same k values for each one, different T values.
+  gsl_interp_init(pmat_interp,kmatter_table, pmatter_table,pmatter_vector.size());
+  NPowerTable = pmatter_vector.size();
 
   std::fstream transfer;
   transfer.open(FileWithTransfer, std::fstream::in);
@@ -50,7 +71,6 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   while ( transfer.good() ) {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
       double k;
-      double delta_cdm, delta_nu, delta_nu_2nd,delta_tot, delta_b;
       //Read the row.
       transfer >> k;
       transfer >> T_cdm;
@@ -91,41 +111,21 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       if(no_gas && OmegaNu == 0){
               T_cdm = T_tot;
       }
-      /* obtain P(k) from transfer function ratios like suggested by JL*/
-      /*NOTE for this to work CAMB's transfer_k_interp_matterpower must be off!!*/
-      size_t cursize = ktransfer_vector.size();
-      delta_b   = pow(T_b/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_cdm = pow(T_cdm/T_tot,2)* pmatter[cursize]/(2*M_PI*M_PI);
-      delta_nu = pow(T_nu/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_nu_2nd = pow(T_nu2/T_tot,2) * pmatter[cursize]/(2*M_PI*M_PI);
-      delta_tot = pmatter[cursize]/(2*M_PI*M_PI);
-      //Assign row to structures
+      //Assign transfer functions to structures as T_s/T_t^2
       ktransfer_vector.push_back(k);
-      transfer_vector[0].push_back(delta_b);
-      transfer_vector[1].push_back(delta_cdm);
-      transfer_vector[2].push_back(delta_nu);
-      transfer_vector[3].push_back(delta_nu_2nd);
-      transfer_vector[4].push_back(delta_tot);
-
+      transfer_vector[0].push_back(pow(T_b/T_tot,2));
+      transfer_vector[1].push_back(pow(T_cdm/T_tot,2));
+      transfer_vector[2].push_back(pow(T_nu/T_tot,2));
+      transfer_vector[3].push_back(pow(T_nu2/T_tot,2));
   }
   transfer.close();
 
-  //Do some basic checks on the read input files.
-  if (ktransfer_vector.size() != pmatter.size() ) {
-      std::cerr << "Transfer function was "<<ktransfer_vector.size()<<" lines long, but input power spectrum was "<<pmatter.size()<<std::endl;
-      exit(47);
-  }
   //Allocate arrays for the gsl interpolation (which must be raw arrays, unfortunately)
   //Then allocate the interpolation objects
   ktransfer_table = new double[ktransfer_vector.size()];
   //Copy over the k values
   for (size_t i=0; i<ktransfer_vector.size(); i++) {
         ktransfer_table[i] = log10(ktransfer_vector[i]);
-        if(fabs(kmatter[i]- ktransfer_vector[i]) > 0.01 * kmatter[i]) {
-              fprintf(stderr, "Error: Input spectrum row %ld has k=%g, transfer has k=%g.\n",i,kmatter[i],ktransfer_vector[i]);
-              std::cerr<<"Remember you need transfer_k_interp_matterpower = F in CAMB"<<std::endl;
-              exit(47);
-        }
         if(i >0 && ktransfer_table[i] <= ktransfer_table[i-1]) {
               std::cerr<<"Transfer table is not increasing in k: i = "<<i<<", k = "<<ktransfer_table[i]<<" <= "<<ktransfer_table[i-1]<<std::endl;
               exit(48);
@@ -138,7 +138,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       //Copy data from the temporary vectors to the statically sized C-arrays
       for (size_t i=0; i<transfer_vector[type].size(); i++) {
           //Make sure we do not take log(0)
-          transfer_table[type][i] = log10(std::max(transfer_vector[type][i],1e-90));
+          transfer_table[type][i] = transfer_vector[type][i];
       }
       //Set up the interpolation structures
       trans_interp[type] = gsl_interp_alloc(gsl_interp_cspline,transfer_vector[type].size());
@@ -148,27 +148,29 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
       gsl_interp_init(trans_interp[type],ktransfer_table, transfer_table[type],transfer_vector[type].size());
   }
   //Store the size of the arrays
-  NPowerTable = ktransfer_vector.size();
+  NTransferTable = ktransfer_vector.size();
 }
 
 double PowerSpec_Tabulated::power(double k, int Type)
 {
-
   double logk = log10(k*scale);
+  double transfer;
 
-  if(logk < ktransfer_table[0] || logk > ktransfer_table[NPowerTable - 1])
+  if(logk < ktransfer_table[0] || logk > ktransfer_table[NTransferTable - 1])
     return 0;
 
-  //Clamp the requested type.
+  if(logk < kmatter_table[0] || logk > kmatter_table[NPowerTable - 1])
+    return 0;
+
+  //If a type is requested that isn't defined, assume we want the total matter power.
   if (Type > N_TYPES-1 || Type < 0)
-      Type = N_TYPES-1;
+      transfer = 1;
+  else
+      transfer = gsl_interp_eval(trans_interp[Type], ktransfer_table, transfer_table[Type], logk, trans_interp_accel[Type]);
 
-  double logD = gsl_interp_eval(trans_interp[Type], ktransfer_table, transfer_table[Type], logk, trans_interp_accel[Type]);
+  double logP = gsl_interp_eval(pmat_interp, kmatter_table, pmatter_table, logk, pmat_interp_accel);
+  double P = pow(10.0, logP) * pow(scale, 3) * transfer;
 
-  double Delta2 = pow(10.0, logD);
-
-  double P = Delta2 * scale * scale * scale / (4 * M_PI );
-  //  printf(" k,P,u,logD,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD %g %g %g %g %g %g %d %d %g %g\n",k,P,u,logD,Delta2,dlogk,binlow,binhigh,PowerTable[binlow].logD,PowerTable[binhigh].logD);
   return P;
 }
 
