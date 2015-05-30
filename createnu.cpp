@@ -27,6 +27,8 @@ class PowerSpec_NuTabulated: public PowerSpec
     virtual ~PowerSpec_NuTabulated(){
         delete[] pvals;
         delete [] kvals;
+        gsl_interp_free(power_interp);
+        gsl_interp_accel_free(power_accel);
     }
     private:
         int NPowerTable;
