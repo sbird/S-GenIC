@@ -41,7 +41,7 @@ INCL   = allvars.h proto.h part_data.hpp thermalvel.hpp power.hpp read_param.hpp
 
 all: $(EXEC)
 
-createnu: createnu.o $(OBJS)
+createnu: createnu.o createnufuncs.o $(OBJS)
 	${LINK}${LFLAGS} -lhdf5_hl -lhdf5 $^ -o $@
 
 test: btest
@@ -56,7 +56,7 @@ doc: Doxyfile main.cpp ${INCL}
 allvars.o: allvars.c allvars.h Makefile
 
 $(EXEC): main.o $(OBJS)
-	${LINK} ${LFLAGS} $^ -o  $@  
+	${LINK} ${LFLAGS} $^ -o  $@
 
 btest: test.o ${OBJS}
 	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
