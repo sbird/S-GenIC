@@ -58,6 +58,9 @@ allvars.o: allvars.c allvars.h Makefile
 $(EXEC): main.o $(OBJS)
 	${LINK} ${LFLAGS} $^ -o  $@
 
+createtest: createtest.o createnufuncs.o ${OBJS}
+	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
+
 btest: test.o ${OBJS}
 	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
 clean:
