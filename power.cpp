@@ -133,7 +133,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   }
   for(int type=0; type < N_TYPES; type++){
       //Check everything is the same size
-      assert( ktransfer_vector.size() == transfer_vector[type].size());
+      assert( ktransfer_vector.size() == transfer_vector[type].size() );
       transfer_table[type] = new double[transfer_vector[type].size()];
       //Copy data from the temporary vectors to the statically sized C-arrays
       for (size_t i=0; i<transfer_vector[type].size(); i++) {
@@ -149,6 +149,22 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   }
   //Store the size of the arrays
   NTransferTable = ktransfer_vector.size();
+}
+
+PowerSpec_Tabulated::~PowerSpec_Tabulated()
+{
+        //Free memory for power table
+        delete[] kmatter_table;
+        delete[] pmatter_table;
+        gsl_interp_free(pmat_interp);
+        gsl_interp_accel_free(pmat_interp_accel);
+        //Free memory for transfer table
+        delete[] ktransfer_table;
+        for (int i=0; i<N_TYPES;i++) {
+            delete[] transfer_table[i];
+            gsl_interp_free(trans_interp[i]);
+            gsl_interp_accel_free(trans_interp_accel[i]);
+        }
 }
 
 double PowerSpec_Tabulated::power(double k, int Type)
