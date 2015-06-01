@@ -11,11 +11,11 @@ class DisplacementFields
 {
     public:
         DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box, bool twolpt=true);
-        void displacement_fields(const int type, const int64_t NumPart, part_data& P, PowerSpec * PSpec, bool SphereMode, bool RayleighScatter=true);
+        void displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode, bool RayleighScatter=true);
         ~DisplacementFields();
     private:
         //Takes the computed Fourier displacement field and reads them into part_data P
-        double displacement_read_out(const int order, const int64_t NumPart, part_data& P, const int axes);
+        double displacement_read_out(const int order, part_data& P, const int axes);
         //Size of the Fourier grid
         const size_t Nmesh;
         //Nsample is the number of particles

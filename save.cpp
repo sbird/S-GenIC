@@ -10,8 +10,9 @@ using namespace std;
 
 #define BUFFER 48
 
-int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t NumPart, int64_t FirstId, bool twolpt)
+int64_t write_particle_data(GWriteSnap & snap, int type, part_data& P, int64_t FirstId, bool twolpt)
 {
+  const int64_t NumPart = P.GetNumPart();
   float *block;
   id_type *blockid;
   int64_t written=0, pc;

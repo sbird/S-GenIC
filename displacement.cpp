@@ -147,7 +147,7 @@ unsigned int * initialize_rng(int Seed, size_t Nmesh)
 }
 
 /**Function to compute Zeldovich displacement fields using a double Fourier transform*/
-void DisplacementFields::displacement_fields(const int type, const int64_t NumPart, part_data& P, PowerSpec * PSpec, bool RayleighScatter, bool SphereMode)
+void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool RayleighScatter, bool SphereMode)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   //Re-initialize every time this is called, so each particle type has the same phases
@@ -311,7 +311,7 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
      } //end twolpt
      fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
      /* read-out Zeldovich displacements into P.Vel*/
-     maxdisp=displacement_read_out(1, NumPart, P, axes);
+     maxdisp=displacement_read_out(1, P, axes);
     }
 
     if (twolpt) {
@@ -359,7 +359,7 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
               /* Cdata now contains the FFT of the 2LPT term */
               fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
-              maxdisp2=displacement_read_out(2, NumPart, P, axes);
+              maxdisp2=displacement_read_out(2, P, axes);
           }
 #ifdef NEUTRINOS
     } //type !=2
@@ -373,10 +373,11 @@ void DisplacementFields::displacement_fields(const int type, const int64_t NumPa
   return;
 }
 
-double DisplacementFields::displacement_read_out(const int order, const int64_t NumPart, part_data& P, const int axes)
+double DisplacementFields::displacement_read_out(const int order, part_data& P, const int axes)
 {
    double maxx=0;
    const double Nmesh3 = pow(1.*Nmesh, 3);
+   const int64_t NumPart = P.GetNumPart();
    #pragma omp parallel
    {
       double maxdisp=0;

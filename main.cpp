@@ -58,6 +58,7 @@ int main(int argc, char **argv)
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);
   }
+
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {
@@ -88,7 +89,6 @@ int main(int argc, char **argv)
           FatalError(23);
 
   for(type=0; type<N_TYPE;type++){
-      int64_t NumPart = 0;
       if(npart[type] == 0)
               continue;
       try{
@@ -98,9 +98,8 @@ int main(int argc, char **argv)
               tlptpart = false;
 #endif
           part_data P(snap, type, GlassTileFac, Box, tlptpart);
-          NumPart = P.GetNumPart();
-          displace.displacement_fields(type, NumPart, P, PSpec, SphereMode, RayleighScatter);
-          FirstId = write_particle_data(osnap, type,P, NumPart,FirstId, tlptpart);
+          displace.displacement_fields(type, P, PSpec, SphereMode, RayleighScatter);
+          FirstId = write_particle_data(osnap, type,P, FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
       {
