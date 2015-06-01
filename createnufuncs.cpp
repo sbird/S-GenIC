@@ -198,6 +198,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
 
 
     H5Gclose(group);
+    delete[] idbuffer;
     //Set the neutrino particle mass
     double masses[N_TYPE];
     H5LTget_attribute_double(handle,"Header","MassTable", masses);
