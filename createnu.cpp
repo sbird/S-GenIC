@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     FermiDiracVel nuvels (v_th);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
     uint32_t Nthisfile = NNeutrinos/numfiles;
-    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass);
+    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
     for(int i=1; i<numfiles; ++i)
     {
         //If this is the last file, write all remaining particles
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
         formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
         SnapFile = formatter.str();
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, Nthisfile, NNeutrinos,FirstId+startPart, vel_prefac, nupartmass);
+        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
     }
     return 0;
 }

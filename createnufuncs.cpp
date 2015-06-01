@@ -6,6 +6,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <fstream>
+#include "proto.h"
 
 
 PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum, double atime)
@@ -123,8 +124,10 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
             H5Dclose(herr);
         }
         hid_t dset = H5Dopen(group,BlockName.c_str(),H5P_DEFAULT);
-        if (dset < 0)
-            return dset;
+        if (dset < 0) {
+                std::cerr << "Could not open dataset: " <<BlockName<<std::endl;
+                throw std::bad_exception();
+        }
         size[0] = np_write;
         hid_t space_id = H5Screate_simple(rank, size, NULL);
         hsize_t begins[2]={begin,0};
@@ -152,7 +155,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass)
+int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, const size_t startPart, const uint32_t NNeutrinos,const size_t NNuTotal, const int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box)
 {
     //Open the HDF5 file
     hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
@@ -166,24 +169,26 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     float * buffer = new float[3*blockwrite];
     //Coordinates first : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
+        const uint32_t blocksz = std::min(blockwrite, NNeutrinos-curpart);
         // Buffer initialization.
-        for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
+        for (uint32_t i = 0; i < blocksz; ++i)
             for(int k = 0; k < 3; k++)
-                buffer[3 * i + k] = P.Pos(startPart+i,k) + P.Vel(startPart+i,k);
+                buffer[3 * i + k] = periodic_wrap(P.Pos(startPart+curpart+i,k) + P.Vel(curpart+i,k), Box);
         //Do the writing
-        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
     //Velocities next : note no ++ below
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
+        const uint32_t blocksz = std::min(blockwrite, NNeutrinos-curpart);
         // Buffer initialization
-        for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
+        for (uint32_t i = 0; i < blocksz; ++i)
             for(int k = 0; k < 3; k++) {
-                buffer[3 * i + k] = vel_prefac * P.Vel(startPart+i,k);
+                buffer[3 * i + k] = vel_prefac * P.Vel(startPart+curpart+i,k);
                 //Add thermal velocities
                 nuvels.add_thermal_speeds(&buffer[3 * i]);
             }
         //Do the writing
-        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
+        curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
     delete[] buffer;
     int64_t* idbuffer = new int64_t[blockwrite];
@@ -191,7 +196,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
         // Buffer initialization.
         for (uint32_t i = 0; i < std::min(blockwrite, NNeutrinos-curpart); ++i)
-                idbuffer[i] = FirstId+i+curpart;
+                idbuffer[i] = FirstId+startPart+i+curpart;
         //Do the writing
         curpart += WriteBlock("ParticleIDs", group, 2, idbuffer, H5T_NATIVE_LLONG, 1, NNeutrinos, std::min(blockwrite, NNeutrinos-curpart), curpart);
     }

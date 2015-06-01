@@ -42,7 +42,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass);
+int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box);
 
 
 
