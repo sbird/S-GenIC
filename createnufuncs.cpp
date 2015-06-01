@@ -173,7 +173,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
         // Buffer initialization.
         for (uint32_t i = 0; i < blocksz; ++i)
             for(int k = 0; k < 3; k++)
-                buffer[3 * i + k] = periodic_wrap(P.Pos(startPart+curpart+i,k) + P.Vel(curpart+i,k), Box);
+                buffer[3 * i + k] = periodic_wrap(P.Pos(startPart+curpart+i,k) + P.Vel(startPart+curpart+i,k), Box);
         //Do the writing
         curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
