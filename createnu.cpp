@@ -135,6 +135,7 @@ int main(int argc, char **argv)
     int64_t FirstId = (Npart[0]+Npart[1]+Npart[3]+Npart[4]+Npart[5])*8;
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
     FermiDiracVel nuvels (v_th);
+    printf("v_th = %g zz = %g, numass = %g\n",v_th, atime, NUmass);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
     uint32_t Nthisfile = NNeutrinos/numfiles;
     size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);

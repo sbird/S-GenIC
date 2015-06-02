@@ -181,12 +181,13 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
     for (uint32_t curpart=0; curpart < NNeutrinos; ) {
         const uint32_t blocksz = std::min(blockwrite, NNeutrinos-curpart);
         // Buffer initialization
-        for (uint32_t i = 0; i < blocksz; ++i)
+        for (uint32_t i = 0; i < blocksz; ++i){
             for(int k = 0; k < 3; k++) {
                 buffer[3 * i + k] = vel_prefac * P.Vel(startPart+curpart+i,k);
-                //Add thermal velocities
-                nuvels.add_thermal_speeds(&buffer[3 * i]);
             }
+            //Add thermal velocities
+            nuvels.add_thermal_speeds(&buffer[3 * i]);
+        }
         //Do the writing
         curpart += WriteBlock("Velocities", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
