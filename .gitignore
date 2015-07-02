@@ -5,3 +5,10 @@ doc/*
 tags
 createnu
 createtest
+btest
+HighLExtrapTemplate_lenspotentialCls.dat
+test/out2.txt
+test_neutrinos_nl
+.gdb_history
+test/ICs_*
+test/ics_*
