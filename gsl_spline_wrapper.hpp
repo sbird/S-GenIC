@@ -21,9 +21,9 @@ class gsl_spline_wrapper
         void reset(void);
 
         //Get the bounds
-        double xmax();
+        double xmax() const;
 
-        double xmin();
+        double xmin() const;
     private:
         //d-pointer: note this is implicitly shared!
         std::shared_ptr<gsl_spline_wrapper_private> d;

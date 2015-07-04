@@ -68,12 +68,12 @@ class gsl_spline_wrapper_private
         }
 
         //Get the bounds
-        double xmax()
+        double xmax() const
         {
             return m_xval[nval-1];
         }
 
-        double xmin()
+        double xmin() const
         {
             return m_xval[0];
         }
@@ -116,12 +116,12 @@ void gsl_spline_wrapper::reset(void)
 };
 
 //Get the bounds
-double gsl_spline_wrapper::xmax()
+double gsl_spline_wrapper::xmax() const
 {
     return d->xmax();
 }
 
-double gsl_spline_wrapper::xmin()
+double gsl_spline_wrapper::xmin() const
 {
     return d->xmin();
 };
