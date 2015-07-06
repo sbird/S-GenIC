@@ -1,3 +1,5 @@
+#ifndef GSL_SPLINE_WRAPPER
+#define GSL_SPLINE_WRAPPER
 /** A short class to wrap the GSL spline routines in a more C++ friendly format
 Avoids all the tedious freeing and allocation.
 Uses an opaque shared pointer type to implement implicitly shared data and so requires C++11
@@ -28,3 +30,5 @@ class gsl_spline_wrapper
         //d-pointer: note this is implicitly shared!
         std::shared_ptr<gsl_spline_wrapper_private> d;
 };
+
+#endif
