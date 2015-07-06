@@ -179,9 +179,9 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     BOOST_CHECK_CLOSE(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE),3e-5);
     //Test getting the distribution
     BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0), 0,1e-6);
-    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(1), MAX_FERMI_DIRAC,1e-3);
+    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(1), 100*MAX_FERMI_DIRAC,1e-3);
     //Number computed by python guessing
-    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0.5), 2.839,1e-3);
+    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0.5), 100*2.839,1e-3);
 //     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE/2; i+=20)
 //         printf("%g %g\n", nuvels.get_fdv(i), nuvels.get_fdvc(i));
     //Remember to reseed the rng...

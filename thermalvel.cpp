@@ -72,7 +72,7 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
         fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
 }
 
-//Given a probability p, find a dimensionless X s.t. P(x< X) = p.
+//Given a probability p, find a velocity v s.t. P( < v) = p.
 double FermiDiracVel::get_fermi_dirac_vel(double p)
 {
     int binlow = 0;
@@ -89,7 +89,7 @@ double FermiDiracVel::get_fermi_dirac_vel(double p)
     }
 
     const double u = (p - fermi_dirac_cumprob[i-1]) / (fermi_dirac_cumprob[i] - fermi_dirac_cumprob[i-1]);
-    return fermi_dirac_vel[i-1] * (1 - u) + fermi_dirac_vel[i] * u;
+    return m_vamp * (fermi_dirac_vel[i-1] * (1 - u) + fermi_dirac_vel[i] * u);
 }
 
 //Add a randomly generated thermal speed to a 3-velocity
@@ -98,7 +98,7 @@ void FermiDiracVel::add_thermal_speeds(float *vel)
     double v, phi, theta, vx, vy, vz;
     const double p = gsl_rng_uniform (g_rng);
     //m_vamp multiples by the dimensional factor to get a velocity again.
-    v = m_vamp * get_fermi_dirac_vel(p);
+    v = get_fermi_dirac_vel(p);
 
     //Random phase
     phi = 2 * M_PI * gsl_rng_uniform (g_rng);
