@@ -1,0 +1,84 @@
+
+Nmesh=768        # This is the size of the FFT grid used to 
+                           # compute the displacement field. One
+                           # should have Nmesh >= Nsample.
+
+Nsample=512        # sets the maximum k that the code uses,
+                           # i.e. this effectively determines the
+                           # Nyquist frequency that the code assumes,
+                           # k_Nyquist = 2*PI/Box * Nsample/2
+                           # Normally, one chooses Nsample such that
+                           # Ntot =  Nsample^3, where Ntot is the
+                           # total number of particles
+ 
+
+Box= 512000.0   # Periodic box size of simulation
+
+FileBase =test                 # Base-filename of output files
+OutputDir= test   # Directory for output
+
+GlassFile= /home/spb/data/glass/reg-grid-128-dm  # Glass-File
+GlassTileFac= 4                # Number of times the glass file is
+                                  # tiled in each dimension (must be
+                                  # an integer)
+ICFormat=3              # 2 for Gadget output, 3 for HDF5
+
+Omega= 0.2793       # Total matter density  (at z=0)
+OmegaLambda= 0.7207       # Cosmological constant (at z=0)
+OmegaBaryon= 0.0463      # Baryon density        (at z=0)
+OmegaDM_2ndSpecies= 0      # Omega for a second dark matter species (at z=0)
+HubbleParam= 0.7       # Hubble paramater (may be used for power spec parameterization)
+
+Redshift= 99        # Starting redshift
+
+SphereMode  =    1         # if "1" only modes with |k| < k_Nyquist are
+                           # used (i.e. a sphere in k-space), otherwise modes with
+                           # |k_x|,|k_y|,|k_z| < k_Nyquist are used
+                           # (i.e. a cube in k-space)
+          
+
+WhichSpectrum=2         # "1" selects Eisenstein & Hu spectrum,
+		           # "2" selects a tabulated power spectrum in
+                           # the file 'FileWithInputSpectrum'
+                           # otherwise, Efstathiou parametrization is used
+
+NumFiles= 4
+FileWithInputSpectrum= /home/spb/data/hybrid-kspace/b512p512nu0.15z99/ics_matterpow_99.dat  # filename of tabulated MATTER powerspectrum from CAMB
+                                           
+FileWithTransfer= /home/spb/data/hybrid-kspace/b512p512nu0.15z99/ics_transfer_99.dat  # filename of transfer functions from CAMB
+
+InputSpectrum_UnitLength_in_cm= 3.085678e24 # defines length unit of tabulated
+                                            # input spectrum in cm/h. 
+                                            # Note: This can be chosen different from UnitLength_in_cm
+
+ReNormalizeInputSpectrum=0                # if set to zero, the
+                                            # tabulated spectrum is
+                                            # assumed to be normalized
+                                            # already in its amplitude to
+                                            # the starting redshift,
+                                            # otherwise this is recomputed
+                                            # based on the specified sigma8
+
+Sigma8 =                0.8
+Seed =181170    #  seed for IC-generator
+RayleighScatter  =    0
+
+UnitLength_in_cm =        3.085678e21   # defines length unit of output (in cm/h) 
+UnitMass_in_g    =        1.989e43      # defines mass unit of output (in g/cm)
+UnitVelocity_in_cm_per_s= 1e5           # defines velocity unit of output (in cm/sec)
+
+
+NU_KSPACE =0      # Fake neutrinos rather than real ones
+NU_On= 0
+NU_Vtherm_On= 1
+NU_PartMass_in_ev= 0
+
+TWOLPT =            1       # Enable twolpt
+
+
+
+
+
+
+
+
