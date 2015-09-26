@@ -35,7 +35,7 @@ ifeq ($(CC),cc)
 endif
 
 LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
-CFLAGS += -I${GREAD} ${OPT}
+CFLAGS += -I${GREAD} ${OPT} -std=gnu++11
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
 #Are we using gcc or icc?
@@ -54,7 +54,7 @@ EXEC   = N-GenIC
 OBJS   = power.o allvars.o save.o read_param.o \
 	 initialise.o print_spec.o thermalvel.o cosmology.o displacement.o
 
-INCL   = allvars.h proto.h part_data.hpp thermalvel.hpp power.hpp displacement.hpp Makefile
+INCL   = allvars.h proto.h part_data.hpp thermalvel.hpp power.hpp read_param.hpp displacement.hpp Makefile
 
 .PHONY : clean all test
 
@@ -73,7 +73,6 @@ doc: Doxyfile main.cpp ${INCL}
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 allvars.o: allvars.c allvars.h Makefile
-read_param.o: read_param.c $(INCL)
 
 $(EXEC): main.o $(OBJS)
 	${LINK} ${LFLAGS} $^ -o  $@  

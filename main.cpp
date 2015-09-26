@@ -4,6 +4,7 @@
 #include "cosmology.hpp"
 #include "power.hpp"
 #include "displacement.hpp"
+#include "read_param.hpp"
 
 #include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
@@ -23,7 +24,63 @@ int main(int argc, char **argv)
   /*Make sure stdout is line buffered even when not 
    * printing to a terminal but, eg, perl*/
   setlinebuf(stdout);
-  read_parameterfile(argv[1]);
+  SpbConfigParser config(argv[1]);
+  std::map<std::string, ValueTuple> configoptions;
+  //Cosmological parameters
+  configoptions["Omega"] = std::make_tuple((void *) &Omega, FloatType, "");
+  configoptions["OmegaLambda"] = std::make_tuple((void *) &OmegaLambda, FloatType, "");
+  configoptions["OmegaBaryon"] = std::make_tuple((void *) &OmegaBaryon, FloatType, "");
+  configoptions["OmegaDM_2ndSpecies"] = std::make_tuple((void *) &OmegaDM_2ndSpecies, FloatType, "");
+  configoptions["HubbleParam"] = std::make_tuple((void *) &HubbleParam, FloatType, "");
+  //Which output format should we use. 3 is HDF5, 2 is Gadget 2
+  configoptions["ICFormat"] = std::make_tuple((void *) &ICFormat, IntType, "3");
+  //How many output files to use in the set
+  configoptions["NumFiles"] = std::make_tuple((void *) &NumFiles, IntType, "");
+  //Parameters of the simulation box
+  configoptions["Redshift"] = std::make_tuple((void *) &Redshift, FloatType, "");
+  configoptions["Box"] = std::make_tuple((void *) &Box, FloatType, "");
+  //Numerical FFT parameters
+  configoptions["Nmesh"] = std::make_tuple((void *) &Nmesh, IntType, "");
+  configoptions["Nsample"] = std::make_tuple((void *) &Nsample, IntType, "");
+  //Particle number is this * size of glassfile
+  configoptions["GlassTileFac"] = std::make_tuple((void *) &GlassTileFac, IntType, "");
+  //File paths
+  configoptions["GlassFile"] = std::make_tuple((void *) &GlassFile, StringType, "");
+  //Unused unless CAMB spectrum
+  configoptions["FileWithInputSpectrum"] = std::make_tuple((void *) &FileWithInputSpectrum, StringType, "");
+  configoptions["FileWithTransfer"] = std::make_tuple((void *) &FileWithTransfer, StringType, "");
+  configoptions["OutputDir"] = std::make_tuple((void *) &OutputDir, StringType, "");
+  configoptions["FileBase"] = std::make_tuple((void *) &FileBase, StringType, "");
+  //Random number seed
+  configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
+  //Various boolean flags
+  configoptions["SphereMode"] = std::make_tuple((void *) &SphereMode, IntType, "1");
+  configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, IntType, "0");
+  configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, IntType, "1");
+  //Power spectrum to use. Default to CAMB
+  configoptions["WhichSpectrum"] = std::make_tuple((void *) &WhichSpectrum, IntType, "2");
+  configoptions["TWOLPT"] = std::make_tuple((void *) &twolpt, IntType, "1");
+  //Unit system
+  configoptions["UnitVelocity_in_cm_per_s"] = std::make_tuple((void *) &UnitVelocity_in_cm_per_s, FloatType, "1e5");
+  configoptions["UnitLength_in_cm"] = std::make_tuple((void *) &UnitLength_in_cm, FloatType, "3.085678e21");
+  configoptions["UnitMass_in_g"] = std::make_tuple((void *) &UnitMass_in_g, FloatType, "1.989e43");
+  configoptions["InputSpectrum_UnitLength_in_cm"] = std::make_tuple((void *) &InputSpectrum_UnitLength_in_cm, FloatType, "3.085678e24");
+  //WDM options
+  configoptions["WDM_On"] = std::make_tuple((void *) &WDM_On, IntType, "0");
+  configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, IntType, "0");
+  configoptions["WDM_PartMass_in_kev"] = std::make_tuple((void *) &WDM_PartMass_in_kev, FloatType, "0");
+  //Neutrino options
+  configoptions["NU_On"] = std::make_tuple((void *) &NU_On, IntType, "0");
+  configoptions["NU_Vtherm_On"] = std::make_tuple((void *) &NU_Vtherm_On, IntType, "1");
+  configoptions["NU_KSPACE"] = std::make_tuple((void *) &neutrinos_ks, IntType, "1");
+  configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
+  //Parameter for the Efstathiou power spectrum. Generally does nothing.
+  configoptions["ShapeGamma"] = std::make_tuple((void *) &ShapeGamma, FloatType, "0.201");
+  //Needed if ReNormaliseInputSpectrum is on. Otherwise unused
+  configoptions["Sigma8"] = std::make_tuple((void *) &Sigma8, FloatType, "0.8");
+  configoptions["PrimordialIndex"] = std::make_tuple((void *) &PrimordialIndex, FloatType, "1.");
+
+  config.parameter_parser(configoptions);
   set_units();
 
   printf("Nmesh = %lu Nsample = %lu\n",Nmesh,Nsample);

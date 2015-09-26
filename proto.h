@@ -27,8 +27,6 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
 extern "C" {
 #endif
 
-void  read_parameterfile(char *fname);
-
 void   set_units(void);
 
 #ifdef __cplusplus
