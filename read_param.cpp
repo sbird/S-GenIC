@@ -99,8 +99,12 @@ std::pair<std::string, std::string> SpbConfigParser::parse_line(std::string line
     size_t separator_pos = linein.find_first_of(m_separators);
     key = linein.substr(0, separator_pos);
     //Set value
-    if (separator_pos != std::string::npos)
-        value = linein.substr(separator_pos+1);
+    if (separator_pos != std::string::npos){
+        size_t value_pos = linein.find_first_not_of(m_separators,separator_pos);
+        if (value_pos != std::string::npos){
+            value = linein.substr(value_pos);
+        }
+    }
     //Take out whitespace
     key.erase(std::remove(key.begin(), key.end(), ' '), key.end());
     key.erase(std::remove(key.begin(), key.end(), '\t'), key.end());
