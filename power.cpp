@@ -26,6 +26,11 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   /* define matter array */
   while ( matpow.good() ) {
     double ktmp,ptmp;
+    //Discard comments
+    if (matpow.get() == '#')
+        matpow.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+    else
+        matpow.unget();
     matpow >> ktmp;
     matpow >> ptmp;
     if (!matpow.good() )
@@ -33,7 +38,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
     kmatter_vector.push_back(ktmp);
     pmatter_vector.push_back(ptmp);
   }
-  std::cerr<<"Found "<<pmatter_vector.size()<<" rows in input spectrum table\n"<<std::endl;
+  std::cerr<<"Found "<<pmatter_vector.size()<<" rows in input spectrum table: "<<FileWithInputSpectrum<<std::endl;
   matpow.close();
 
   //Allocate arrays for the gsl interpolation (which must be raw arrays, unfortunately)
@@ -71,6 +76,11 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
   while ( transfer.good() ) {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
       double k;
+      //Discard comments
+      if (transfer.get() == '#')
+          transfer.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+      else
+          transfer.unget();
       //Read the row.
       transfer >> k;
       transfer >> T_cdm;
