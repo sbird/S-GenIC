@@ -11,7 +11,7 @@ class DisplacementFields
 {
     public:
         DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box, bool twolpt=true);
-        void displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode, bool RayleighScatter=true);
+        void displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode=true, bool RayleighScatter=true);
         ~DisplacementFields();
     private:
         //Takes the computed Fourier displacement field and reads them into part_data P

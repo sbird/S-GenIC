@@ -147,7 +147,7 @@ unsigned int * initialize_rng(int Seed, size_t Nmesh)
 }
 
 /**Function to compute Zeldovich displacement fields using a double Fourier transform*/
-void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool RayleighScatter, bool SphereMode)
+void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode, bool RayleighScatter)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   //Re-initialize every time this is called, so each particle type has the same phases
