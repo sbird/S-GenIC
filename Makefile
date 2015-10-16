@@ -19,7 +19,7 @@ ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp
   LINK +=${CXX} -openmp
 else
-  CFLAGS +=-O2 -g -c -Wall -fopenmp $(PRO)
+  CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(PRO)
   LINK +=${CXX} $(PRO)
   LFLAGS += -lm -lgomp
 endif
