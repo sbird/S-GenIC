@@ -219,7 +219,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                             * fac=(2π/Box)^1.5*/
 #ifdef CORRECT_CIC
               /* do deconvolution of CIC interpolation */
-              delta *= invwindow(i,j,k,Nmesh);
+              delta *= invwindow(KVAL(i,Nmesh),KVAL(j,Nmesh),KVAL(k,Nmesh),Nmesh);
 #endif
               if(k > 0) {
                   size_t index = (i * Nmesh + j) * (Nmesh / 2 + 1) + k;
@@ -351,7 +351,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                       (Cdata[coord])[1] = -(ctwosrc[coord])[0] * kvec[axes] / kmag2;
 #ifdef CORRECT_CIC
                       /* do deconvolution of CIC interpolation */
-                      double smth= invwindow(i,j,k,Nmesh);
+                      double smth= invwindow(KVAL(i,Nmesh),KVAL(j,Nmesh),KVAL(k,Nmesh),Nmesh);
                       (Cdata[coord])[0] *= smth;
                       (Cdata[coord])[1] *= smth;
 #endif
