@@ -81,24 +81,25 @@ inline int KVAL(const size_t n, const size_t Nmesh)
 
 
 #ifdef CORRECT_CIC
-/* do deconvolution of CIC interpolation */
-double invwindow(int kx,int ky,int kz,int n)
+/*Helper function to deconvolve 1D CIC interpolation*/
+inline double oneinvwindow(int kx, int n)
 {
-	double iwx=1.0,iwy=1.0,iwz=1.0;
-        if(!n)
-                return 0;
+    double iwx = 1.0;
 	if(kx){
 		iwx=M_PI*kx/static_cast<float>(n);
 		iwx=iwx/sin(iwx);
-        }
-	if(ky){
-		iwy=M_PI*ky/static_cast<float>(n);
-		iwy=iwy/sin(iwy);
-        }
-	if(kz){
-		iwz=M_PI*kz/static_cast<float>(n);
-		iwz=iwz/sin(iwz);
-        }
+    }
+    return iwx;
+}
+
+/* do deconvolution of CIC interpolation */
+double invwindow(int kx,int ky,int kz,int n)
+{
+    if(!n)
+            return 0;
+    double iwx = oneinvwindow(kx,n);
+    double iwy = oneinvwindow(ky,n);
+    double iwz = oneinvwindow(kz,n);
 	return pow(iwx*iwy*iwz,2);
 }
 #endif
