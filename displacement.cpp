@@ -368,63 +368,55 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 
 double DisplacementFields::displacement_read_out(const int order, part_data& P, const int axes)
 {
-   double maxx=0;
+   double maxdisp=0;
    const double Nmesh3 = pow(1.*Nmesh, 3);
    const int64_t NumPart = P.GetNumPart();
-   #pragma omp parallel
+   //This needs openmp 3.1, (gcc 4.7)
+   #pragma omp parallel for reduction(max: maxdisp)
+   for(int n = 0; n < NumPart; n++)
    {
-      double maxdisp=0;
-      #pragma omp for
-      for(int n = 0; n < NumPart; n++)
-        {
-                  double dis;
-                  double f1, f2, f3, f4, f5, f6, f7, f8;
-                  double u[3];
-                  size_t i[3], ii[3];
-                  for(int q=0;q<3;q++){
-                      u[q] = P.Pos(n,q) / Box * Nmesh;
-                      i[q] = static_cast<size_t>(u[q]);
-                      if(i[q] == Nmesh)
-                          i[q]--;
-                      u[q] -= i[q];
-                      ii[q] = i[q]+1;
-                      if(ii[q] >= Nmesh)
-                          ii[q] -= Nmesh;
-                  }
+               double dis;
+               double f1, f2, f3, f4, f5, f6, f7, f8;
+               double u[3];
+               size_t i[3], ii[3];
+               for(int q=0;q<3;q++){
+                   u[q] = P.Pos(n,q) / Box * Nmesh;
+                   i[q] = static_cast<size_t>(u[q]);
+                   if(i[q] == Nmesh)
+                       i[q]--;
+                   u[q] -= i[q];
+                   ii[q] = i[q]+1;
+                   if(ii[q] >= Nmesh)
+                       ii[q] -= Nmesh;
+               }
 
-		  f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
-		  f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
-		  f4 = (1 - u[0]) * (u[1]) * (u[2]);
-		  f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
-		  f6 = (u[0]) * (1 - u[1]) * (u[2]);
-		  f7 = (u[0]) * (u[1]) * (1 - u[2]);
-		  f8 = (u[0]) * (u[1]) * (u[2]);
+               f1 = (1 - u[0]) * (1 - u[1]) * (1 - u[2]);
+               f2 = (1 - u[0]) * (1 - u[1]) * (u[2]);
+               f3 = (1 - u[0]) * (u[1]) * (1 - u[2]);
+               f4 = (1 - u[0]) * (u[1]) * (u[2]);
+               f5 = (u[0]) * (1 - u[1]) * (1 - u[2]);
+               f6 = (u[0]) * (1 - u[1]) * (u[2]);
+               f7 = (u[0]) * (u[1]) * (1 - u[2]);
+               f8 = (u[0]) * (u[1]) * (u[2]);
 
-		  dis = Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
-		    Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
-		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
-		    Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
-		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
-		    Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
-		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
-		    Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
-          /*Read out the 2lpt velocity if this is
-           * being called from the 2lpt part of the code*/
-          if(order == 2){
-              dis /= Nmesh3;
-              P.Set2Vel(dis, n,axes);
-          }
-          else
-              P.SetVel(dis, n,axes);
-          if(dis > maxdisp)
-            maxdisp = dis;
-        }
-        #pragma omp critical
-        {
-              if (maxdisp > maxx)
-                      maxx=maxdisp;
-        }
-   } //end omp_parallel
-   return maxx;
+               dis = Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f1 +
+               Disp[(i[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f2 +
+               Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f3 +
+               Disp[(i[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f4 +
+               Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f5 +
+               Disp[(ii[0] * Nmesh + i[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f6 +
+               Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + i[2]] * f7 +
+               Disp[(ii[0] * Nmesh + ii[1]) * (2 * (Nmesh / 2 + 1)) + ii[2]] * f8;
+       /*Read out the 2lpt velocity if this is
+       * being called from the 2lpt part of the code*/
+       if(order == 2){
+           dis /= Nmesh3;
+           P.Set2Vel(dis, n,axes);
+       }
+       else
+           P.SetVel(dis, n,axes);
+       if(dis > maxdisp)
+           maxdisp = dis;
+   } // end openmp parallel
+   return maxdisp;
 }
