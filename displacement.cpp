@@ -153,9 +153,9 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
   const double fac = pow(2 * M_PI / Box, 1.5);
   //Re-initialize every time this is called, so each particle type has the same phases
   unsigned int *seedtable = initialize_rng(Seed, Nmesh);
+
   double maxdisp;
   const size_t fftsize = 2*Nmesh*Nmesh*(Nmesh/2+1);
-
   double maxdisp2=0;
   if(twolpt)
     memset(twosrc, 0, fftsize*sizeof(float));
@@ -182,8 +182,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 			    ampl = gsl_rng_uniform(random_generator);
 			  while(ampl == 0);
 
-			  if(i == Nmesh / 2 || j == Nmesh / 2 || k == Nmesh / 2)
-			    continue;
+                          //Skip zero mode as this contains the field mean anyway.
 			  if(i == 0 && j == 0 && k == 0)
 			    continue;
 
