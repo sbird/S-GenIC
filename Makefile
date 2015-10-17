@@ -4,7 +4,12 @@ GREAD=${CURDIR}/../GadgetReader
 LIBDIR =
 
 #OPT   += -DNO64BITID # switch this on if you want normal 32-bit IDs
-OPT   +=  -DCORRECT_CIC  # only switch this on if particles are homogenously distributed over mesh cells (say glass)
+# This corrects for the CIC window function of the particles.
+# It is inaccurate for a regular grid of particles because a regular grid has *extra* power at the grid scale,
+# which gets convolved with the power spectrum and over-corrects.
+# However, you might nevertheless want it on for a small fourier mesh, as then the loss of power becomes important.
+# The most accurate option is to use a regular grid, Nmesh >= 2 * Npart and turn this off.
+#OPT   +=  -DCORRECT_CIC  
 OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second DM component
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
