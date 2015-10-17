@@ -26,10 +26,10 @@ class DisplacementFields
         //Box size
         const double Box;
         //FFT variables for Zeldovich
-        fftwf_plan Inverse_plan;
-        float *Disp;
+        fftw_plan Inverse_plan;
+        double *Disp;
         //This will always be a cast of Disp
-        fftwf_complex *Cdata;
+        fftw_complex *Cdata;
         //Pointers for 2LPT term
         fftwf_plan Forward_plan2;
         fftwf_plan Inverse_plan_grad[3];

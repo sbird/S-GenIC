@@ -16,15 +16,15 @@
 /**Initialise the memory for the FFTs*/
 DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt): Nmesh(Nmesh), twolpt(twolpt), Seed(Seed), Box(Box)
 {
-  size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
-  Disp = (float *) fftwf_malloc(bytes);
+  size_t bytes = sizeof(double) * 2*Nmesh*Nmesh*(Nmesh/2+1);
+  Disp = (double *) fftw_malloc(bytes);
   if(Disp)
         printf("Nmesh = %lu. Allocated %lu MB for FFTs\n",Nmesh,  bytes / (1024 * 1024));
   else{
       fprintf(stderr, "Nmesh = %lu. Failed to allocate %lu MB for FFTs\n",Nmesh, bytes / (1024 * 1024));
       throw std::bad_alloc();
   }
-  Cdata = (fftwf_complex *) Disp;	/* transformed array */
+  Cdata = (fftw_complex *) Disp;	/* transformed array */
 
   if (twolpt) {
         twosrc = (float *) fftwf_malloc(bytes);
@@ -42,12 +42,12 @@ DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool 
         }
   }
 
-  if(!fftwf_init_threads()){
+  if(!fftw_init_threads()){
   		  fprintf(stderr,"Error initialising fftw threads\n");
   		  exit(1);
   }
-  fftwf_plan_with_nthreads(omp_get_num_procs());
-  Inverse_plan = fftwf_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
+  fftw_plan_with_nthreads(omp_get_num_procs());
+  Inverse_plan = fftw_plan_dft_c2r_3d(Nmesh, Nmesh, Nmesh,Cdata,Disp, FFTW_ESTIMATE);
   if(twolpt) {
     Forward_plan2 = fftwf_plan_dft_r2c_3d(Nmesh, Nmesh, Nmesh,twosrc,ctwosrc, FFTW_ESTIMATE);
     for(int i=0; i<3; i++){
@@ -59,8 +59,8 @@ DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool 
 //Free the memory in the FFTs
 DisplacementFields::~DisplacementFields()
 {
-    fftwf_free(Disp);
-    fftwf_destroy_plan(Inverse_plan);
+    fftw_free(Disp);
+    fftw_destroy_plan(Inverse_plan);
     if (twolpt) {
         /* Free  */
         fftwf_free(twosrc);
@@ -86,7 +86,7 @@ inline double oneinvwindow(int kx, int n)
 {
     double iwx = 1.0;
 	if(kx){
-		iwx=M_PI*kx/static_cast<float>(n);
+		iwx=M_PI*kx/static_cast<double>(n);
 		iwx=iwx/sin(iwx);
     }
     return iwx;
@@ -100,7 +100,7 @@ double invwindow(int kx,int ky,int kz,int n)
     double iwx = oneinvwindow(kx,n);
     double iwy = oneinvwindow(ky,n);
     double iwz = oneinvwindow(kz,n);
-	return pow(iwx*iwy*iwz,2);
+    return pow(iwx*iwy*iwz,2);
 }
 #endif
 
@@ -163,7 +163,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
   for(int axes = 0; axes < 3; axes++) {
 	  printf("Starting Zeldovich axis %d.\n", axes);
 	  /* first, clean the array */
-      memset(Disp, 0, fftsize*sizeof(float));
+      memset(Disp, 0, fftsize*sizeof(double));
       #pragma omp parallel
 	  {
           gsl_rng * random_generator = gsl_rng_alloc(gsl_rng_ranlxd1);
@@ -176,6 +176,8 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                           double kvec[3], kmag, kmag2, p_of_k;
                           double delta, phase, ampl;
 			  phase = gsl_rng_uniform(random_generator) * 2 * M_PI;
+                          //We don't actually need this if RayleighScatter is off,
+                          //but we do it anyway to keep the phases the same.
 			  do
 			    ampl = gsl_rng_uniform(random_generator);
 			  while(ampl == 0);
@@ -300,7 +302,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                         }
             }
      } //end twolpt
-     fftwf_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
+     fftw_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
      /* read-out Zeldovich displacements into P.Vel*/
      maxdisp=displacement_read_out(1, P, axes);
     }
@@ -322,7 +324,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
       for(int axes=0; axes< 3; axes++){
               printf("Starting 2LPT term, axis %d\n",axes);
               /* Reuse the memory used earlier for ZA field */
-              memset(Disp, 0, fftsize*sizeof(float));
+              memset(Disp, 0, fftsize*sizeof(double));
               /* Solve Poisson eq. and calculate 2nd order displacements */
               (Cdata[0])[0] = (Cdata[0])[1] = 0.0;
               #pragma omp parallel for
@@ -348,7 +350,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                }
 
               /* Cdata now contains the FFT of the 2LPT term */
-              fftwf_execute(Inverse_plan);	/** FFT of Cdata**/
+              fftw_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
               maxdisp2=displacement_read_out(2, P, axes);
           }

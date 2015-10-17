@@ -10,7 +10,7 @@ OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second 
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
 HDF_LIB = -lhdf5 -lhdf5_hl
 
-LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lgsl -lgslcblas -lpthread -lrgad ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
+LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread -lrgad ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD)
 CFLAGS += -I${GREAD} ${OPT}
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
