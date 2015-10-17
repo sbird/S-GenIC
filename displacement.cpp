@@ -204,9 +204,6 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 			        p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) ;
-                          /* scale back to starting redshift */
-                          /*If we are using the CAMB P(k), Dplus=1.
-                            * fac=(2π/Box)^1.5*/
 #ifdef CORRECT_CIC
               /* do deconvolution of CIC interpolation */
               delta *= invwindow(KVAL(i,Nmesh),KVAL(j,Nmesh),KVAL(k,Nmesh),Nmesh);
@@ -224,6 +221,9 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
                     continue;
                   else
                     {
+                      /* This is done like this, rather than just looping for longer,
+                       * because we want these modes to have the same phase, and
+                       * thus be complex conjugates of each other.*/
                       int jj = Nmesh - j;    /* note: i=k=0 => j!=0 */
                       size_t index = j * (Nmesh / 2 + 1);
                       (Cdata[index])[0] = -kvec[axes] / kmag2 * delta * sin(phase);
