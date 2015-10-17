@@ -22,10 +22,11 @@ HubbleParam= 0.7       # Hubble paramater (may be used for power spec parameteri
 
 Redshift= 99        # Starting redshift
 
-SphereMode  =    1         # if "1" only modes with |k| < k_Nyquist are
+SphereMode  =    0         # if "1" only modes with |k| < k_Nyquist are
                            # used (i.e. a sphere in k-space), otherwise modes with
                            # |k_x|,|k_y|,|k_z| < k_Nyquist are used
                            # (i.e. a cube in k-space)
+                           # WARNING: Using the sphere introduces low-level noise in the FFT
           
 
 WhichSpectrum=2         # "1" selects Eisenstein & Hu spectrum,

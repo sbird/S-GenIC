@@ -26,7 +26,7 @@ Sigma8          0.1217642               % power spectrum normalization at that R
 
 
 
-SphereMode       1         % if "1" only modes with |k| < k_Nyquist are
+SphereMode       0         % if "1" only modes with |k| < k_Nyquist are
                            % used (i.e. a sphere in k-space), otherwise modes with
                            % |k_x|,|k_y|,|k_z| < k_Nyquist are used
                            % (i.e. a cube in k-space)

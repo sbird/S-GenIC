@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   //Random number seed
   configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
   //Various boolean flags
-  configoptions["SphereMode"] = std::make_tuple((void *) &SphereMode, IntType, "1");
+  configoptions["SphereMode"] = std::make_tuple((void *) &SphereMode, IntType, "0");
   configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, IntType, "0");
   configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, IntType, "1");
   //Power spectrum to use. Default to CAMB
