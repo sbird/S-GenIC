@@ -197,16 +197,6 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 			      if(kmag * Box / (2 * M_PI) > Nmesh / 2)
                                       continue;
                           }
-                          /*Or a box*/
-			  else {
-			      if(fabs(kvec[0]) * Box / (2 * M_PI) > Nmesh / 2)
-				continue;
-			      if(fabs(kvec[1]) * Box / (2 * M_PI) > Nmesh / 2)
-				continue;
-			      if(fabs(kvec[2]) * Box / (2 * M_PI) > Nmesh / 2)
-				continue;
-			  }
-
 			  p_of_k = PSpec->power(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
