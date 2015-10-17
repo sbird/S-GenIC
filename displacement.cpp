@@ -14,7 +14,7 @@
 // #include "proto.h"
 
 /**Initialise the memory for the FFTs*/
-DisplacementFields::DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box, bool twolpt): Nmesh(Nmesh), Nsample(Nsample), twolpt(twolpt), Seed(Seed), Box(Box)
+DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt): Nmesh(Nmesh), twolpt(twolpt), Seed(Seed), Box(Box)
 {
   size_t bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (float *) fftwf_malloc(bytes);
@@ -194,16 +194,16 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 
                           /* select a sphere in k-space */
 			  if(SphereMode){
-			      if(kmag * Box / (2 * M_PI) > Nsample / 2)
+			      if(kmag * Box / (2 * M_PI) > Nmesh / 2)
                                       continue;
                           }
                           /*Or a box*/
 			  else {
-			      if(fabs(kvec[0]) * Box / (2 * M_PI) > Nsample / 2)
+			      if(fabs(kvec[0]) * Box / (2 * M_PI) > Nmesh / 2)
 				continue;
-			      if(fabs(kvec[1]) * Box / (2 * M_PI) > Nsample / 2)
+			      if(fabs(kvec[1]) * Box / (2 * M_PI) > Nmesh / 2)
 				continue;
-			      if(fabs(kvec[2]) * Box / (2 * M_PI) > Nsample / 2)
+			      if(fabs(kvec[2]) * Box / (2 * M_PI) > Nmesh / 2)
 				continue;
 			  }
 

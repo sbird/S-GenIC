@@ -10,7 +10,7 @@ class PowerSpec;
 class DisplacementFields
 {
     public:
-        DisplacementFields(size_t Nmesh, size_t Nsample, int Seed, double Box, bool twolpt=true);
+        DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt=true);
         void displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode=true, bool RayleighScatter=true);
         ~DisplacementFields();
     private:
@@ -18,8 +18,6 @@ class DisplacementFields
         double displacement_read_out(const int order, part_data& P, const int axes);
         //Size of the Fourier grid
         const size_t Nmesh;
-        //Nsample is the number of particles
-        const size_t Nsample;
         //Do we need a twolpt term?
         const bool twolpt;
         //Seed for the random number generator.

@@ -3,15 +3,6 @@ Nmesh            512        % This is the size of the FFT grid used to
                            % compute the displacement field. One
                            % should have Nmesh >= Nsample.
 
-Nsample          512        % sets the maximum k that the code uses,
-                           % i.e. this effectively determines the
-                           % Nyquist frequency that the code assumes,
-                           % k_Nyquist = 2*PI/Box * Nsample/2
-                           % Normally, one chooses Nsample such that
-                           % Ntot =  Nsample^3, where Ntot is the
-                           % total number of particles
- 
-
 Box              60000.0   % Periodic box size of simulation
 
 FileBase         ics                 % Base-filename of output files

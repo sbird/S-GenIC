@@ -389,7 +389,6 @@ sub gen_ngen_file{
         open(my $INHAND, "<","$NGenDefParams") or die "Could not open $NGenDefParams for reading!";
         open(my $OUTHAND, ">","$NGenParams") or die "Could not open $NGenParams for writing!";
         while(<$INHAND>){
-                s/^\s*Nsample\s+[0-9]*/Nsample $npart/i;
                 s/^\s*ICFormat\s+[0-9]*/ICFormat 3/i;
                 s/^\s*Nmesh\s+[0-9]*/Nmesh $nmesh/i;
                 s!^\s*OutputDir\s+[/\w\.=-]*! OutputDir  $Directory!i;

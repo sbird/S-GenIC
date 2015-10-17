@@ -41,7 +41,6 @@ int main(int argc, char **argv)
   configoptions["Box"] = std::make_tuple((void *) &Box, FloatType, "");
   //Numerical FFT parameters
   configoptions["Nmesh"] = std::make_tuple((void *) &Nmesh, IntType, "");
-  configoptions["Nsample"] = std::make_tuple((void *) &Nsample, IntType, "");
   //Particle number is this * size of glassfile
   configoptions["GlassTileFac"] = std::make_tuple((void *) &GlassTileFac, IntType, "");
   //File paths
@@ -83,12 +82,11 @@ int main(int argc, char **argv)
   config.parameter_parser(configoptions);
   set_units();
 
-  printf("Nmesh = %lu Nsample = %lu\n",Nmesh,Nsample);
   if (Nmesh % 2 != 0){
     printf("Nmesh must be even or correct output is not guaranteed.\n");
     exit(1);
   }
-  DisplacementFields displace(Nmesh, Nsample, Seed, Box, twolpt);
+  DisplacementFields displace(Nmesh, Seed, Box, twolpt);
   printf("Initialising pre-IC file '%s'\n",GlassFile);
   GadgetReader::GSnap snap(GlassFile);
   /*Set particle numbers*/
