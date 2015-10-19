@@ -105,8 +105,6 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
 {
     //For the neutrinos we don't want this; the modes that we have are the modes that exist
     bool RayleighScatter = false;
-    //Always initialise in a sphere
-    bool SphereMode = true;
 
     //Load the neutrino power spectrum from the powerspec file
     PowerSpec_NuTabulated PSpec(SimSpecFile, atime);
@@ -116,11 +114,11 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     std::cout<<"Initialising pre-IC file "<< GlassFile<<std::endl;
     GadgetReader::GSnap glass(GlassFile);
     printf("Nmesh = %lu Nsample = %lu\n",Nmesh,NNeutrinos);
-    DisplacementFields displace(Nmesh, NNeutrinos, Seed, Box, false);
+    DisplacementFields displace(Nmesh, Seed, Box, false);
     //Output is neutrino particles
     int GlassTileFac = NNeutrinos/pow(glass.GetNpart(2),1./3.);
     part_data P(glass, 2, GlassTileFac, Box, false);
-    displace.displacement_fields(2, NNeutrinos, P, &PSpec, SphereMode, RayleighScatter);
+    displace.displacement_fields(2, P, &PSpec, RayleighScatter);
     return P;
 }
 
