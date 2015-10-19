@@ -2,8 +2,6 @@
 
 int WhichSpectrum;
 
-int SphereMode;
-
 size_t Nmesh, Nsample;
 
 int ICFormat;

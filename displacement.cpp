@@ -148,7 +148,7 @@ unsigned int * initialize_rng(int Seed, size_t Nmesh)
 }
 
 /**Function to compute Zeldovich displacement fields using a double Fourier transform*/
-void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool SphereMode, bool RayleighScatter)
+void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool RayleighScatter)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   //Re-initialize every time this is called, so each particle type has the same phases
@@ -193,11 +193,11 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
 			  kmag2 = kvec[0] * kvec[0] + kvec[1] * kvec[1] + kvec[2] * kvec[2];
 			  kmag = sqrt(kmag2);
 
-                          /* select a sphere in k-space */
-			  if(SphereMode){
+              /* select a sphere in k-space. No idea why you would do this, so disabled */
+			  /*if(SphereMode){
 			      if(kmag * Box / (2 * M_PI) > Nmesh / 2)
                                       continue;
-                          }
+                          }*/
 			  p_of_k = PSpec->power(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);

@@ -13,8 +13,6 @@ extern int NumFiles;
 //is defined, but signed overflow is not.
 extern size_t      Nmesh, Nsample;
 
-extern int      SphereMode;
-
 extern int ICFormat;
 
 extern int twolpt;

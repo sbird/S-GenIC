@@ -25,13 +25,6 @@ Redshift         7        % Starting redshift
 Sigma8          0.1217642               % power spectrum normalization at that Redshift!
 
 
-
-SphereMode       0         % if "1" only modes with |k| < k_Nyquist are
-                           % used (i.e. a sphere in k-space), otherwise modes with
-                           % |k_x|,|k_y|,|k_z| < k_Nyquist are used
-                           % (i.e. a cube in k-space)
-          
-
 WhichSpectrum    2         % "1" selects Eisenstein & Hu spectrum,
 		           % "2" selects a tabulated power spectrum in
                            % the file 'FileWithInputSpectrum'

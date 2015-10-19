@@ -53,7 +53,6 @@ int main(int argc, char **argv)
   //Random number seed
   configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
   //Various boolean flags
-  configoptions["SphereMode"] = std::make_tuple((void *) &SphereMode, IntType, "0");
   configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, IntType, "0");
   configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, IntType, "1");
   //Power spectrum to use. Default to CAMB
@@ -153,7 +152,7 @@ int main(int argc, char **argv)
               tlptpart = false;
 #endif
           part_data P(snap, type, GlassTileFac, Box, tlptpart);
-          displace.displacement_fields(type, P, PSpec, SphereMode, RayleighScatter);
+          displace.displacement_fields(type, P, PSpec, RayleighScatter);
           FirstId = write_particle_data(osnap, type,P, FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
