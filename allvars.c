@@ -2,7 +2,7 @@
 
 int WhichSpectrum;
 
-size_t Nmesh, Nsample;
+size_t Nmesh;
 
 int ICFormat;
 

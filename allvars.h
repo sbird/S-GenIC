@@ -11,7 +11,7 @@ extern int NumFiles;
 //These should be 64 bit, to avoid Nmesh^3 overflowing.
 //Make sure they are unsigned as well, as unsigned overflow
 //is defined, but signed overflow is not.
-extern size_t      Nmesh, Nsample;
+extern size_t      Nmesh;
 
 extern int ICFormat;
 
