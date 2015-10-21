@@ -250,3 +250,56 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     BOOST_CHECK_CLOSE((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1),1e-3);
     BOOST_CHECK_CLOSE(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1),1e-3);
 }
+
+BOOST_AUTO_TEST_CASE(check_part_grid)
+{
+    //First check for a small number of DM particles
+    std::valarray<size_t> NumPart((size_t) 0,(size_t) 6);
+    std::valarray<double> Masses((double) 0,(size_t) 6);
+    NumPart[1] = 16;
+    Masses[1] = 1;
+    double Box = 20.;
+    part_grid P(NumPart, Masses, Box);
+    for (size_t i=0; i< NumPart[1]; i++)
+        for (size_t j=0; j< NumPart[1]; j++)
+            for (size_t k=0; k< NumPart[1]; k++)
+            {
+                //Check each axis in turn
+                size_t index = i*NumPart[1]*NumPart[1]+j*NumPart[1]+k;
+                BOOST_CHECK_CLOSE(static_cast<double>(i)*Box/NumPart[1], P.Pos(index, 0, 1),1e-6);
+                BOOST_CHECK_CLOSE(static_cast<double>(j)*Box/NumPart[1], P.Pos(index, 1, 1),1e-6);
+                BOOST_CHECK_CLOSE(static_cast<double>(k)*Box/NumPart[1], P.Pos(index, 2, 1),1e-6);
+            }
+    //Now add baryons and neutrinos and check that the particle spacing is working.
+    NumPart[0] = 16;
+    Masses[0] = 1/6.;
+    NumPart[2] = 16;
+    Masses[2] = 1/36.;
+    part_grid Pnu(NumPart, Masses, Box);
+    for (size_t i=0; i< NumPart[1]-1; i++)
+        for (size_t j=0; j< NumPart[1]-1; j++)
+            for (size_t k=0; k< NumPart[1]-1; k++)
+            {
+                size_t index[3];
+                //Check the spacing between particles is still correct in all directions
+                for(int type = 0; type < 3; type++){
+                    index[type] = i*NumPart[type]*NumPart[type]+j*NumPart[type]+k;
+                    BOOST_CHECK_CLOSE(Pnu.Pos((i+1)*NumPart[type]*NumPart[type]+j*NumPart[type]+k, 0, type)-Pnu.Pos(index[type], 0, type), Box/NumPart[type], 1e-6);
+                    BOOST_CHECK_CLOSE(Pnu.Pos(i*NumPart[type]*NumPart[type]+(j+1)*NumPart[type]+k, 1, type)-Pnu.Pos(index[type], 1, type), Box/NumPart[type], 1e-6);
+                    BOOST_CHECK_CLOSE(Pnu.Pos(i*NumPart[type]*NumPart[type]+j*NumPart[type]+k+1, 2, type)-Pnu.Pos(index[type], 2, type), Box/NumPart[type], 1e-6);
+                }
+                //Check that no two types have the same position
+                for(int type = 0; type < 2; type++){
+                    bool same_pos = true;
+                    for(int axis=0; axis < 3; axis++) {
+                        same_pos *= (Pnu.Pos(index[type], axis, type) == Pnu.Pos(index[type+1], axis, type+1));
+                    }
+                    BOOST_CHECK_EQUAL(same_pos, false);
+                }
+                //Check the center of mass is unchanged.
+                double cofm = (Pnu.Pos(index[0], 0, 0)*Masses[0]+Pnu.Pos(index[1], 0, 1)*Masses[1]+Pnu.Pos(index[2], 0, 2)*Masses[2])/(Masses[0]+Masses[1]+Masses[2]);
+                BOOST_CHECK_CLOSE(cofm, static_cast<double>(i)*Box/NumPart[1], 1e-6);
+                cofm = (Pnu.Pos(index[0], 1, 0)*Masses[0]+Pnu.Pos(index[1], 1, 1)*Masses[1]+Pnu.Pos(index[2], 1, 2)*Masses[2])/(Masses[0]+Masses[1]+Masses[2]);
+                BOOST_CHECK_CLOSE(cofm, static_cast<double>(j)*Box/NumPart[1], 1e-6);
+            }
+}
