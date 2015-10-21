@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
 BOOST_AUTO_TEST_CASE(check_part_grid)
 {
     //First check for a small number of DM particles
-    std::valarray<int64_t> NumPart((int64_t) 0,(size_t) 6);
+    int NumPart[6] = {0,0,0,0,0,0};
     double Masses[6] = {0,0,0,0,0,0};
     NumPart[1] = 16;
     Masses[1] = 1;

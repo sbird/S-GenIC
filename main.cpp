@@ -5,14 +5,14 @@
 #include "power.hpp"
 #include "displacement.hpp"
 #include "read_param.hpp"
+#include <cassert>
 
-#include <gadgetreader.hpp>
 #include <gadgetwriter.hpp>
 
 int main(int argc, char **argv)
 {
   int type;
-  std::valarray<int64_t> npart(N_TYPE);
+  std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int64_t FirstId=1;
 
   if(argc < 2)
@@ -74,25 +74,26 @@ int main(int argc, char **argv)
   configoptions["Sigma8"] = std::make_tuple((void *) &Sigma8, FloatType, "0.8");
   configoptions["PrimordialIndex"] = std::make_tuple((void *) &PrimordialIndex, FloatType, "1.");
   //Number of particles desired
-  {
-    int parts;
-    configoptions["NBaryon"] = std::make_tuple((void *) &parts, IntType, "0");
-    npart[BARYON_TYPE] = static_cast<int64_t>(parts)*parts*parts;
-    configoptions["NCDM"] = std::make_tuple((void *) &parts, IntType, "0");
-    npart[DM_TYPE] = static_cast<int64_t>(parts)*parts*parts;
+  int CbRtNpart[6]={0,0,0,0,0,0};
+  configoptions["NBaryon"] = std::make_tuple((void *) &CbRtNpart[0], IntType, "0");
+  configoptions["NCDM"] = std::make_tuple((void *) &CbRtNpart[1], IntType, "0");
 #ifdef NEUTRINOS
-    configoptions["NNeutrino"] = std::make_tuple((void *) &parts, IntType, "0");
-    npart[NEUTRINO_TYPE] = static_cast<int64_t>(parts)*parts*parts;
+  configoptions["NNeutrino"] = std::make_tuple((void *) &CbRtNpart[2], IntType, "0");
 #endif
-  }
-
   config.parameter_parser(configoptions);
   set_units();
+
+  npart[BARYON_TYPE] = static_cast<int64_t>(CbRtNpart[0])*static_cast<int64_t>(CbRtNpart[0])*CbRtNpart[0];
+  npart[DM_TYPE] = static_cast<int64_t>(CbRtNpart[1])*static_cast<int64_t>(CbRtNpart[1])*CbRtNpart[1];
+  npart[NEUTRINO_TYPE] = static_cast<int64_t>(CbRtNpart[2])*CbRtNpart[2]*CbRtNpart[2];
+  printf("Particle numbers: %ld %ld %ld\n",npart[BARYON_TYPE], npart[DM_TYPE], npart[NEUTRINO_TYPE]);
+  assert(npart[BARYON_TYPE] > 0 || npart[DM_TYPE] > 0 || npart[NEUTRINO_TYPE] > 0);
 
   if (Nmesh % 2 != 0){
     printf("Nmesh must be even or correct output is not guaranteed.\n");
     exit(1);
   }
+
   DisplacementFields displace(Nmesh, Seed, Box, twolpt);
   /*Set particle numbers*/
   if(npart.sum() == 0)
@@ -143,10 +144,12 @@ int main(int argc, char **argv)
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, neutrinos_ks);
 
+  //Generate regular particle grid
+  part_grid Pgrid(CbRtNpart, header.mass, Box);
+
   if(osnap.WriteHeaders(header))
           FatalError(23);
 
-  part_grid Pgrid(npart, header.mass, Box);
   for(type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
@@ -161,7 +164,7 @@ int main(int argc, char **argv)
       }
       catch (std::bad_alloc& ba)
       {
-         size_t mem = sizeof(float)*Pgrid.GetNumPart(type);
+         size_t mem = sizeof(float)*pow(Pgrid.GetNumPart(type),3);
          if(twolpt)
 #ifdef NEUTRINOS
             if (type != 2)

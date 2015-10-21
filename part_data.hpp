@@ -14,7 +14,7 @@ class part_grid
          * NumPart should be the number of particles per side; the cube root of the total number of particles.
          * Masses are the mass ratios of the different particle species, for making sure no two types share the same position
          * Box is the boxsize.*/
-        part_grid(const std::valarray<int64_t>& NumPart, double Masses[], double Box);
+        part_grid(const int NumPart[], const double Masses[], const double Box);
         /* Get the position of a particle at some index on a grid.
          * We want to return:
          * size_t index = k + j* NumPart + i * NumPart**2
@@ -25,9 +25,9 @@ class part_grid
          */
         double Pos(size_t index, int axis, int type);
         //Get number of particles
-        int64_t GetNumPart(int type);
+        int GetNumPart(int type);
     private:
-        const std::valarray<int64_t> NumPart;
+        const std::valarray<int> NumPart;
         double pspace[N_TYPES];
         double shift[N_TYPES][3];
 };
@@ -36,7 +36,8 @@ class part_grid
 class lpt_data
 {
     public:
-        lpt_data(const int64_t NumPart, bool twolpt=true): twolpt(twolpt),Vel_data(3*NumPart),Vel_2_data(twolpt*3*NumPart)
+        //Again, NumPart is the cube root of the particle number!
+        lpt_data(const int NumPart, bool twolpt=true): twolpt(twolpt),Vel_data(3*NumPart*NumPart*NumPart),Vel_2_data(twolpt*3*NumPart*NumPart*NumPart)
         {}
         //Note Vel_2_data takes zero space if !twolpt
         //Note these functions are not checked. In particular calling the Vel2 functions will be bad if !twolpt
