@@ -98,12 +98,6 @@ int main(int argc, char **argv)
   /*Set particle numbers*/
   if(npart.sum() == 0)
           exit(1);
-  /*Set the global variable saying there is no gas in the glassfile,
-   * so that the OmegaBaryon should be added to the DM.*/
-  if (npart[BARYON_TYPE] == 0)
-          no_gas = 1;
-  else
-          no_gas = 0;
   //Initialise a power spectrum
   PowerSpec * PSpec;
   switch(WhichSpectrum)
@@ -112,7 +106,7 @@ int main(int argc, char **argv)
             PSpec = new PowerSpec_EH(HubbleParam, Omega, OmegaBaryon, UnitLength_in_cm);
             break;
       case 2:
-            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, no_gas, neutrinos_ks);
+            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], neutrinos_ks);
             break;
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);
