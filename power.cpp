@@ -71,7 +71,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
 
   //Temporary arrays which can be resized so we don't have to read the file twice
   std::vector<double> ktransfer_vector;
-  std::vector<double> transfer_vector[N_TYPES];
+  std::vector<double> transfer_vector[N_TYPES_TAB];
 
   while ( transfer.good() ) {
       double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
@@ -141,7 +141,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
               exit(48);
         }
   }
-  for(int type=0; type < N_TYPES; type++){
+  for(int type=0; type < N_TYPES_TAB; type++){
       //Check everything is the same size
       assert( ktransfer_vector.size() == transfer_vector[type].size() );
       transfer_table[type] = new double[transfer_vector[type].size()];
@@ -170,7 +170,7 @@ PowerSpec_Tabulated::~PowerSpec_Tabulated()
         gsl_interp_accel_free(pmat_interp_accel);
         //Free memory for transfer table
         delete[] ktransfer_table;
-        for (int i=0; i<N_TYPES;i++) {
+        for (int i=0; i<N_TYPES_TAB;i++) {
             delete[] transfer_table[i];
             gsl_interp_free(trans_interp[i]);
             gsl_interp_accel_free(trans_interp_accel[i]);
@@ -189,7 +189,7 @@ double PowerSpec_Tabulated::power(double k, int Type)
     return 0;
 
   //If a type is requested that isn't defined, assume we want the total matter power.
-  if (Type > N_TYPES-1 || Type < 0)
+  if (Type > N_TYPES_TAB-1 || Type < 0)
       transfer = 1;
   else
       transfer = gsl_interp_eval(trans_interp[Type], ktransfer_table, transfer_table[Type], logk, trans_interp_accel[Type]);
