@@ -141,18 +141,18 @@ class TestFermiDirac: public FermiDiracVel
        {
            gsl_rng_set(g_rng, seed);
        }
-       double get_fdv(int i)
-       {
-           if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
-                return fermi_dirac_vel[i];
-           return 0;
-       }
-       double get_fdvc(int i)
-       {
-           if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
-                return fermi_dirac_cumprob[i];
-           return 0;
-       }
+//        double get_fdv(int i)
+//        {
+//            if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
+//                 return fermi_dirac_vel[i];
+//            return 0;
+//        }
+//        double get_fdvc(int i)
+//        {
+//            if(i < LENGTH_FERMI_DIRAC_TABLE && i >= 0)
+//                 return fermi_dirac_cumprob[i];
+//            return 0;
+//        }
 };
 
 BOOST_AUTO_TEST_CASE(check_fermi_vel)
@@ -171,17 +171,17 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     TestFermiDirac nuvels(100);
     nuvels.reseed(23);
     //Check that the probability table makes sense
-    BOOST_CHECK_CLOSE(nuvels.get_fdvc(0), 0,1e-6);
-    BOOST_CHECK_CLOSE(nuvels.get_fdvc(LENGTH_FERMI_DIRAC_TABLE-2), 1,1e-6);
+//     BOOST_CHECK_CLOSE(nuvels.get_fdvc(0), 0,1e-6);
+//     BOOST_CHECK_CLOSE(nuvels.get_fdvc(LENGTH_FERMI_DIRAC_TABLE-2), 1,1e-6);
     //Check that the probability table makes sense
-    BOOST_CHECK_CLOSE(nuvels.get_fdv(0), 0,1e-6);
-    BOOST_CHECK_CLOSE(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE-1), MAX_FERMI_DIRAC,1e-6);
-    BOOST_CHECK_CLOSE(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE),3e-5);
+//     BOOST_CHECK_CLOSE(nuvels.get_fdv(0), 0,1e-6);
+//     BOOST_CHECK_CLOSE(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE-1), MAX_FERMI_DIRAC,1e-6);
+//     BOOST_CHECK_CLOSE(nuvels.get_fdv(LENGTH_FERMI_DIRAC_TABLE/2), MAX_FERMI_DIRAC/2.*(1.+1./LENGTH_FERMI_DIRAC_TABLE),3e-5);
     //Test getting the distribution
     BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0), 0,1e-6);
     BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(1), 100*MAX_FERMI_DIRAC,1e-3);
     //Number computed by python guessing
-    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0.5), 100*2.839,1e-3);
+    BOOST_CHECK_CLOSE(nuvels.get_fermi_dirac_vel(0.5), 100*2.83907,1e-3);
 //     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE/2; i+=20)
 //         printf("%g %g\n", nuvels.get_fdv(i), nuvels.get_fdvc(i));
     //Remember to reseed the rng...

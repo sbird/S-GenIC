@@ -2,6 +2,7 @@
 #define THERMALVEL_H
 
 #include <gsl/gsl_rng.h>
+#include "gsl_spline_wrapper.hpp"
 
 //Class defined in thermalvel.cpp for adding FermiDirac velocities
 #define LENGTH_FERMI_DIRAC_TABLE 2000
@@ -18,10 +19,10 @@ class FermiDiracVel
         ~FermiDiracVel()
         {
             gsl_rng_free(g_rng);
+            delete fd_table;
         }
     protected:
-        double fermi_dirac_vel[LENGTH_FERMI_DIRAC_TABLE];
-        double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
+        gsl_spline_wrapper * fd_table;
         const double m_vamp;
         gsl_rng * g_rng;
 };

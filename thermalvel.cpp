@@ -54,6 +54,10 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
 {
     //Allocate random number generator
     g_rng = gsl_rng_alloc(gsl_rng_mt19937);
+
+    double fermi_dirac_vel[LENGTH_FERMI_DIRAC_TABLE];
+    double fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE];
+
     /*These functions are so smooth that we don't need much space*/
     gsl_integration_workspace * w = gsl_integration_workspace_alloc (100);
     double abserr;
@@ -70,26 +74,15 @@ FermiDiracVel::FermiDiracVel(double v_amp): m_vamp(v_amp)
     //Normalise total integral to unity
     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
         fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
+
+    //Initialise the table
+    fd_table = new gsl_spline_wrapper(fermi_dirac_cumprob, fermi_dirac_vel, LENGTH_FERMI_DIRAC_TABLE);
 }
 
 //Given a probability p, find a velocity v s.t. P( < v) = p.
 double FermiDiracVel::get_fermi_dirac_vel(double p)
 {
-    int binlow = 0;
-    int binhigh = LENGTH_FERMI_DIRAC_TABLE - 1;
-    int i=0;
-
-    while(binhigh - binlow > 1)
-    {
-        i = (binhigh + binlow) / 2;
-        if(p >= fermi_dirac_cumprob[i + 1])
-            binlow = i;
-        else
-            binhigh = i;
-    }
-
-    const double u = (p - fermi_dirac_cumprob[i-1]) / (fermi_dirac_cumprob[i] - fermi_dirac_cumprob[i-1]);
-    return m_vamp * (fermi_dirac_vel[i-1] * (1 - u) + fermi_dirac_vel[i] * u);
+    return m_vamp*fd_table->eval(p);
 }
 
 //Add a randomly generated thermal speed to a 3-velocity
