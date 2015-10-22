@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     BOOST_CHECK_CLOSE(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5),1e-6);
     //Check it is correct (roughly). This is
     //(4/11)^1/3* 2.7255* 1.00381* 8.61734e-5 * 2.99792e5/(M_nu/3)
-    BOOST_CHECK_CLOSE(NU_V0(0,1, 1e5), 151.344,1e-4);
+    BOOST_CHECK_CLOSE(NU_V0(0,1, 1e5), 151.344971,1e-4);
 
     //Seed table with velocity of 100 km/s
     TestFermiDirac nuvels(100);

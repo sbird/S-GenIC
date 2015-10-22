@@ -1,4 +1,5 @@
 #include "thermalvel.hpp"
+#include "physconst.h"
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_rng.h>
 
@@ -18,15 +19,6 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 
 #ifdef NEUTRINOS
 
-#define  T_CMB0      2.7255	/* present-day CMB temperature, from Fixsen 2009 */
-/* Note there is a slight correction from 4/11
- * due to the neutrinos being slightly coupled at e+- annihilation.
- * See Mangano et al 2005 (hep-ph/0506164)
- *The correction is (3.046/3)^(1/4), for N_eff = 3.046 */
-#define TNU     (T_CMB0*pow(4/11.,1/3.)*1.00381)              /* Neutrino + antineutrino background temperature in Kelvin */
-#define BOLEVK 8.61734e-5        /*The Boltzmann constant in units of eV/K*/
-#define  LIGHT           2.9979e10 /*Speed of light in cm/s*/
-
 // This function converts the dimensionless units used in the integral to dimensionful units.
 // Unit scaling velocity for neutrinos:
 // This is an arbitrary rescaling of the unit system in the Fermi-Dirac kernel so we can integrate dimensionless quantities.
@@ -39,7 +31,7 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 //NOTE: this m is the mass of a SINGLE neutrino species, not the sum of neutrinos!
 double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s)
 {
-    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift)* (LIGHT / UnitVelocity_in_cm_per_s);
+    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift)* (LIGHTCGS / UnitVelocity_in_cm_per_s);
     NU_V0*=sqrt(1+redshift);
     return NU_V0;
 }
