@@ -27,7 +27,7 @@ class PowerSpec_NuTabulated: public PowerSpec
         double *pvals;
 };
 
-part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpecFile, size_t NNeutrinos, size_t Nmesh, double Box, int Seed, double atime);
+lpt_data generate_neutrino_particles(std::string SimSpecFile, part_grid& Pgrid, size_t Nmesh, double Box, int Seed, double atime);
 
 //Copied with minor modifications from GadgetReader
 uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *data, hid_t d_type, int ncols, uint32_t npart, uint32_t np_write, uint32_t begin);
@@ -42,7 +42,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box);
+int64_t write_neutrino_data(const std::string & SnapFile, lpt_data& outdata, part_grid& Pgrid, FermiDiracVel& nuvels, size_t startPart, uint32_t NNeutrinos,size_t NNuTotal, int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box);
 
 
 

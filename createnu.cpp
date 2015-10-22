@@ -129,8 +129,12 @@ int main(int argc, char **argv)
     const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
     const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     std::cout<<"Omega Nu is "<<cosmo.OmegaNu(1.)<<" at z=0, so particle mass is "<<nupartmass<<std::endl;
+    //FIXME: Get phase information from the snapshot somehow?
+    int npart_new[6] = {0,0,Nsample, 0,0,0};
+    double masses_new[6] = {0,0,1, 0,0,0};
+    part_grid Pgrid(npart_new, masses_new, Box);
     //This does the FFT
-    part_data P  = generate_neutrino_particles(std::string(GlassFile), powerfile, Nsample, Nmesh, Box, seed, atime);
+    lpt_data outdata  = generate_neutrino_particles(powerfile, Pgrid, Nmesh, Box, seed, atime);
     //Choose a high ID number
     int64_t FirstId = (Npart[0]+Npart[1]+Npart[3]+Npart[4]+Npart[5])*8;
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
@@ -138,7 +142,7 @@ int main(int argc, char **argv)
     printf("v_th = %g zz = %g, numass = %g\n",v_th, atime, NUmass);
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
     uint32_t Nthisfile = NNeutrinos/numfiles;
-    size_t startPart = write_neutrino_data(SnapFile, P, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
+    size_t startPart = write_neutrino_data(SnapFile, outdata, Pgrid, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
     for(int i=1; i<numfiles; ++i)
     {
         //If this is the last file, write all remaining particles
@@ -149,7 +153,7 @@ int main(int argc, char **argv)
         formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
         SnapFile = formatter.str();
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile, P, nuvels, startPart, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
+        startPart += write_neutrino_data(SnapFile, outdata, Pgrid, nuvels, startPart, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
     }
     return 0;
 }

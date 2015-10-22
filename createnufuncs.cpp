@@ -7,6 +7,7 @@
 #include <hdf5_hl.h>
 #include <fstream>
 #include "proto.h"
+// #include "gadgetheader.h"
 
 
 PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum, double atime)
@@ -72,7 +73,7 @@ double PowerSpec_NuTabulated::power(double k, int Type)
 }
 
 
-part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpecFile, size_t NNeutrinos, size_t Nmesh, double Box, int Seed, double atime)
+lpt_data generate_neutrino_particles(std::string SimSpecFile, part_grid& Pgrid, size_t Nmesh, double Box, int Seed, double atime)
 {
     //For the neutrinos we don't want this; the modes that we have are the modes that exist
     bool RayleighScatter = false;
@@ -80,17 +81,10 @@ part_data generate_neutrino_particles(std::string GlassFile, std::string SimSpec
     //Load the neutrino power spectrum from the powerspec file
     PowerSpec_NuTabulated PSpec(SimSpecFile, atime);
 
-    //Open the glass file: this should be a regular grid and will provide the phase information for the neutrinos
-    //FIXME: Get phase information from the snapshot somehow?
-    std::cout<<"Initialising pre-IC file "<< GlassFile<<std::endl;
-    GadgetReader::GSnap glass(GlassFile);
-    printf("Nmesh = %lu Nsample = %lu\n",Nmesh,NNeutrinos);
     DisplacementFields displace(Nmesh, Seed, Box, false);
     //Output is neutrino particles
-    int GlassTileFac = NNeutrinos/pow(glass.GetNpart(2),1./3.);
-    part_data P(glass, 2, GlassTileFac, Box, false);
-    displace.displacement_fields(2, P, &PSpec, RayleighScatter);
-    return P;
+    lpt_data outdata = displace.displacement_fields(2, Pgrid, &PSpec, RayleighScatter);
+    return outdata;
 }
 
 //Copied with minor modifications from GadgetReader
@@ -155,7 +149,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDiracVel& nuvels, const size_t startPart, const uint32_t NNeutrinos,const size_t NNuTotal, const int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box)
+int64_t write_neutrino_data(const std::string & SnapFile, lpt_data& outdata, part_grid& Pgrid, FermiDiracVel& nuvels, const size_t startPart, const uint32_t NNeutrinos,const size_t NNuTotal, const int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box)
 {
     //Open the HDF5 file
     hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
@@ -173,7 +167,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
         // Buffer initialization.
         for (uint32_t i = 0; i < blocksz; ++i)
             for(int k = 0; k < 3; k++)
-                buffer[3 * i + k] = periodic_wrap(P.Pos(startPart+curpart+i,k) + P.Vel(startPart+curpart+i,k), Box);
+                buffer[3 * i + k] = periodic_wrap(Pgrid.Pos(startPart+curpart+i,k,2) + outdata.Vel(startPart+curpart+i,k), Box);
         //Do the writing
         curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
@@ -183,7 +177,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, part_data& P, FermiDir
         // Buffer initialization
         for (uint32_t i = 0; i < blocksz; ++i){
             for(int k = 0; k < 3; k++) {
-                buffer[3 * i + k] = vel_prefac * P.Vel(startPart+curpart+i,k);
+                buffer[3 * i + k] = vel_prefac * outdata.Vel(startPart+curpart+i,k);
             }
             //Add thermal velocities
             nuvels.add_thermal_speeds(&buffer[3 * i]);
