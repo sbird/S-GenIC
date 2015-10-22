@@ -23,6 +23,8 @@ class Cosmology
         double F_Omega(double a);
         double F2_Omega(double a);
         double OmegaNuPrimed(double a);
+        //The matter density
+        double OmegaMatter(double a);
     private:
         /* Return the matter density in a single neutrino species.
         * Not externally callable*/

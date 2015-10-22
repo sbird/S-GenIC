@@ -30,16 +30,15 @@
 //Hubble H(z) / H0 in units of 1/T.
 double Cosmology::Hubble(double a)
 {
-        //Begin with matter, curvature and lambda.
-        double hubble_a = Omega / (a * a * a) + (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
+        //Begin with curvature and lambda.
+        double hubble_a = OmegaMatter(a);
+        //curvature and lambda
+        hubble_a += (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
         //Add the radiation
         hubble_a += OmegaR(a);
-        //If neutrinos are massless, add them too.
+        //If neutrinos are massless, add them too. Otherwise they are included in OmegaMatter
         if(MNu == 0)
                 hubble_a += OMEGANU/(a*a*a*a);
-        /*Otherwise add massive neutrinos, possibly slightly relativistic, to the evolution*/
-        else
-                hubble_a += OmegaNu(a) - OmegaNu(1)/ (a * a * a);
         return HUBBLE * sqrt(hubble_a);
 }
 
@@ -66,10 +65,20 @@ double Cosmology::OmegaNu(double a)
         return rhonu;
 }
 
+double Cosmology::OmegaMatter(double a)
+{
+    double OmegaMatter = Omega / (a * a * a);
+    //add massive neutrinos, possibly slightly relativistic, to the evolution
+    if (MNu > 0)
+        OmegaMatter += OmegaNu(a) - OmegaNu(1)/ (a * a * a);
+    return OmegaMatter;
+}
+
 double Cosmology::OmegaR(double a)
 {
     return OMEGAG/(a*a*a*a);
 }
+
 /*Note q carries units of eV/c. kT/c has units of eV/c.
  * M_nu has units of eV  Here c=1. */
 double rho_nu_int(double q, void * params)
