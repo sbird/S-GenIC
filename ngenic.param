@@ -8,10 +8,11 @@ Box= 512000.0   # Periodic box size of simulation
 FileBase =test                 # Base-filename of output files
 OutputDir= test   # Directory for output
 
-GlassFile= /home/spb/data/glass/reg-grid-128-dm  # Glass-File
-GlassTileFac= 4                # Number of times the glass file is
-                                  # tiled in each dimension (must be
-                                  # an integer)
+#(Cube root of) particle numbers
+NBaryons = 128
+NCDM = 128
+NNeutrino = 128
+
 ICFormat=3              # 2 for Gadget output, 3 for HDF5
 
 Omega= 0.2793       # Total matter density  (at z=0)

@@ -10,8 +10,6 @@
 #include <omp.h>
 
 #include "power.hpp"
-#include "part_data.hpp"
-// #include "proto.h"
 
 /**Initialise the memory for the FFTs*/
 DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt): Nmesh(Nmesh), twolpt(twolpt), Seed(Seed), Box(Box)
@@ -148,7 +146,7 @@ unsigned int * initialize_rng(int Seed, size_t Nmesh)
 }
 
 /**Function to compute Zeldovich displacement fields using a double Fourier transform*/
-void DisplacementFields::displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool RayleighScatter)
+lpt_data DisplacementFields::displacement_fields(const int type, part_grid& Pgrid, PowerSpec * PSpec, bool RayleighScatter)
 {
   const double fac = pow(2 * M_PI / Box, 1.5);
   //Re-initialize every time this is called, so each particle type has the same phases
@@ -157,6 +155,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
   double maxdisp;
   const size_t fftsize = 2*Nmesh*Nmesh*(Nmesh/2+1);
   double maxdisp2=0;
+  lpt_data outdata(Pgrid.GetNumPart(type), twolpt);
   if(twolpt)
     memset(twosrc, 0, fftsize*sizeof(float));
 
@@ -303,7 +302,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
      } //end twolpt
      fftw_execute(Inverse_plan);	/** FFT of the Zeldovich displacements **/
      /* read-out Zeldovich displacements into P.Vel*/
-     maxdisp=displacement_read_out(1, P, axes);
+     maxdisp=displacement_read_out(1, outdata, Pgrid, axes, type);
     }
 
     if (twolpt) {
@@ -351,7 +350,7 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
               /* Cdata now contains the FFT of the 2LPT term */
               fftw_execute(Inverse_plan);	/** FFT of Cdata**/
               /* read-out displacements */
-              maxdisp2=displacement_read_out(2, P, axes);
+              maxdisp2=displacement_read_out(2, outdata, Pgrid, axes, type);
           }
 #ifdef NEUTRINOS
     } //type !=2
@@ -362,17 +361,17 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
          maxdisp, maxdisp / (Box / Nmesh));
   printf("\nMaximum 2LPT displacement: %g kpc/h, in units of the part-spacing= %g\n",maxdisp2, maxdisp2 / (Box / Nmesh));
   free(seedtable);
-  return;
+  return outdata;
 }
 
 /** This function evaluates the displacement field computed above for a particular position, given as a list in part_data
  * Cloud-in-cell is used to find the displacement field averaged over the 8 nearby grid cells.
  */
-double DisplacementFields::displacement_read_out(const int order, part_data& P, const int axes)
+double DisplacementFields::displacement_read_out(const int order, lpt_data& outdata, part_grid& Pgrid, const int axes, const int type)
 {
    double maxdisp=0;
    const double Nmesh3 = pow(1.*Nmesh, 3);
-   const int64_t NumPart = P.GetNumPart();
+   const int64_t NumPart = Pgrid.GetNumPart(type);
    //This needs openmp 3.1, (gcc 4.7)
    #pragma omp parallel for reduction(max: maxdisp)
    for(int n = 0; n < NumPart; n++)
@@ -382,7 +381,7 @@ double DisplacementFields::displacement_read_out(const int order, part_data& P, 
                double u[3];
                size_t i[3], ii[3];
                for(int q=0;q<3;q++){
-                   u[q] = P.Pos(n,q) / Box * Nmesh;
+                   u[q] = Pgrid.Pos(n,q, type) / Box * Nmesh;
                    i[q] = static_cast<size_t>(u[q]);
                    if(i[q] == Nmesh)
                        i[q]--;
@@ -413,10 +412,10 @@ double DisplacementFields::displacement_read_out(const int order, part_data& P, 
        * being called from the 2lpt part of the code*/
        if(order == 2){
            dis /= Nmesh3;
-           P.Set2Vel(dis, n,axes);
+           outdata.Set2Vel(dis, n,axes);
        }
        else
-           P.SetVel(dis, n,axes);
+           outdata.SetVel(dis, n,axes);
        if(dis > maxdisp)
            maxdisp = dis;
    } // end openmp parallel

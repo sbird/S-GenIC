@@ -254,15 +254,15 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
 BOOST_AUTO_TEST_CASE(check_part_grid)
 {
     //First check for a small number of DM particles
-    std::valarray<size_t> NumPart((size_t) 0,(size_t) 6);
-    std::valarray<double> Masses((double) 0,(size_t) 6);
+    std::valarray<int64_t> NumPart((int64_t) 0,(size_t) 6);
+    double Masses[6] = {0,0,0,0,0,0};
     NumPart[1] = 16;
     Masses[1] = 1;
     double Box = 20.;
     part_grid P(NumPart, Masses, Box);
-    for (size_t i=0; i< NumPart[1]; i++)
-        for (size_t j=0; j< NumPart[1]; j++)
-            for (size_t k=0; k< NumPart[1]; k++)
+    for (int i=0; i< NumPart[1]; i++)
+        for (int j=0; j< NumPart[1]; j++)
+            for (int k=0; k< NumPart[1]; k++)
             {
                 //Check each axis in turn
                 size_t index = i*NumPart[1]*NumPart[1]+j*NumPart[1]+k;
@@ -276,9 +276,9 @@ BOOST_AUTO_TEST_CASE(check_part_grid)
     NumPart[2] = 16;
     Masses[2] = 1/36.;
     part_grid Pnu(NumPart, Masses, Box);
-    for (size_t i=0; i< NumPart[1]-1; i++)
-        for (size_t j=0; j< NumPart[1]-1; j++)
-            for (size_t k=0; k< NumPart[1]-1; k++)
+    for (int i=0; i< NumPart[1]-1; i++)
+        for (int j=0; j< NumPart[1]-1; j++)
+            for (int k=0; k< NumPart[1]-1; k++)
             {
                 size_t index[3];
                 //Check the spacing between particles is still correct in all directions

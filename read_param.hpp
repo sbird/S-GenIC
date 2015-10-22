@@ -3,6 +3,7 @@
 
 #include <tuple>
 #include <string>
+#include <map>
 
 enum TypeEnum
 {

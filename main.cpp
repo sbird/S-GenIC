@@ -41,10 +41,6 @@ int main(int argc, char **argv)
   configoptions["Box"] = std::make_tuple((void *) &Box, FloatType, "");
   //Numerical FFT parameters
   configoptions["Nmesh"] = std::make_tuple((void *) &Nmesh, IntType, "");
-  //Particle number is this * size of glassfile
-  configoptions["GlassTileFac"] = std::make_tuple((void *) &GlassTileFac, IntType, "");
-  //File paths
-  configoptions["GlassFile"] = std::make_tuple((void *) &GlassFile, StringType, "");
   //Unused unless CAMB spectrum
   configoptions["FileWithInputSpectrum"] = std::make_tuple((void *) &FileWithInputSpectrum, StringType, "");
   configoptions["FileWithTransfer"] = std::make_tuple((void *) &FileWithTransfer, StringType, "");
@@ -77,6 +73,18 @@ int main(int argc, char **argv)
   //Needed if ReNormaliseInputSpectrum is on. Otherwise unused
   configoptions["Sigma8"] = std::make_tuple((void *) &Sigma8, FloatType, "0.8");
   configoptions["PrimordialIndex"] = std::make_tuple((void *) &PrimordialIndex, FloatType, "1.");
+  //Number of particles desired
+  {
+    int parts;
+    configoptions["NBaryon"] = std::make_tuple((void *) &parts, IntType, "0");
+    npart[BARYON_TYPE] = static_cast<int64_t>(parts)*parts*parts;
+    configoptions["NCDM"] = std::make_tuple((void *) &parts, IntType, "0");
+    npart[DM_TYPE] = static_cast<int64_t>(parts)*parts*parts;
+#ifdef NEUTRINOS
+    configoptions["NNeutrino"] = std::make_tuple((void *) &parts, IntType, "0");
+    npart[NEUTRINO_TYPE] = static_cast<int64_t>(parts)*parts*parts;
+#endif
+  }
 
   config.parameter_parser(configoptions);
   set_units();
@@ -86,11 +94,7 @@ int main(int argc, char **argv)
     exit(1);
   }
   DisplacementFields displace(Nmesh, Seed, Box, twolpt);
-  printf("Initialising pre-IC file '%s'\n",GlassFile);
-  GadgetReader::GSnap snap(GlassFile);
   /*Set particle numbers*/
-  for(type = 0; type < N_TYPE; type++)
-    npart[type] = snap.GetNpart(type) * GlassTileFac * GlassTileFac * GlassTileFac;
   if(npart.sum() == 0)
           exit(1);
   /*Set the global variable saying there is no gas in the glassfile,
@@ -142,6 +146,7 @@ int main(int argc, char **argv)
   if(osnap.WriteHeaders(header))
           FatalError(23);
 
+  part_grid Pgrid(npart, header.mass, Box);
   for(type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
@@ -151,13 +156,12 @@ int main(int argc, char **argv)
           if (type==2)
               tlptpart = false;
 #endif
-          part_data P(snap, type, GlassTileFac, Box, tlptpart);
-          displace.displacement_fields(type, P, PSpec, RayleighScatter);
-          FirstId = write_particle_data(osnap, type,P, FirstId, tlptpart);
+          lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
+          FirstId = write_particle_data(osnap, type,outdata, Pgrid, FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
       {
-         size_t mem = sizeof(float)*snap.GetNpart(type)*3*GlassTileFac*GlassTileFac*GlassTileFac/1024/1024;
+         size_t mem = sizeof(float)*Pgrid.GetNumPart(type);
          if(twolpt)
 #ifdef NEUTRINOS
             if (type != 2)

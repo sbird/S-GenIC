@@ -3,19 +3,19 @@
 
 #include <fftw3.h>
 #include <stdint.h>
+#include "part_data.hpp"
 
-class part_data;
 class PowerSpec;
 
 class DisplacementFields
 {
     public:
         DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt=true);
-        void displacement_fields(const int type, part_data& P, PowerSpec * PSpec, bool RayleighScatter=true);
+        lpt_data displacement_fields(const int type, part_grid& Pgrid, PowerSpec * PSpec, bool RayleighScatter=true);
         ~DisplacementFields();
     private:
-        //Takes the computed Fourier displacement field and reads them into part_data P
-        double displacement_read_out(const int order, part_data& P, const int axes);
+        //Takes the computed Fourier displacement field and reads them into lpt_data outdata, using a grid specified in Pgrid.
+        double displacement_read_out(const int order, lpt_data& outdata, part_grid& Pgrid, const int axes, const int type);
         //Size of the Fourier grid
         const size_t Nmesh;
         //Do we need a twolpt term?

@@ -3,7 +3,7 @@
 //memset
 #include <string.h>
 
-part_grid::part_grid(const std::valarray<size_t>& NumPart, const std::valarray<double>& Masses, double Box): NumPart(NumPart)
+part_grid::part_grid(const std::valarray<int64_t>& NumPart, double Masses[], double Box): NumPart(NumPart)
 {
     assert(NumPart.size() == N_TYPES);
     //Mean interparticle spacing
@@ -52,7 +52,7 @@ part_grid::part_grid(const std::valarray<size_t>& NumPart, const std::valarray<d
 double part_grid::Pos(size_t index, int axis, int type)
 {
     //Check that we are in bounds first.
-    assert(index < NumPart[type]*NumPart[type]*NumPart[type]);
+    assert(index < (size_t)NumPart[type]*NumPart[type]*NumPart[type]);
     assert(axis < 3 && axis >= 0);
 
     //Compute the index for this dimension
@@ -73,4 +73,9 @@ double part_grid::Pos(size_t index, int axis, int type)
     assert(pspace[type] > 0);
     double pos = i*pspace[type] + shift[type][axis];
     return pos;
+}
+
+int64_t part_grid::GetNumPart(int type)
+{
+    return NumPart[type];
 }
