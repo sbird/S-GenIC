@@ -26,7 +26,6 @@ int main(int argc, char **argv)
     int c;
     int snapnum=-1;
     char * BaseDir = NULL;
-    char * GlassFile = NULL;
     int numfiles = 0;
     double NUmass=0.;
     const double seed = 23;
@@ -35,7 +34,7 @@ int main(int argc, char **argv)
     const double UnitVelocity_in_cm_per_s = 1e5;
     const double UnitMass_in_g = 1.989e43;
 
-    while ((c = getopt (argc, argv, "s:g:n:m:")) != -1) {
+    while ((c = getopt (argc, argv, "s:n:m:")) != -1) {
         switch (c)
         {
         case 's':
@@ -44,19 +43,16 @@ int main(int argc, char **argv)
         case 'n':
             snapnum = atoi(optarg);
             break;
-        case 'g':
-            GlassFile = optarg;
-            break;
         case 'm':
             NUmass = atof(optarg);
             break;
         default:
-            printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
+            printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
             exit(0);
         }
     }
-    if (BaseDir == NULL || GlassFile == NULL || snapnum == -1 || NUmass < 0.005) {
-          printf("-s : Directory with simulation snapshots\n -g : glassfile for neutrino particles\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
+    if (BaseDir == NULL || snapnum == -1 || NUmass < 0.005) {
+          printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
           exit(0);
     }
     std::ostringstream formatter;
