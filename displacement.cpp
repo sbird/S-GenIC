@@ -365,6 +365,9 @@ void DisplacementFields::displacement_fields(const int type, part_data& P, Power
   return;
 }
 
+/** This function evaluates the displacement field computed above for a particular position, given as a list in part_data
+ * Cloud-in-cell is used to find the displacement field averaged over the 8 nearby grid cells.
+ */
 double DisplacementFields::displacement_read_out(const int order, part_data& P, const int axes)
 {
    double maxdisp=0;
