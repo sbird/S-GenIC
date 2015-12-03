@@ -25,17 +25,18 @@ DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool 
   Cdata = (fftw_complex *) Disp;	/* transformed array */
 
   if (twolpt) {
-        twosrc = (float *) fftwf_malloc(bytes);
+        size_t two_bytes = sizeof(float) * 2*Nmesh*Nmesh*(Nmesh/2+1);
+        twosrc = (float *) fftwf_malloc(two_bytes);
         ctwosrc = (fftwf_complex *) twosrc;
         for(int i=0; i<3; i++){
-            cdigrad[i] = (fftwf_complex *) malloc(bytes);
+            cdigrad[i] = (fftwf_complex *) malloc(two_bytes);
             digrad[i] = (float *) cdigrad[i];
         }
         /*Check memory allocation*/
         if(cdigrad[0] && cdigrad[1] && cdigrad[2] && twosrc)
-                printf("Allocated %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+                printf("Allocated %lu MB for 2LPT term\n",4*two_bytes / (1024 * 1024));
         else{
-            fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*bytes / (1024 * 1024));
+            fprintf(stderr, "Failed to allocate %lu MB for 2LPT term\n",4*two_bytes / (1024 * 1024));
             throw std::bad_alloc();
         }
   }
