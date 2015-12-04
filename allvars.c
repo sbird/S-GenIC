@@ -41,8 +41,6 @@ double WDM_PartMass_in_kev;
 
 
 int NU_On;
-/*This triggers the use of neutrinos via an altered transfer function*/
-int neutrinos_ks;
 int NU_Vtherm_On;
 double NU_PartMass_in_ev;
 int InvertedHierarchy;

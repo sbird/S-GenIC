@@ -14,6 +14,8 @@ int main(int argc, char **argv)
   int type;
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int64_t FirstId=1;
+  //This triggers the use of neutrinos via an altered transfer function
+  int combined_neutrinos=0;
 
   if(argc < 2)
     {
@@ -64,9 +66,13 @@ int main(int argc, char **argv)
   configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, IntType, "0");
   configoptions["WDM_PartMass_in_kev"] = std::make_tuple((void *) &WDM_PartMass_in_kev, FloatType, "0");
   //Neutrino options
+  //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
   configoptions["NU_On"] = std::make_tuple((void *) &NU_On, IntType, "0");
+  //Add thermal velocities to type 2 particles if NU_On is also true.
   configoptions["NU_Vtherm_On"] = std::make_tuple((void *) &NU_Vtherm_On, IntType, "1");
-  configoptions["NU_KSPACE"] = std::make_tuple((void *) &neutrinos_ks, IntType, "1");
+  //This should be on only if you are faking neutrinos by combining them with the dark matter,
+  //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
+  configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, IntType, "0");
   configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
   //Parameter for the Efstathiou power spectrum. Generally does nothing.
   configoptions["ShapeGamma"] = std::make_tuple((void *) &ShapeGamma, FloatType, "0.201");
@@ -106,16 +112,17 @@ int main(int argc, char **argv)
             PSpec = new PowerSpec_EH(HubbleParam, Omega, OmegaBaryon, UnitLength_in_cm);
             break;
       case 2:
-            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], neutrinos_ks);
+            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
             break;
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);
   }
 
+  //Make a cosmology
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {
-      Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
       PSpec = new NormalizedPowerSpec(PSpec, Sigma8, PrimordialIndex, cosmo.GrowthFactor(InitTime, 1.0), UnitLength_in_cm);
   }
   if(WDM_On)
@@ -136,24 +143,21 @@ int main(int argc, char **argv)
 #endif //NEUTRINO_PAIRS
   GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase)+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
-  gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, neutrinos_ks);
+  gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, combined_neutrinos);
 
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
 
   if(osnap.WriteHeaders(header))
           FatalError(23);
-
-  double Omegan=Omega;
-  if (neutrinos_ks)
-      Omegan+=OmegaDM_2ndSpecies;
-  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
+ 
+  //Compute the factors to go from velocity to displacement
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
   const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
   //Only used if twolpt is on
   //This is slightly approximate: we are assuming that D2 ~ -3/7 Da^2 Omega_m^{-1/143} (Bouchet, F 1995, A&A 296)
-  const double vel_prefac2 = -3./7.*pow(Omegan, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
-  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omegan);
+  const double vel_prefac2 = -3./7.*pow(Omega, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
+  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omega);
 
   for(type=0; type<N_TYPE;type++){
       if(npart[type] == 0)

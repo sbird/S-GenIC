@@ -10,7 +10,7 @@ int FatalError(int errnum)
 }
 
 
-gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool neutrinos_ks)
+gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool combined_neutrinos)
 {
   gadget_header header;
   //No factor of h^2 because mass is in 10^10 M_sun/h
@@ -34,7 +34,7 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   }
   /*For the "edit the transfer function" neutrino simulation method, we would *not* want to do this.
    * For true kspace neutrinos, we do. */
-  else if (!neutrinos_ks){
+  else if (!combined_neutrinos){
           OmegaCDM-=OmegaNuPart;
   }
 

@@ -9,7 +9,7 @@
 #include <gsl/gsl_integration.h>
 
 PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
-                        double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool neutrinos_ks)
+                        double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos)
 {
   //Set up conversion factor between internal units and CAMB units
   scale = (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);
@@ -103,7 +103,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const ch
        * optionally subtract the baryons.
        * We want to incorporate neutrinos into the dark matter if we are changing the transfer function,
        * but not if we are using the full kspace method. */
-      if(neutrinos_ks){
+      if(combined_neutrinos){
             T_cdm = T_tot;
             /*If we have separate gas particles, subtract
              * the baryon transfer function */
