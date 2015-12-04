@@ -1,91 +1,11 @@
 #include "createnu.hpp"
 #include <iostream>
 #include <sstream>
-#include "displacement.hpp"
-//For getopt
+#include <cassert>
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #include <fstream>
 #include "proto.h"
-// #include "gadgetheader.h"
-
-
-PowerSpec_NuTabulated::PowerSpec_NuTabulated(const std::string & FileWithInputSpectrum, double atime)
-{
-    //Note there is no need to convert units as we both power spectrum and snapshot come from the same place
-    //Open power spectrum file
-    std::ifstream file;
-    file.open(FileWithInputSpectrum.c_str());
-    if(!file.is_open() ) {
-      std::cerr<<"Can't read input power in file "<<FileWithInputSpectrum<<std::endl;
-      throw std::bad_exception();
-    }
-    NPowerTable = 0;
-    std::string line;
-    //Read first two lines with metadata
-    {
-        std::getline(file, line);
-        std::stringstream tokeniser;
-        double newatime;
-        tokeniser.str(line);
-        tokeniser >> newatime;
-        if (fabs(newatime/atime-1) > 0.01){
-            std::cerr<<"Power spectrum file "<<FileWithInputSpectrum<<" is at a="<<newatime<<" not a="<<atime<<std::endl;
-            throw std::bad_exception();
-        }
-        std::getline(file, line);
-        tokeniser.clear();
-        tokeniser.str(line);
-        tokeniser >> NPowerTable;
-    }
-    std::cerr<<"Found "<<NPowerTable<<" rows in power spectrum "<<FileWithInputSpectrum<<std::endl;
-    if (NPowerTable == 0) {
-      throw std::bad_alloc();
-    }
-    pvals = new double[NPowerTable];
-    kvals = new double [NPowerTable];
-    /* define matter array */
-    for(int count=0; count < NPowerTable; count++) {
-        std::getline(file, line);
-        std::stringstream tokeniser;
-        double kmat, pmat;
-        tokeniser.str(line);
-        tokeniser >> kmat;
-        tokeniser >> pmat;
-        if (!tokeniser.fail()) {
-            kvals[count] = log10(kmat);
-            pvals[count] = log10(pmat);
-        }
-    }
-    power_interp = gsl_interp_alloc(gsl_interp_cspline,NPowerTable);
-    power_accel = gsl_interp_accel_alloc();
-    gsl_interp_init(power_interp,kvals, pvals,NPowerTable);
-}
-
-double PowerSpec_NuTabulated::power(double k, int Type)
-{
-    double logk = log10(k);
-    if (logk < kvals[0] || logk > kvals[NPowerTable-1])
-        return 0;
-    double logP = gsl_interp_eval(power_interp, kvals, pvals, logk, power_accel);
-    double Delta2 = pow(10.0, logP);
-    return Delta2;
-}
-
-
-lpt_data generate_neutrino_particles(std::string SimSpecFile, part_grid& Pgrid, size_t Nmesh, double Box, int Seed, double atime)
-{
-    //For the neutrinos we don't want this; the modes that we have are the modes that exist
-    bool RayleighScatter = false;
-
-    //Load the neutrino power spectrum from the powerspec file
-    PowerSpec_NuTabulated PSpec(SimSpecFile, atime);
-
-    DisplacementFields displace(Nmesh, Seed, Box, false);
-    //Output is neutrino particles
-    lpt_data outdata = displace.displacement_fields(2, Pgrid, &PSpec, RayleighScatter);
-    return outdata;
-}
 
 //Copied with minor modifications from GadgetReader
 uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *data, hid_t d_type, int ncols, uint32_t npart, uint32_t np_write, uint32_t begin)
@@ -111,16 +31,14 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
             //Create a hyperslab that we will write to
             hid_t herr = H5Dcreate(group,BlockName.c_str(),d_type, full_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
             if (herr < 0) {
-                std::cerr << "Could not create dataset: " <<BlockName<<std::endl;
-                throw std::bad_exception();
+                throw std::runtime_error("Could not create dataset: "+BlockName);
             }
 
             H5Dclose(herr);
         }
         hid_t dset = H5Dopen(group,BlockName.c_str(),H5P_DEFAULT);
         if (dset < 0) {
-                std::cerr << "Could not open dataset: " <<BlockName<<std::endl;
-                throw std::bad_exception();
+                throw std::runtime_error("Could not open dataset: "+BlockName);
         }
         size[0] = np_write;
         hid_t space_id = H5Screate_simple(rank, size, NULL);
@@ -133,8 +51,7 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
         H5Sclose(space_id);
         H5Sclose(full_space_id);
         if (herr < 0) {
-            std::cerr << "Could not write dataset: " <<BlockName<<std::endl;
-            throw std::bad_exception();
+            throw std::runtime_error("Could not write dataset: "+BlockName);
         }
         return np_write;
 }
@@ -149,14 +66,15 @@ uint32_t WriteBlock(const std::string& BlockName, hid_t group, int type, void *d
  * vel_prefac - Zeldovich prefactor for velocities
  * nupartmass - mass of a single (N-body) neutrino particle in internal gadget units
  */
-int64_t write_neutrino_data(const std::string & SnapFile, lpt_data& outdata, part_grid& Pgrid, FermiDiracVel& nuvels, const size_t startPart, const uint32_t NNeutrinos,const size_t NNuTotal, const int64_t FirstId, const double vel_prefac, const double nupartmass, const double Box)
+int64_t write_neutrino_data(const std::string & SnapFile, part_grid& Pgrid, FermiDiracVel& nuvels, const size_t startPart, const uint32_t NNeutrinos,const size_t NNuTotal, const int64_t FirstId, const double nupartmass, const double Box)
 {
     //Open the HDF5 file
     hid_t handle = H5Fopen(SnapFile.c_str(), H5F_ACC_RDWR, H5P_DEFAULT);
     //Create the group
     hid_t group = H5Gcreate(handle,"PartType2",H5P_DEFAULT, H5P_DEFAULT,H5P_DEFAULT);
-    if(group < 0)
-        return group;
+    if(group < 0){
+            throw std::runtime_error("Could not open or create group PartType2");
+    }
     //We now want to create Coordinates, ParticleIDs and Velocities and write particles to them
     //Make a buffer of about 100 MB
     const uint32_t blockwrite = (1<<22);
@@ -167,7 +85,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, lpt_data& outdata, par
         // Buffer initialization.
         for (uint32_t i = 0; i < blocksz; ++i)
             for(int k = 0; k < 3; k++)
-                buffer[3 * i + k] = periodic_wrap(Pgrid.Pos(startPart+curpart+i,k,2) + outdata.Vel(startPart+curpart+i,k), Box);
+                buffer[3 * i + k] = periodic_wrap(Pgrid.Pos(startPart+curpart+i,k,2), Box);
         //Do the writing
         curpart += WriteBlock("Coordinates", group, 2, buffer, H5T_NATIVE_FLOAT, 3, NNeutrinos, blocksz, curpart);
     }
@@ -177,7 +95,7 @@ int64_t write_neutrino_data(const std::string & SnapFile, lpt_data& outdata, par
         // Buffer initialization
         for (uint32_t i = 0; i < blocksz; ++i){
             for(int k = 0; k < 3; k++) {
-                buffer[3 * i + k] = vel_prefac * outdata.Vel(startPart+curpart+i,k);
+                buffer[3 * i + k] = 0;
             }
             //Add thermal velocities
             nuvels.add_thermal_speeds(&buffer[3 * i]);

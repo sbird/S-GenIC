@@ -28,13 +28,13 @@ int main(int argc, char **argv)
     char * BaseDir = NULL;
     int numfiles = 0;
     double NUmass=0.;
-    const double seed = 23;
+    double vbstart = 0;
     //Default units
     const double UnitLength_in_cm = 3.085678e21;
     const double UnitVelocity_in_cm_per_s = 1e5;
     const double UnitMass_in_g = 1.989e43;
 
-    while ((c = getopt (argc, argv, "s:n:m:")) != -1) {
+    while ((c = getopt (argc, argv, "s:n:m:v:")) != -1) {
         switch (c)
         {
         case 's':
@@ -46,13 +46,16 @@ int main(int argc, char **argv)
         case 'm':
             NUmass = atof(optarg);
             break;
+        case 'v':
+            vbstart = atof(optarg);
+            break;
         default:
-            printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
+            printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n -v : Smallest velocity to make particles\n");
             exit(0);
         }
     }
     if (BaseDir == NULL || snapnum == -1 || NUmass < 0.005) {
-          printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n");
+          printf("-s : Directory with simulation snapshots\n -n : Snapshot output number\n -m : total neutrino mass in eV\n -v : Smallest velocity to make particles\n");
           exit(0);
     }
     std::ostringstream formatter;
@@ -64,9 +67,6 @@ int main(int argc, char **argv)
     //Contains the snapshot directory
     const std::string snapdir( formatter.str() );
     //Contains the power spectrum file
-    formatter.str("");
-    formatter << std::string(BaseDir)<<"/powerspec_nu_"<< snapnum_f <<".txt";
-    const std::string powerfile ( formatter.str() );
     //Open the first file of the simulation snapshots and read metadata from there
     formatter.str("");
     formatter << snapdir;
@@ -111,9 +111,7 @@ int main(int argc, char **argv)
     }
     //FIXME: The output will have as many neutrino particles as there are CDM particles.
     //Ultimately we want to reduce this
-    const size_t Nsample = round(pow(Npart[1], 1./3));
     const size_t NNeutrinos = Npart[1];
-    const size_t Nmesh = Nsample;
 
     //Note no hierarchy right now.
     Cosmology cosmo(HubbleParam, Omega0, OmegaLambda, NUmass, false);
@@ -122,35 +120,38 @@ int main(int argc, char **argv)
     // so this is in g kpc^3 cm^-3
     //So the conversion factor is (kpc/cm)^3 * g/Msun)
     const double nupartmass = cosmo.OmegaNu(1.) * pow(Box, 3) * 3 * pow(HUBBLE, 2) / (8 * M_PI * GRAVITY) * pow(UnitLength_in_cm, 3) / UnitMass_in_g / NNeutrinos;
-    const double hubble_a = cosmo.Hubble(atime) * UnitLength_in_cm / UnitVelocity_in_cm_per_s;
-    const double vel_prefac = atime * hubble_a * cosmo.F_Omega(atime) /sqrt(atime);
     std::cout<<"Omega Nu is "<<cosmo.OmegaNu(1.)<<" at z=0, so particle mass is "<<nupartmass<<std::endl;
-    //FIXME: Get phase information from the snapshot somehow?
-    int npart_new[6] = {0,0,Nsample, 0,0,0};
+    //Positions are irrelevant here because we want to start at high enough redshift that thermal velocities dominate.
+    //If this is not so we need to start earlier
+    int npart_new[6] = {0,0,(int) round(cbrt(NNeutrinos)), 0,0,0};
     double masses_new[6] = {0,0,1, 0,0,0};
     part_grid Pgrid(npart_new, masses_new, Box);
-    //This does the FFT
-    lpt_data outdata  = generate_neutrino_particles(powerfile, Pgrid, Nmesh, Box, seed, atime);
+
     //Choose a high ID number
     int64_t FirstId = (Npart[0]+Npart[1]+Npart[3]+Npart[4]+Npart[5])*8;
+    //This is an overall scaling for the fermi dirac velocities
     const double v_th = NU_V0(1./atime-1, NUmass, UnitVelocity_in_cm_per_s);
-    FermiDiracVel nuvels (v_th);
-    printf("v_th = %g zz = %g, numass = %g\n",v_th, atime, NUmass);
+    FermiDiracVel nuvels (v_th, vbstart/v_th);
+
     //We need to open each snapshot file in turn and write neutrinos to it until we run out.
     uint32_t Nthisfile = NNeutrinos/numfiles;
-    size_t startPart = write_neutrino_data(SnapFile, outdata, Pgrid, nuvels, 0, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
-    for(int i=1; i<numfiles; ++i)
+    size_t startPart = 0;
+    for(int i=0; i< numfiles; ++i)
     {
         //If this is the last file, write all remaining particles
-        if (i == numfiles -1) {
+        if (i == numfiles -1)
             Nthisfile = NNeutrinos - startPart;
+        if (i > 0) {
+            formatter.str("");
+            formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
+            SnapFile = formatter.str();
         }
-        formatter.str("");
-        formatter << snapdir << "/snap_"<<snapnum_f<<"."<<i<<".hdf5";
-        SnapFile = formatter.str();
+        std::cout<<"Writing to file "<<SnapFile<<std::endl;
         //Base this on the routine in save.cpp
-        startPart += write_neutrino_data(SnapFile, outdata, Pgrid, nuvels, startPart, Nthisfile, NNeutrinos,FirstId, vel_prefac, nupartmass, Box);
+        startPart += write_neutrino_data(SnapFile, Pgrid, nuvels, startPart, Nthisfile, NNeutrinos,FirstId, nupartmass, Box);
     }
+    FirstId += startPart;
+
     return 0;
 }
 
