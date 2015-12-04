@@ -15,8 +15,25 @@ int main(int argc, char **argv)
   int type;
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int64_t FirstId=1;
+  double Omega, OmegaLambda, OmegaDM_2ndSpecies;
+  double OmegaBaryon, HubbleParam;
+
+  int WDM_On;
+  int WDM_Vtherm_On;
+  double WDM_PartMass_in_kev;
+
+  int NU_On;
+  int NU_Vtherm_On;
+  //Total neutrino mass
+  double NU_PartMass_in_ev;
+  int InvertedHierarchy;
+
   //This triggers the use of neutrinos via an altered transfer function
   int combined_neutrinos=0;
+  //Rarely used parameters for power spectrum
+  double ShapeGamma;
+  double PrimordialIndex, Sigma8;
+  int ReNormalizeInputSpectrum;
 
   if(argc < 2)
     {
@@ -75,6 +92,7 @@ int main(int argc, char **argv)
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
   configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, IntType, "0");
   configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
+  configoptions["InvertedHierarchy"] = std::make_tuple((void *) &InvertedHierarchy, IntType, "0");
   //Parameter for the Efstathiou power spectrum. Generally does nothing.
   configoptions["ShapeGamma"] = std::make_tuple((void *) &ShapeGamma, FloatType, "0.201");
   //Needed if ReNormaliseInputSpectrum is on. Otherwise unused

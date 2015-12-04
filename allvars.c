@@ -6,11 +6,8 @@ size_t Nmesh;
 
 int ICFormat;
 
-char GlassFile[500];
 char FileWithInputSpectrum[500];
 char FileWithTransfer[500];
-
-size_t GlassTileFac;
 
 double Box;
 int Seed;
@@ -27,23 +24,6 @@ char OutputDir[1000], FileBase[1000];
 
 double UnitTime_in_s, UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
 double InputSpectrum_UnitLength_in_cm;
-
-double Omega, OmegaLambda, OmegaDM_2ndSpecies, Sigma8;
-double OmegaBaryon, HubbleParam;
-double ShapeGamma;
-double PrimordialIndex;
-
-int ReNormalizeInputSpectrum;
-
-int WDM_On;
-int WDM_Vtherm_On;
-double WDM_PartMass_in_kev;
-
-
-int NU_On;
-int NU_Vtherm_On;
-double NU_PartMass_in_ev;
-int InvertedHierarchy;
 
 void set_units(void)		/* ... set some units */
 {
