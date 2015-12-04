@@ -5,6 +5,7 @@
 #include "power.hpp"
 #include "displacement.hpp"
 #include "read_param.hpp"
+#include "thermalvel.hpp"
 #include <cassert>
 
 #include <gadgetwriter.hpp>
@@ -162,14 +163,30 @@ int main(int argc, char **argv)
   for(type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
-      try{
-          bool tlptpart = twolpt;
+      bool tlptpart = twolpt;
 #ifdef NEUTRINOS
-          if (type==2)
-              tlptpart = false;
+      if (type==2)
+          tlptpart = false;
 #endif
+      FermiDiracVel * therm_vels = NULL;
+      //For WDM thermal velocities
+      if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1){
+        const double wdm_vth = WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s);
+        therm_vels = new FermiDiracVel (wdm_vth);
+        printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
+      }
+#ifdef NEUTRINOS
+      //Neutrino thermal velocities
+      if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2) {
+          //Init structure for neutrino velocities
+          const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
+          therm_vels = new FermiDiracVel (v_th);
+          printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
+      }
+#endif //NEUTRINOS
+      try{
           lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
-          FirstId = write_particle_data(osnap, type,outdata, Pgrid, vel_prefac, vel_prefac2, FirstId, tlptpart);
+          FirstId = write_particle_data(osnap, type,outdata, Pgrid, therm_vels, vel_prefac, vel_prefac2, FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
       {
@@ -182,6 +199,7 @@ int main(int argc, char **argv)
          fprintf(stderr, "Could not allocate %ld MB for particle velocities\n", mem);
          FatalError(24);
       }
+      delete therm_vels;
 #ifdef PRINT_SPEC
       print_spec(type);
 #endif

@@ -9,7 +9,7 @@ using namespace std;
 
 #define BUFFER 48
 
-int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part_grid& Pgrid, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt)
+int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt)
 {
   const int64_t NumPart = outdata.GetNumPart();
   float *block;
@@ -26,20 +26,6 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
       idstr = "ParticleIDs";
       ustr = "InternalEnergy";
   }
-#ifdef NEUTRINOS
-  //Init structure for neutrino velocities
-  const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
-  FermiDiracVel nuvels (v_th);
-  if(NU_On == 1 && NU_Vtherm_On == 1) {
-    printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
-  }
-#endif //NEUTRINOS
-  //For WDM thermal velocities
-  const double wdm_vth = WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s);
-  FermiDiracVel WDMvels (wdm_vth);
-  if(WDM_On == 1 && WDM_Vtherm_On == 1)
-        printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
-
   printf("\nWriting IC-file\n");
   const int64_t blockmaxlen = BUFFER * 1024 * 1024;
   if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
@@ -92,25 +78,21 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
       }
 
       //Add thermal velocities
-      if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1)
-          WDMvels.add_thermal_speeds(&block[3 * pc]);
-#ifdef NEUTRINOS
-      if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2) {
+      if(therm_vels) {
 #ifdef NEUTRINO_PAIRS
           float vtherm[3];
           for(int k = 0; k < 3; k++)
               vtherm[k] = 0;
-          nuvels.add_thermal_speeds(vtherm);
+          therm_vels->add_thermal_speeds(vtherm);
           for(int k = 0; k < 3; k++)
               block[3 * pc + k] = vel_prefac*outdata.Vel(i,k) + vtherm[k];
           pc++;
           for(int k = 0; k < 3; k++)
               block[3 * pc + k] = vel_prefac*outdata.Vel(i,k) - vtherm[k];
 #else
-          nuvels.add_thermal_speeds(&block[3 * pc]);
+          therm_vels->add_thermal_speeds(&block[3 * pc]);
 #endif //NEUTRINO_PAIRS
       }
-#endif //NEUTRINOS
       pc++;
 
       if(pc > blockmaxlen){
