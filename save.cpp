@@ -1,6 +1,5 @@
 #include "allvars.h"
 #include "proto.h"
-#include "cosmology.hpp"
 #include "part_data.hpp"
 #include "thermalvel.hpp"
 #include <gadgetwriter.hpp>
@@ -10,7 +9,7 @@ using namespace std;
 
 #define BUFFER 48
 
-int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part_grid& Pgrid, int64_t FirstId, bool twolpt)
+int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part_grid& Pgrid, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt)
 {
   const int64_t NumPart = outdata.GetNumPart();
   float *block;
@@ -41,18 +40,6 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
   if(WDM_On == 1 && WDM_Vtherm_On == 1)
         printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
 
-  double Omegan=Omega;
-  if (neutrinos_ks)
-      Omegan+=OmegaDM_2ndSpecies;
-  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
-  const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
-  const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
-  //Only used if twolpt is on
-  //This is slightly approximate: we are assuming that D2 ~ -3/7 Da^2 Omega_m^{-1/143} (Bouchet, F 1995, A&A 296)
-  const double vel_prefac2 = -3./7.*pow(Omegan, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
-  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omegan);
-
-    
   printf("\nWriting IC-file\n");
   const int64_t blockmaxlen = BUFFER * 1024 * 1024;
   if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))

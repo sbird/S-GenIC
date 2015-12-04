@@ -144,6 +144,17 @@ int main(int argc, char **argv)
   if(osnap.WriteHeaders(header))
           FatalError(23);
 
+  double Omegan=Omega;
+  if (neutrinos_ks)
+      Omegan+=OmegaDM_2ndSpecies;
+  Cosmology cosmo(HubbleParam, Omegan, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
+  const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
+  const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
+  //Only used if twolpt is on
+  //This is slightly approximate: we are assuming that D2 ~ -3/7 Da^2 Omega_m^{-1/143} (Bouchet, F 1995, A&A 296)
+  const double vel_prefac2 = -3./7.*pow(Omegan, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
+  printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omegan);
+
   for(type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
@@ -154,7 +165,7 @@ int main(int argc, char **argv)
               tlptpart = false;
 #endif
           lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
-          FirstId = write_particle_data(osnap, type,outdata, Pgrid, FirstId, tlptpart);
+          FirstId = write_particle_data(osnap, type,outdata, Pgrid, vel_prefac, vel_prefac2, FirstId, tlptpart);
       }
       catch (std::bad_alloc& ba)
       {

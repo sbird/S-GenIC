@@ -22,7 +22,7 @@ int    FatalError(int errnum);
 
 double periodic_wrap(double x, double box);
 
-int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, lpt_data& outdata, part_grid&  P, int64_t FirstId, bool twolpt);
+int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, lpt_data& outdata, part_grid&  P, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt);
 
 gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool neutrinos_ks);
 extern "C" {
