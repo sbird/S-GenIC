@@ -42,7 +42,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
           block[3 * pc + k] = Pgrid.Pos(i,k, type) + outdata.Vel(i,k);
           if(twolpt)
                 block[3 * pc + k] -= 3./7. * outdata.Vel2(i,k);
-          block[3 * pc + k] = periodic_wrap(block[3*pc+k], Box);
+          block[3 * pc + k] = periodic_wrap(block[3*pc+k], Pgrid.GetBox());
       }
       pc++;
 
@@ -50,7 +50,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
       /*Add an extra copy of the position vector for the double neutrino*/
       if(type == NEUTRINO_TYPE) {
 	  for(int k = 0; k < 3; k++)
-	    block[3 * pc + k] = periodic_wrap(Pgrid.Pos(i,k,type) + outdata.Vel(i,k), Box);
+	    block[3 * pc + k] = periodic_wrap(Pgrid.Pos(i,k,type) + outdata.Vel(i,k), Pgrid.GetBox());
 	  pc++;
       }
 #endif //NEUTRINO_PAIRS

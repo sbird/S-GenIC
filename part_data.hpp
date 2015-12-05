@@ -26,8 +26,13 @@ class part_grid
         double Pos(size_t index, int axis, int type);
         //Get number of particles
         int GetNumPart(int type);
+        //Get box size
+        inline double GetBox(){
+            return Box;
+        }
     private:
         const std::valarray<int> NumPart;
+        const double Box;
         double pspace[N_TYPES];
         double shift[N_TYPES][3];
 };
