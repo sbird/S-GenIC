@@ -15,51 +15,8 @@ void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& fil
 
 int main(int argc, char **argv)
 {
-  int type;
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int64_t FirstId=1;
-  double Omega, OmegaLambda, OmegaDM_2ndSpecies;
-  double OmegaBaryon, HubbleParam;
-
-  int WDM_On;
-  int WDM_Vtherm_On;
-  double WDM_PartMass_in_kev;
-
-  int NU_On;
-  int NU_Vtherm_On;
-  //Total neutrino mass
-  double NU_PartMass_in_ev;
-  int InvertedHierarchy;
-
-  //This triggers the use of neutrinos via an altered transfer function
-  int combined_neutrinos=0;
-  //Rarely used parameters for power spectrum
-  double ShapeGamma;
-  double PrimordialIndex, Sigma8;
-  int ReNormalizeInputSpectrum;
-
-  int WhichSpectrum;
-
-  size_t Nmesh;
-  int ICFormat;
-
-  std::string FileWithInputSpectrum;
-  std::string FileWithTransfer;
-
-  double Box;
-  int Seed;
-  int RayleighScatter;
-  int twolpt;
-
-  int NumFiles;
-
-  double Redshift;
-
-  std::string OutputDir, FileBase;
-
-  double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
-  double InputSpectrum_UnitLength_in_cm;
-
   if(argc < 2)
     {
 	  fprintf(stdout, "\nParameters are missing.\n");
@@ -72,43 +29,70 @@ int main(int argc, char **argv)
   SpbConfigParser config(argv[1]);
   std::map<std::string, ValueTuple> configoptions;
   //Cosmological parameters
+  double Omega, OmegaLambda, OmegaDM_2ndSpecies;
+  double OmegaBaryon, HubbleParam;
   configoptions["Omega"] = std::make_tuple((void *) &Omega, FloatType, "");
   configoptions["OmegaLambda"] = std::make_tuple((void *) &OmegaLambda, FloatType, "");
   configoptions["OmegaBaryon"] = std::make_tuple((void *) &OmegaBaryon, FloatType, "");
   configoptions["OmegaDM_2ndSpecies"] = std::make_tuple((void *) &OmegaDM_2ndSpecies, FloatType, "");
   configoptions["HubbleParam"] = std::make_tuple((void *) &HubbleParam, FloatType, "");
   //Which output format should we use. 3 is HDF5, 2 is Gadget 2
+  int ICFormat;
   configoptions["ICFormat"] = std::make_tuple((void *) &ICFormat, IntType, "3");
   //How many output files to use in the set
+  int NumFiles;
   configoptions["NumFiles"] = std::make_tuple((void *) &NumFiles, IntType, "");
   //Parameters of the simulation box
+  double Box;
+  double Redshift;
   configoptions["Redshift"] = std::make_tuple((void *) &Redshift, FloatType, "");
   configoptions["Box"] = std::make_tuple((void *) &Box, FloatType, "");
-  //Numerical FFT parameters
+  //Size of FFT
+  size_t Nmesh;
   configoptions["Nmesh"] = std::make_tuple((void *) &Nmesh, IntType, "");
   //Unused unless CAMB spectrum
+  std::string FileWithInputSpectrum;
+  std::string FileWithTransfer;
   configoptions["FileWithInputSpectrum"] = std::make_tuple((void *) &FileWithInputSpectrum, StringType, "");
   configoptions["FileWithTransfer"] = std::make_tuple((void *) &FileWithTransfer, StringType, "");
+  double InputSpectrum_UnitLength_in_cm;
+  configoptions["InputSpectrum_UnitLength_in_cm"] = std::make_tuple((void *) &InputSpectrum_UnitLength_in_cm, FloatType, "3.085678e24");
+  //Output filenames
+  std::string OutputDir, FileBase;
   configoptions["OutputDir"] = std::make_tuple((void *) &OutputDir, StringType, "");
   configoptions["FileBase"] = std::make_tuple((void *) &FileBase, StringType, "");
   //Random number seed
+  int Seed;
   configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
   //Various boolean flags
+  int ReNormalizeInputSpectrum, RayleighScatter;
   configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, IntType, "0");
   configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, IntType, "1");
   //Power spectrum to use. Default to CAMB
+  int WhichSpectrum;
   configoptions["WhichSpectrum"] = std::make_tuple((void *) &WhichSpectrum, IntType, "2");
+  //Is twolpt on?
+  int twolpt;
   configoptions["TWOLPT"] = std::make_tuple((void *) &twolpt, IntType, "1");
   //Unit system
+  double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
   configoptions["UnitVelocity_in_cm_per_s"] = std::make_tuple((void *) &UnitVelocity_in_cm_per_s, FloatType, "1e5");
   configoptions["UnitLength_in_cm"] = std::make_tuple((void *) &UnitLength_in_cm, FloatType, "3.085678e21");
   configoptions["UnitMass_in_g"] = std::make_tuple((void *) &UnitMass_in_g, FloatType, "1.989e43");
-  configoptions["InputSpectrum_UnitLength_in_cm"] = std::make_tuple((void *) &InputSpectrum_UnitLength_in_cm, FloatType, "3.085678e24");
   //WDM options
+  int WDM_On;
+  int WDM_Vtherm_On;
+  double WDM_PartMass_in_kev;
   configoptions["WDM_On"] = std::make_tuple((void *) &WDM_On, IntType, "0");
   configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, IntType, "0");
   configoptions["WDM_PartMass_in_kev"] = std::make_tuple((void *) &WDM_PartMass_in_kev, FloatType, "0");
   //Neutrino options
+  int NU_On;
+  int NU_Vtherm_On;
+  //This triggers the use of neutrinos via an altered transfer function
+  int combined_neutrinos=0;
+  double NU_PartMass_in_ev;
+  int InvertedHierarchy;
   //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
   configoptions["NU_On"] = std::make_tuple((void *) &NU_On, IntType, "0");
   //Add thermal velocities to type 2 particles if NU_On is also true.
@@ -116,8 +100,12 @@ int main(int argc, char **argv)
   //This should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
   configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, IntType, "0");
+  //Total neutrino mass
   configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
   configoptions["InvertedHierarchy"] = std::make_tuple((void *) &InvertedHierarchy, IntType, "0");
+  //Rarely used parameters for power spectrum
+  double ShapeGamma;
+  double PrimordialIndex, Sigma8;
   //Parameter for the Efstathiou power spectrum. Generally does nothing.
   configoptions["ShapeGamma"] = std::make_tuple((void *) &ShapeGamma, FloatType, "0.201");
   //Needed if ReNormaliseInputSpectrum is on. Otherwise unused
@@ -205,7 +193,7 @@ int main(int argc, char **argv)
   const double vel_prefac2 = -3./7.*pow(Omega, -1./143)*InitTime * hubble_a * cosmo.F2_Omega(InitTime) /sqrt(InitTime);
   printf("vel_prefac= %g  hubble_a=%g fom=%g Omega=%g \n", vel_prefac, hubble_a, cosmo.F_Omega(InitTime), Omega);
 
-  for(type=0; type<N_TYPE;type++){
+  for(int type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
       bool tlptpart = twolpt;
