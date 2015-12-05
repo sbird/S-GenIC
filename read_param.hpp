@@ -7,7 +7,7 @@
 
 enum TypeEnum
 {
-    StringType, IntType, FloatType
+    StringType, IntType, FloatType, BoolType
 };
 
 typedef std::tuple<void *, enum TypeEnum, std::string>  ValueTuple;

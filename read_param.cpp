@@ -69,6 +69,9 @@ int SpbConfigParser::parameter_parser(std::map<std::string, ValueTuple > datasto
     if(thistype == IntType) {
         * (int *) std::get<0>(dit->second) = atoi(value.c_str());
     }
+    else if (thistype == BoolType) {
+        * (bool *) std::get<0>(dit->second) = (bool) atoi(value.c_str());
+    }
     else if (thistype == StringType) {
         * (std::string *) std::get<0>(dit->second) = value;
     }
