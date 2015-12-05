@@ -16,6 +16,12 @@ class part_grid;
 class lpt_data;
 class FermiDiracVel;
 
+#ifdef NO64BITID
+        typedef int32_t id_type;
+#else
+        typedef int64_t id_type;
+#endif //NO64BITID
+
 #ifdef PRINT_SPEC
 void   print_spec(int type);
 #endif
