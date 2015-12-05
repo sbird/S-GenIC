@@ -32,10 +32,10 @@ endif
 CXXFLAGS +=${CFLAGS} -std=gnu++11
 EXEC   = N-GenIC
 
-OBJS   = power.o allvars.o save.o read_param.o \
+OBJS   = power.o save.o read_param.o \
 	 initialise.o print_spec.o thermalvel.o cosmology.o displacement.o part_data.o gsl_spline_wrapper.o
 
-INCL   = allvars.h proto.h part_data.hpp thermalvel.hpp power.hpp read_param.hpp displacement.hpp Makefile
+INCL   = proto.h part_data.hpp thermalvel.hpp power.hpp read_param.hpp displacement.hpp Makefile
 
 .PHONY : clean all test
 
@@ -52,8 +52,6 @@ doc: Doxyfile main.cpp ${INCL}
 
 %.o: %.cpp $(INCL)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
-
-allvars.o: allvars.c allvars.h Makefile
 
 $(EXEC): main.o $(OBJS)
 	${LINK} ${LFLAGS} $^ -o  $@

@@ -1,4 +1,3 @@
-#include "allvars.h"
 #include "proto.h"
 #include "part_data.hpp"
 #include "cosmology.hpp"
@@ -34,6 +33,28 @@ int main(int argc, char **argv)
   double ShapeGamma;
   double PrimordialIndex, Sigma8;
   int ReNormalizeInputSpectrum;
+
+  int WhichSpectrum;
+
+  size_t Nmesh;
+  int ICFormat;
+
+  char FileWithInputSpectrum[500];
+  char FileWithTransfer[500];
+
+  double Box;
+  int Seed;
+  int RayleighScatter;
+  int twolpt;
+
+  int NumFiles;
+
+  double Redshift;
+
+  char OutputDir[1000], FileBase[1000];
+
+  double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
+  double InputSpectrum_UnitLength_in_cm;
 
   if(argc < 2)
     {
@@ -106,7 +127,9 @@ int main(int argc, char **argv)
   configoptions["NNeutrino"] = std::make_tuple((void *) &CbRtNpart[2], IntType, "0");
 #endif
   config.parameter_parser(configoptions);
-  set_units();
+  //Set up a unit system
+  double InitTime = 1 / (1 + Redshift);
+  double UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
 
   npart[BARYON_TYPE] = static_cast<int64_t>(CbRtNpart[0])*static_cast<int64_t>(CbRtNpart[0])*CbRtNpart[0];
   npart[DM_TYPE] = static_cast<int64_t>(CbRtNpart[1])*static_cast<int64_t>(CbRtNpart[1])*CbRtNpart[1];
