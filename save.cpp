@@ -1,4 +1,3 @@
-#include "allvars.h"
 #include "proto.h"
 #include "part_data.hpp"
 #include "thermalvel.hpp"
@@ -20,7 +19,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
   std::string idstr("ID  ");
   std::string ustr("U   ");
   //HDF5 has different strings
-  if(ICFormat == 3){
+  if(snap.GetFormat() == 3){
       posstr = "Coordinates";
       velstr = "Velocities";
       idstr = "ParticleIDs";
