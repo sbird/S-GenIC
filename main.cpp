@@ -65,41 +65,38 @@ int main(int argc, char **argv)
   int Seed;
   configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
   //Various boolean flags
-  int ReNormalizeInputSpectrum, RayleighScatter;
-  configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, IntType, "0");
-  configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, IntType, "1");
+  bool ReNormalizeInputSpectrum, RayleighScatter;
+  configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, BoolType, "0");
+  configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, BoolType, "1");
   //Power spectrum to use. Default to CAMB
   int WhichSpectrum;
   configoptions["WhichSpectrum"] = std::make_tuple((void *) &WhichSpectrum, IntType, "2");
   //Is twolpt on?
-  int twolpt;
-  configoptions["TWOLPT"] = std::make_tuple((void *) &twolpt, IntType, "1");
+  bool twolpt;
+  configoptions["TWOLPT"] = std::make_tuple((void *) &twolpt, BoolType, "1");
   //Unit system
   double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
   configoptions["UnitVelocity_in_cm_per_s"] = std::make_tuple((void *) &UnitVelocity_in_cm_per_s, FloatType, "1e5");
   configoptions["UnitLength_in_cm"] = std::make_tuple((void *) &UnitLength_in_cm, FloatType, "3.085678e21");
   configoptions["UnitMass_in_g"] = std::make_tuple((void *) &UnitMass_in_g, FloatType, "1.989e43");
   //WDM options
-  int WDM_On;
-  int WDM_Vtherm_On;
+  bool WDM_On, WDM_Vtherm_On;
   double WDM_PartMass_in_kev;
-  configoptions["WDM_On"] = std::make_tuple((void *) &WDM_On, IntType, "0");
-  configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, IntType, "0");
+  configoptions["WDM_On"] = std::make_tuple((void *) &WDM_On, BoolType, "0");
+  configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, BoolType, "0");
   configoptions["WDM_PartMass_in_kev"] = std::make_tuple((void *) &WDM_PartMass_in_kev, FloatType, "0");
   //Neutrino options
-  int NU_On;
-  int NU_Vtherm_On;
+  bool NU_On, NU_Vtherm_On;
   //This triggers the use of neutrinos via an altered transfer function
-  int combined_neutrinos=0;
+  bool combined_neutrinos, InvertedHierarchy;
   double NU_PartMass_in_ev;
-  int InvertedHierarchy;
   //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
-  configoptions["NU_On"] = std::make_tuple((void *) &NU_On, IntType, "0");
+  configoptions["NU_On"] = std::make_tuple((void *) &NU_On, BoolType, "0");
   //Add thermal velocities to type 2 particles if NU_On is also true.
-  configoptions["NU_Vtherm_On"] = std::make_tuple((void *) &NU_Vtherm_On, IntType, "1");
+  configoptions["NU_Vtherm_On"] = std::make_tuple((void *) &NU_Vtherm_On, BoolType, "1");
   //This should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
-  configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, IntType, "0");
+  configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, BoolType, "0");
   //Total neutrino mass
   configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
   configoptions["InvertedHierarchy"] = std::make_tuple((void *) &InvertedHierarchy, IntType, "0");
