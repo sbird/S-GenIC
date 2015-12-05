@@ -3,12 +3,13 @@
 #include <cstdio>
 #include <fstream>
 #include <iostream>
+#include <cstddef>
 #include <limits>
 #include <cassert>
 //For the normalized power spectrum
 #include <gsl/gsl_integration.h>
 
-PowerSpec_Tabulated::PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
+PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, const std::string & FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos)
 {
   //Set up conversion factor between internal units and CAMB units

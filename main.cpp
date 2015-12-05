@@ -43,8 +43,8 @@ int main(int argc, char **argv)
   size_t Nmesh;
   int ICFormat;
 
-  char FileWithInputSpectrum[500];
-  char FileWithTransfer[500];
+  std::string FileWithInputSpectrum;
+  std::string FileWithTransfer;
 
   double Box;
   int Seed;
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
   double Redshift;
 
-  char OutputDir[1000], FileBase[1000];
+  std::string OutputDir, FileBase;
 
   double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
   double InputSpectrum_UnitLength_in_cm;
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
-  GadgetWriter::GWriteSnap osnap(std::string(OutputDir)+std::string("/")+std::string(FileBase)+extension, npart,NumFiles, sizeof(id_type));
+  GadgetWriter::GWriteSnap osnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, combined_neutrinos);
 

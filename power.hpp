@@ -2,7 +2,7 @@
 #define POWERSPEC_H
 //For pow
 #include <cmath>
-#include <cstddef>
+#include <string>
 #include <vector>
 #include <gsl/gsl_interp.h>
 
@@ -31,7 +31,7 @@ class PowerSpec
 class PowerSpec_Tabulated: public PowerSpec
 {
     public:
-    PowerSpec_Tabulated(const char * FileWithTransfer, const char * FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
+    PowerSpec_Tabulated(const std::string& FileWithTransfer, const std::string& FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos);
     virtual double power(double k, int Type);
     virtual ~PowerSpec_Tabulated();

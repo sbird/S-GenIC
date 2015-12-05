@@ -70,8 +70,7 @@ int SpbConfigParser::parameter_parser(std::map<std::string, ValueTuple > datasto
         * (int *) std::get<0>(dit->second) = atoi(value.c_str());
     }
     else if (thistype == StringType) {
-        //strcpy is fine here because the conversion from a std::string will always be null-terminated
-        strcpy((char *) std::get<0>(dit->second), value.c_str());
+        * (std::string *) std::get<0>(dit->second) = value;
     }
     else if (thistype == FloatType) {
         * (double *) std::get<0>(dit->second) = atof(value.c_str());
