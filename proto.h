@@ -22,9 +22,6 @@ class FermiDiracVel;
         typedef int64_t id_type;
 #endif //NO64BITID
 
-#ifdef PRINT_SPEC
-void   print_spec(int type);
-#endif
 int    FatalError(int errnum);
 
 double periodic_wrap(double x, double box);

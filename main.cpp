@@ -9,6 +9,10 @@
 
 #include <gadgetwriter.hpp>
 
+#ifdef PRINT_SPEC
+void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);
+#endif
+
 int main(int argc, char **argv)
 {
   int type;
@@ -242,7 +246,8 @@ int main(int argc, char **argv)
       }
       delete therm_vels;
 #ifdef PRINT_SPEC
-      print_spec(type);
+      std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");
+      print_spec(type, PSpec, cosmo, spec_filename, Redshift, UnitLength_in_cm);
 #endif
   }
 
