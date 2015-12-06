@@ -186,21 +186,8 @@ int main(int argc, char **argv)
           printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
       }
 #endif //NEUTRINOS
-      try{
-          lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
-          FirstId = write_particle_data(osnap, type,outdata, Pgrid, therm_vels, vel_prefac, vel_prefac2, FirstId, tlptpart);
-      }
-      catch (std::bad_alloc& ba)
-      {
-         size_t mem = sizeof(float)*pow(Pgrid.GetNumPart(type),3);
-         if(twolpt)
-#ifdef NEUTRINOS
-            if (type != 2)
-#endif
-                mem*=2;
-         fprintf(stderr, "Could not allocate %ld MB for particle velocities\n", mem);
-         FatalError(24);
-      }
+      lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
+      FirstId = write_particle_data(osnap, type,outdata, Pgrid, therm_vels, vel_prefac, vel_prefac2, FirstId, tlptpart);
       delete therm_vels;
 #ifdef PRINT_SPEC
       std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");
