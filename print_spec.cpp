@@ -1,6 +1,5 @@
 #ifdef PRINT_SPEC
 #include <string>
-#include "proto.h"
 #include "cosmology.hpp"
 #include "power.hpp"
 

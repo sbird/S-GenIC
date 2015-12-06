@@ -1,13 +1,11 @@
-#include "proto.h"
 #include "part_data.hpp"
 #include "cosmology.hpp"
 #include "power.hpp"
 #include "displacement.hpp"
 #include "read_param.hpp"
 #include "thermalvel.hpp"
+#include "save.hpp"
 #include <cassert>
-
-#include <gadgetwriter.hpp>
 
 #ifdef PRINT_SPEC
 void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);

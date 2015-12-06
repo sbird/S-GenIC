@@ -33,9 +33,9 @@ CXXFLAGS +=${CFLAGS} -std=gnu++11
 EXEC   = N-GenIC
 
 OBJS   = power.o save.o read_param.o \
-	 initialise.o print_spec.o thermalvel.o cosmology.o displacement.o part_data.o gsl_spline_wrapper.o
+	 print_spec.o thermalvel.o cosmology.o displacement.o part_data.o gsl_spline_wrapper.o
 
-INCL   = proto.h part_data.hpp thermalvel.hpp power.hpp read_param.hpp displacement.hpp Makefile
+INCL   = save.hpp part_data.hpp thermalvel.hpp power.hpp read_param.hpp displacement.hpp Makefile
 
 .PHONY : clean all test
 
@@ -50,7 +50,28 @@ test: btest
 doc: Doxyfile main.cpp ${INCL}
 	doxygen $<
 
-%.o: %.cpp $(INCL)
+%.o: %.cpp %.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+main.o: main.cpp ${INCL}
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+test.o: test.cpp ${INCL}
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+displacement.o: displacement.cpp displacement.hpp part_data.hpp power.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+cosmology.o: cosmology.cpp cosmology.hpp physconst.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+print_spec.o: print_spec.cpp cosmology.hpp power.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+save.o: save.cpp save.hpp part_data.hpp physconst.h thermalvel.hpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+thermalvel.o: thermalvel.cpp gsl_spline_wrapper.hpp physconst.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 $(EXEC): main.o $(OBJS)

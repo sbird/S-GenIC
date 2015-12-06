@@ -13,4 +13,7 @@
  *The correction is (3.046/3)^(1/4), for N_eff = 3.046 */
 #define TNU     (T_CMB0*pow(4/11.,1/3.)*1.00381)              /* Neutrino + antineutrino background temperature in Kelvin */
 
+#define  GRAVITY     6.672e-8 // cm^3 g^-1 s^-2
+#define  HUBBLE      3.2407789e-18   /* in h/sec */
+
 #endif

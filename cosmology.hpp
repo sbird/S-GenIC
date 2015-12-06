@@ -1,8 +1,7 @@
 #ifndef __COSMOLOGY_H
 #define __COSMOLOGY_H
 
-#define  GRAVITY     6.672e-8 // cm^3 g^-1 s^-2
-#define  HUBBLE      3.2407789e-18   /* in h/sec */
+#include "physconst.h"
 
 /** Class to store various cosmological parameters. Any function that relies on Omega or OmegaLambda should ultimately be in here */
 class Cosmology
