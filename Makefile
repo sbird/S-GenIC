@@ -41,9 +41,6 @@ INCL   = save.hpp part_data.hpp thermalvel.hpp power.hpp read_param.hpp displace
 
 all: $(EXEC)
 
-createnu: createnu.o createnufuncs.o $(OBJS)
-	${LINK}${LFLAGS} -lhdf5_hl -lhdf5 $^ -o $@
-
 test: btest
 	./$^
 
@@ -76,9 +73,6 @@ thermalvel.o: thermalvel.cpp gsl_spline_wrapper.hpp physconst.h
 
 $(EXEC): main.o $(OBJS)
 	${LINK} ${LFLAGS} $^ -o  $@
-
-createtest: createtest.o createnufuncs.o ${OBJS}
-	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
 
 btest: test.o ${OBJS}
 	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
