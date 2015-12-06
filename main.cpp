@@ -15,8 +15,6 @@ void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& fil
 
 int main(int argc, char **argv)
 {
-  std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
-  int64_t FirstId=1;
   if(argc < 2)
     {
 	  fprintf(stdout, "\nParameters are missing.\n");
@@ -26,103 +24,76 @@ int main(int argc, char **argv)
   /*Make sure stdout is line buffered even when not 
    * printing to a terminal but, eg, perl*/
   setlinebuf(stdout);
+  //Read the config file
   SpbConfigParser config(argv[1]);
-  std::map<std::string, ValueTuple> configoptions;
   //Cosmological parameters
-  double Omega, OmegaLambda, OmegaDM_2ndSpecies;
-  double OmegaBaryon, HubbleParam;
-  configoptions["Omega"] = std::make_tuple((void *) &Omega, FloatType, "");
-  configoptions["OmegaLambda"] = std::make_tuple((void *) &OmegaLambda, FloatType, "");
-  configoptions["OmegaBaryon"] = std::make_tuple((void *) &OmegaBaryon, FloatType, "");
-  configoptions["OmegaDM_2ndSpecies"] = std::make_tuple((void *) &OmegaDM_2ndSpecies, FloatType, "");
-  configoptions["HubbleParam"] = std::make_tuple((void *) &HubbleParam, FloatType, "");
-  //Which output format should we use. 3 is HDF5, 2 is Gadget 2
-  int ICFormat;
-  configoptions["ICFormat"] = std::make_tuple((void *) &ICFormat, IntType, "3");
+  const auto Omega = config.PopValue<double>("Omega");
+  const auto OmegaLambda = config.PopValue<double>("OmegaLambda");
+  const auto OmegaBaryon = config.PopValue<double>("OmegaBaryon");
+  const auto OmegaDM_2ndSpecies = config.PopValue<double>("OmegaDM_2ndSpecies");
+  const auto HubbleParam = config.PopValue<double>("HubbleParam");
+  //Which output format should we use. 3 is HDF5, 2 is Gadget 2. Default to 3.
+  const auto ICFormat = config.PopValue<int>("ICFormat", 3);
   //How many output files to use in the set
-  int NumFiles;
-  configoptions["NumFiles"] = std::make_tuple((void *) &NumFiles, IntType, "");
+  const auto NumFiles = config.PopValue<int>("NumFiles");
   //Parameters of the simulation box
-  double Box;
-  double Redshift;
-  configoptions["Redshift"] = std::make_tuple((void *) &Redshift, FloatType, "");
-  configoptions["Box"] = std::make_tuple((void *) &Box, FloatType, "");
+  const auto Box = config.PopValue<double>("Box");
+  const auto Redshift = config.PopValue<double>("Redshift");
+  const double InitTime = 1 / (1 + Redshift);
   //Size of FFT
-  size_t Nmesh;
-  configoptions["Nmesh"] = std::make_tuple((void *) &Nmesh, IntType, "");
+  const size_t Nmesh = config.PopValue<int>("Nmesh");
   //Unused unless CAMB spectrum
-  std::string FileWithInputSpectrum;
-  std::string FileWithTransfer;
-  configoptions["FileWithInputSpectrum"] = std::make_tuple((void *) &FileWithInputSpectrum, StringType, "");
-  configoptions["FileWithTransfer"] = std::make_tuple((void *) &FileWithTransfer, StringType, "");
-  double InputSpectrum_UnitLength_in_cm;
-  configoptions["InputSpectrum_UnitLength_in_cm"] = std::make_tuple((void *) &InputSpectrum_UnitLength_in_cm, FloatType, "3.085678e24");
+  const auto FileWithInputSpectrum = config.PopValue<std::string>("FileWithInputSpectrum");
+  const auto FileWithTransfer = config.PopValue<std::string>("FileWithTransfer");
+  const auto InputSpectrum_UnitLength_in_cm = config.PopValue<double>("InputSpectrum_UnitLength_in_cm", 3.085678e24);
   //Output filenames
-  std::string OutputDir, FileBase;
-  configoptions["OutputDir"] = std::make_tuple((void *) &OutputDir, StringType, "");
-  configoptions["FileBase"] = std::make_tuple((void *) &FileBase, StringType, "");
+  const auto OutputDir = config.PopValue<std::string>("OutputDir");
+  const auto FileBase = config.PopValue<std::string>("FileBase");
   //Random number seed
-  int Seed;
-  configoptions["Seed"] = std::make_tuple((void *) &Seed, IntType, "");
+  const auto Seed = config.PopValue<int>("Seed");
   //Various boolean flags
-  bool ReNormalizeInputSpectrum, RayleighScatter;
-  configoptions["ReNormalizeInputSpectrum"] = std::make_tuple((void *) &ReNormalizeInputSpectrum, BoolType, "0");
-  configoptions["RayleighScatter"] = std::make_tuple((void *) &RayleighScatter, BoolType, "1");
+  const auto ReNormalizeInputSpectrum = config.PopValue<bool>("ReNormalizeInputSpectrum", false);
+  const auto RayleighScatter = config.PopValue<bool>("RayleighScatter", true);
   //Power spectrum to use. Default to CAMB
-  int WhichSpectrum;
-  configoptions["WhichSpectrum"] = std::make_tuple((void *) &WhichSpectrum, IntType, "2");
+  const auto WhichSpectrum = config.PopValue<int>("WhichSpectrum", 2);
   //Is twolpt on?
-  bool twolpt;
-  configoptions["TWOLPT"] = std::make_tuple((void *) &twolpt, BoolType, "1");
+  const auto twolpt = config.PopValue<bool>("TWOLPT",true);
   //Unit system
-  double UnitLength_in_cm, UnitMass_in_g, UnitVelocity_in_cm_per_s;
-  configoptions["UnitVelocity_in_cm_per_s"] = std::make_tuple((void *) &UnitVelocity_in_cm_per_s, FloatType, "1e5");
-  configoptions["UnitLength_in_cm"] = std::make_tuple((void *) &UnitLength_in_cm, FloatType, "3.085678e21");
-  configoptions["UnitMass_in_g"] = std::make_tuple((void *) &UnitMass_in_g, FloatType, "1.989e43");
+  const auto UnitLength_in_cm = config.PopValue<double>("UnitLength_in_cm", 3.085678e21);
+  const auto UnitVelocity_in_cm_per_s = config.PopValue<double>("UnitVelocity_in_cm_per_s", 1e5);
+  const auto UnitMass_in_g = config.PopValue<double>("UnitMass_in_g", 1.989e43);
+  const double UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
   //WDM options
-  bool WDM_On, WDM_Vtherm_On;
-  double WDM_PartMass_in_kev;
-  configoptions["WDM_On"] = std::make_tuple((void *) &WDM_On, BoolType, "0");
-  configoptions["WDM_Vtherm_On"] = std::make_tuple((void *) &WDM_Vtherm_On, BoolType, "0");
-  configoptions["WDM_PartMass_in_kev"] = std::make_tuple((void *) &WDM_PartMass_in_kev, FloatType, "0");
+  bool WDM_Vtherm_On = config.PopValue<bool>("WDM_On",false);
+  WDM_Vtherm_On = WDM_Vtherm_On && config.PopValue<bool>("WDM_Vtherm_On",false);
+  const auto WDM_PartMass_in_kev = config.PopValue<double>("WDM_PartMass_in_kev", 0);
   //Neutrino options
-  bool NU_On, NU_Vtherm_On;
-  //This triggers the use of neutrinos via an altered transfer function
-  bool combined_neutrinos, InvertedHierarchy;
-  double NU_PartMass_in_ev;
   //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
-  configoptions["NU_On"] = std::make_tuple((void *) &NU_On, BoolType, "0");
+  bool NU_Vtherm_On = config.PopValue<bool>("NU_On",false);
   //Add thermal velocities to type 2 particles if NU_On is also true.
-  configoptions["NU_Vtherm_On"] = std::make_tuple((void *) &NU_Vtherm_On, BoolType, "1");
-  //This should be on only if you are faking neutrinos by combining them with the dark matter,
+  NU_Vtherm_On = NU_Vtherm_On && config.PopValue<bool>("NU_Vtherm_On",false);
+  //This triggers the use of neutrinos via an altered transfer function
+  //Should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
-  configoptions["NU_KSPACE"] = std::make_tuple((void *) &combined_neutrinos, BoolType, "0");
+  const auto combined_neutrinos = config.PopValue<bool>("NU_KSPACE",false);
+  //Changes whether we have two heavy and one light neutrino or one heavy two light.
+  const auto InvertedHierarchy = config.PopValue<bool>("InvertedHierarchy",false);
   //Total neutrino mass
-  configoptions["NU_PartMass_in_ev"] = std::make_tuple((void *) &NU_PartMass_in_ev, FloatType, "0");
-  configoptions["InvertedHierarchy"] = std::make_tuple((void *) &InvertedHierarchy, IntType, "0");
-  //Rarely used parameters for power spectrum
-  double ShapeGamma;
-  double PrimordialIndex, Sigma8;
+  const auto NU_PartMass_in_ev = config.PopValue<double>("NU_PartMass_in_ev",0);
   //Parameter for the Efstathiou power spectrum. Generally does nothing.
-  configoptions["ShapeGamma"] = std::make_tuple((void *) &ShapeGamma, FloatType, "0.201");
+  const auto ShapeGamma = config.PopValue<double>("ShapeGamma",0.201);
   //Needed if ReNormaliseInputSpectrum is on. Otherwise unused
-  configoptions["Sigma8"] = std::make_tuple((void *) &Sigma8, FloatType, "0.8");
-  configoptions["PrimordialIndex"] = std::make_tuple((void *) &PrimordialIndex, FloatType, "1.");
+  const auto PrimordialIndex = config.PopValue<double>("PrimordialIndex",1.);
+  const auto Sigma8 = config.PopValue<double>("Sigma8",0.8);
   //Number of particles desired
-  int CbRtNpart[6]={0,0,0,0,0,0};
-  configoptions["NBaryon"] = std::make_tuple((void *) &CbRtNpart[0], IntType, "0");
-  configoptions["NCDM"] = std::make_tuple((void *) &CbRtNpart[1], IntType, "0");
-#ifdef NEUTRINOS
-  configoptions["NNeutrino"] = std::make_tuple((void *) &CbRtNpart[2], IntType, "0");
-#endif
-  config.parameter_parser(configoptions);
-  //Set up a unit system
-  double InitTime = 1 / (1 + Redshift);
-  double UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
+  std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
+  int CbRtNpart[6] = {0};
+  CbRtNpart[BARYON_TYPE] = config.PopValue<int>("NBaryon", 0);
+  CbRtNpart[DM_TYPE] = config.PopValue<int>("NCDM", 0);
+  CbRtNpart[NEUTRINO_TYPE] = config.PopValue<int>("NNeutrino", 0);
+  for(int type=0; type<N_TYPES; ++type)
+      npart[type] = static_cast<int64_t>(CbRtNpart[type])*CbRtNpart[type]*CbRtNpart[type];
 
-  npart[BARYON_TYPE] = static_cast<int64_t>(CbRtNpart[0])*static_cast<int64_t>(CbRtNpart[0])*CbRtNpart[0];
-  npart[DM_TYPE] = static_cast<int64_t>(CbRtNpart[1])*static_cast<int64_t>(CbRtNpart[1])*CbRtNpart[1];
-  npart[NEUTRINO_TYPE] = static_cast<int64_t>(CbRtNpart[2])*CbRtNpart[2]*CbRtNpart[2];
   printf("Particle numbers: %ld %ld %ld\n",npart[BARYON_TYPE], npart[DM_TYPE], npart[NEUTRINO_TYPE]);
   assert(npart[BARYON_TYPE] > 0 || npart[DM_TYPE] > 0 || npart[NEUTRINO_TYPE] > 0);
 
@@ -156,7 +127,7 @@ int main(int argc, char **argv)
   if (ReNormalizeInputSpectrum) {
       PSpec = new NormalizedPowerSpec(PSpec, Sigma8, PrimordialIndex, cosmo.GrowthFactor(InitTime, 1.0), UnitLength_in_cm);
   }
-  if(WDM_On)
+  if(WDM_Vtherm_On)
       PSpec = new WDMPowerSpec(PSpec, WDM_PartMass_in_kev, Omega, OmegaBaryon, HubbleParam, UnitLength_in_cm);
 
   std::string extension("");
@@ -182,6 +153,7 @@ int main(int argc, char **argv)
   if(osnap.WriteHeaders(header))
           FatalError(23);
  
+  int64_t FirstId=1;
   //Compute the factors to go from velocity to displacement
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
   const double vel_prefac = InitTime * hubble_a * cosmo.F_Omega(InitTime) /sqrt(InitTime);
@@ -200,14 +172,14 @@ int main(int argc, char **argv)
 #endif
       FermiDiracVel * therm_vels = NULL;
       //For WDM thermal velocities
-      if(WDM_On == 1 && WDM_Vtherm_On == 1 && type == 1){
+      if(WDM_Vtherm_On && type == 1){
         const double wdm_vth = WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s);
         therm_vels = new FermiDiracVel (wdm_vth);
         printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
       }
 #ifdef NEUTRINOS
       //Neutrino thermal velocities
-      if(NU_On == 1 && NU_Vtherm_On == 1 && type == 2) {
+      if(NU_Vtherm_On && type == 2) {
           //Init structure for neutrino velocities
           const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
           therm_vels = new FermiDiracVel (v_th);

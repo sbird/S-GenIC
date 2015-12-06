@@ -1,16 +1,21 @@
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <map>
-#include <tuple>
-#include <exception>
 #include <algorithm>
-#include <string.h>
 #include "read_param.hpp"
+
+std::vector<std::string> SpbConfigParser::GetRemainingKeys()
+{
+    std::vector<std::string> keys;
+    //C++11!
+    for(auto pair: optdict)
+        keys.push_back(pair.first);
+    return keys;
+}
 
 //This function reads the key, value pairs from the config file into a map. 
 //The argument is only used to check the keys are what we expected.
-std::map<std::string, std::string> SpbConfigParser::get_parameter_map(std::map<std::string, ValueTuple> expected_keys)
+std::map<std::string, std::string> SpbConfigParser::get_parameter_map()
 {
   std::fstream config;
   config.open(m_config.c_str(), std::fstream::in);
@@ -36,55 +41,16 @@ std::map<std::string, std::string> SpbConfigParser::get_parameter_map(std::map<s
         throw std::runtime_error("Key: "+parsed_line.first+" found twice in "+m_config+" with values "+fit->second+" and "+parsed_line.second);
     }
     //Check that we expected this key
-    std::map<std::string, ValueTuple>::iterator dit = expected_keys.find(parsed_line.first);
-    if (dit == expected_keys.end()){
-        throw std::runtime_error(m_config+" contained unexpected key: "+parsed_line.first);
-    }
+//     auto dit = std::find(expected_keys.begin(), expected_keys.end(), parsed_line.first);
+//     if (dit == expected_keys.end()){
+//         throw std::runtime_error(m_config+" contained unexpected key: "+parsed_line.first);
+//     }
     //Store the name and value in found
     found[parsed_line.first] = parsed_line.second;
   }
   config.close();
   return found;
 }
-
-int SpbConfigParser::parameter_parser(std::map<std::string, ValueTuple > datastore)
-{
-  std::map<std::string, std::string> found = get_parameter_map(datastore);
-  //Now we have read the key, value pairs into a map, store them where we want them
-  for(std::map<std::string, ValueTuple>::iterator dit = datastore.begin(); dit != datastore.end(); ++dit) {
-    //Get the string we want. Use found unless it wasn't, in which case use the default
-    std::string value = std::get<2>(dit->second);
-    std::map<std::string, std::string>::iterator fit = found.find(dit->first);
-    if (fit != found.end() ) {
-        value = fit->second;
-    }
-    else if (m_verbose) {
-        std::cout<<"Using default value: "<<value<<" for key: "<<dit->first<<std::endl;
-    }
-    if (value.empty()) {
-        throw std::runtime_error("No value for key: "+dit->first);
-    }
-    //Switch on the type of the key
-    TypeEnum thistype = std::get<1>(dit->second);
-    if(thistype == IntType) {
-        * (int *) std::get<0>(dit->second) = atoi(value.c_str());
-    }
-    else if (thistype == BoolType) {
-        * (bool *) std::get<0>(dit->second) = (bool) atoi(value.c_str());
-    }
-    else if (thistype == StringType) {
-        * (std::string *) std::get<0>(dit->second) = value;
-    }
-    else if (thistype == FloatType) {
-        * (double *) std::get<0>(dit->second) = atof(value.c_str());
-    }
-    else {
-        throw std::runtime_error("Unrecognised type for "+dit->first);
-    }
-  }
-  return 0;
-}
-
 //Parse a single line into a key-value pair
 std::pair<std::string, std::string> SpbConfigParser::parse_line(std::string linein)
 {
@@ -113,4 +79,25 @@ std::pair<std::string, std::string> SpbConfigParser::parse_line(std::string line
     value.erase(std::remove(value.begin(), value.end(), '\t'), value.end());
     value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
     return std::make_pair(key, value);
+}
+
+template<> int SpbConfigParser::convert_value<int>(std::string value)
+{
+    return atoi(value.c_str());
+}
+
+template<> double SpbConfigParser::convert_value<double>(std::string value)
+{
+    return atof(value.c_str());
+}
+
+//For strings just return them as is
+template<> std::string SpbConfigParser::convert_value<std::string>(std::string value)
+{
+    return value;
+}
+
+template<> bool SpbConfigParser::convert_value<bool>(std::string value)
+{
+    return (bool) atoi(value.c_str());
 }
