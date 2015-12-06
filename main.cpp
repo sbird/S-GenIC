@@ -63,13 +63,13 @@ int main(int argc, char **argv)
   const double UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
   //WDM options
   bool WDM_Vtherm_On = config.PopValue<bool>("WDM_On",false);
-  WDM_Vtherm_On = WDM_Vtherm_On && config.PopValue<bool>("WDM_Vtherm_On",false);
+  WDM_Vtherm_On = config.PopValue<bool>("WDM_Vtherm_On",false) && WDM_Vtherm_On;
   const auto WDM_PartMass_in_kev = config.PopValue<double>("WDM_PartMass_in_kev", 0);
   //Neutrino options
   //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
   bool NU_Vtherm_On = config.PopValue<bool>("NU_On",false);
   //Add thermal velocities to type 2 particles if NU_On is also true.
-  NU_Vtherm_On = NU_Vtherm_On && config.PopValue<bool>("NU_Vtherm_On",false);
+  NU_Vtherm_On = config.PopValue<bool>("NU_Vtherm_On",false) && NU_Vtherm_On;
   //This triggers the use of neutrinos via an altered transfer function
   //Should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
@@ -100,6 +100,13 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  std::vector<std::string> unexpected = config.GetRemainingKeys();
+  if(unexpected.size() > 0){
+    std::cerr<<"Config file contained the following unexpected keys:"<<std::endl;
+    for(auto unex: unexpected)
+        std::cerr<<unex<<std::endl;
+    exit(1);
+  }
   DisplacementFields displace(Nmesh, Seed, Box, twolpt);
   /*Set particle numbers*/
   if(npart.sum() == 0)

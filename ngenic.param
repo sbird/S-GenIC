@@ -9,7 +9,7 @@ FileBase =test                 # Base-filename of output files
 OutputDir= test   # Directory for output
 
 #(Cube root of) particle numbers
-NBaryons = 128
+NBaryon = 128
 NCDM = 128
 NNeutrino = 128
 
@@ -60,11 +60,4 @@ NU_Vtherm_On= 1
 NU_PartMass_in_ev= 0
 
 TWOLPT =            1       # Enable twolpt
-
-
-
-
-
-
-
 

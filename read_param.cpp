@@ -40,11 +40,6 @@ std::map<std::string, std::string> SpbConfigParser::get_parameter_map()
     if (fit != found.end()){
         throw std::runtime_error("Key: "+parsed_line.first+" found twice in "+m_config+" with values "+fit->second+" and "+parsed_line.second);
     }
-    //Check that we expected this key
-//     auto dit = std::find(expected_keys.begin(), expected_keys.end(), parsed_line.first);
-//     if (dit == expected_keys.end()){
-//         throw std::runtime_error(m_config+" contained unexpected key: "+parsed_line.first);
-//     }
     //Store the name and value in found
     found[parsed_line.first] = parsed_line.second;
   }

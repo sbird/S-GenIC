@@ -38,6 +38,8 @@ class SpbConfigParser
             if (value.empty()) {
                 throw std::invalid_argument("No value for key: "+key);
             }
+            //Remove the popped value
+            optdict.erase(fit);
             return convert_value<T>(value);
         }
 
