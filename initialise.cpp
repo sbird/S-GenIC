@@ -2,14 +2,6 @@
 #include "gadgetheader.h"
 #include "cosmology.hpp"
 
-int FatalError(int errnum)
-{
-  printf("FatalError called with number=%d\n", errnum);
-  fflush(stdout);
-  exit(0);
-}
-
-
 gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool combined_neutrinos)
 {
   gadget_header header;

@@ -1,6 +1,7 @@
 #include "proto.h"
 #include "part_data.hpp"
 #include "thermalvel.hpp"
+#include <exception>
 #include <gadgetwriter.hpp>
 
 using namespace GadgetWriter;
@@ -29,8 +30,8 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
   const int64_t blockmaxlen = BUFFER * 1024 * 1024;
   if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
     {
-      printf("failed to allocate memory for `block' (%ld MB).\n", 3*sizeof(float)*blockmaxlen/1024/1024);
-      exit(24);
+      fprintf(stderr, "failed to allocate memory for `block' (%ld MB).\n", 3*sizeof(float)*blockmaxlen/1024/1024);
+      throw std::bad_alloc();
     }
 
   /*We are about to write the POS block*/
@@ -53,17 +54,19 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
 	  pc++;
       }
 #endif //NEUTRINO_PAIRS
-
       if(pc > blockmaxlen){
-	  if(snap.WriteBlocks(posstr,type, block, pc,written) != pc)
-                  FatalError(2);
-          written+=pc;
-	  pc = 0;
-	}
+	    if(snap.WriteBlocks(posstr,type, block, pc,written) != pc) {
+            fprintf(stderr, "Could not write position data at particle %ld", i);
+            exit(2);
+        }
+        written+=pc;
+	    pc = 0;
+	  }
   }
-  if(pc > 0)
-	  if(snap.WriteBlocks(posstr,type, block, pc,written) != pc)
-                  FatalError(2);
+  if(pc > 0 && snap.WriteBlocks(posstr,type, block, pc,written) != pc) {
+        fprintf(stderr, "Could not write final position data");
+        exit(2);
+  }
   /*Done writing POS block*/
   written=0;
   pc = 0;
@@ -95,15 +98,18 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
       pc++;
 
       if(pc > blockmaxlen){
-          if(snap.WriteBlocks(velstr,type, block, pc,written) != pc)
-                  FatalError(2);
+          if(snap.WriteBlocks(velstr,type, block, pc,written) != pc) {
+            fprintf(stderr, "Could not write velocity data at particle %ld", i);
+            exit(2);
+          }
           written+=pc;
           pc = 0;
       }
   }
-  if(pc > 0)
-	  if(snap.WriteBlocks(velstr,type, block, pc,written) != pc)
-                  FatalError(2);
+  if(pc > 0 && snap.WriteBlocks(velstr,type, block, pc,written) != pc) {
+    fprintf(stderr, "Could not write final velocity data");
+    exit(2);
+  }
 
   /* write particle ID */
   written=0;
@@ -121,18 +127,21 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
 #endif //NEUTRINO_PAIRS
 
       if(pc > blockmaxlen){
-	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc)
-                  FatalError(2);
+          if(snap.WriteBlocks(idstr,type, block, pc,written) != pc) {
+                fprintf(stderr, "Could not write id data at particle %ld", i);
+                exit(2);
+          }
           written+=pc;
-	  pc = 0;
+	      pc = 0;
       }
   }
   if(pc > 0)
-	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc)
-                  FatalError(2);
+	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc) {
+        fprintf(stderr, "Could not write final id data");
+        exit(2);
+      }
 
   /*Done writing IDs*/
-
   /* write zero temperatures if needed */
   if(type== 0) {
       written=0;
@@ -141,15 +150,19 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
           block[pc] = 0;
           pc++;
           if(pc > blockmaxlen){
-              if(snap.WriteBlocks(ustr,type, block, pc,written) != pc)
-                  FatalError(2);
+              if(snap.WriteBlocks(ustr,type, block, pc,written) != pc) {
+                fprintf(stderr, "Could not write zero temp data at particle %ld", i);
+                exit(2);
+              }
               written+=pc;
               pc = 0;
           }
       }
       if(pc > 0)
-         if(snap.WriteBlocks(ustr,type, block, pc,written) != pc)
-                  FatalError(2);
+         if(snap.WriteBlocks(ustr,type, block, pc,written) != pc) {
+            fprintf(stderr, "Could not write final temperature data");
+            exit(2);
+         }
   }
   /*Done writing temperatures*/
 

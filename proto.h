@@ -22,8 +22,6 @@ class FermiDiracVel;
         typedef int64_t id_type;
 #endif //NO64BITID
 
-int    FatalError(int errnum);
-
 double periodic_wrap(double x, double box);
 
 int64_t write_particle_data(GadgetWriter::GWriteSnap & snap, int type, lpt_data& outdata, part_grid&  P, FermiDiracVel *therm_vels, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt);

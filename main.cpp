@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 
   std::string extension("");
   if (ICFormat > 3 || ICFormat < 2) {
-          fprintf(stdout, "Only Gadget format 2 or HDF5 output is supported.\n");
+          fprintf(stderr, "Only Gadget format 2 or HDF5 output is supported.\n");
           exit(1);
   }
   if (ICFormat == 3){
@@ -150,8 +150,10 @@ int main(int argc, char **argv)
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
 
-  if(osnap.WriteHeaders(header))
-          FatalError(23);
+  if(osnap.WriteHeaders(header)) {
+      fprintf(stderr, "Could not write headers to snapshot\n");
+      exit(1);
+  }
  
   int64_t FirstId=1;
   //Compute the factors to go from velocity to displacement
