@@ -45,7 +45,6 @@ double fermi_dirac_kernel(double x, void * params)
 FermiDiracVel::FermiDiracVel(const double v_amp, const double max_fd,const double min_fd) : m_vamp(v_amp), min_fd(min_fd), max_fd(std::min(MAX_FERMI_DIRAC, max_fd))
 {
     assert(max_fd > min_fd);
-    printf("max_fd = %g\n", max_fd);
     //Allocate random number generator
     g_rng = gsl_rng_alloc(gsl_rng_mt19937);
 
@@ -63,10 +62,15 @@ FermiDiracVel::FermiDiracVel(const double v_amp, const double max_fd,const doubl
         gsl_integration_qag (&F, min_fd, fermi_dirac_vel[i], 0, 1e-6,100,GSL_INTEG_GAUSS61, w,&(fermi_dirac_cumprob[i]), &abserr);
     //       printf("gsl_integration_qng in fermi_dirac_init_nu. Result %g, error: %g, intervals: %lu\n",fermi_dirac_cumprob[i], abserr,w->size);
     }
+    //Save the largest cum. probability, pre-normalisation,
+    //divided by the total F-D probability (which is 3 Zeta(3)/2 ~ 1.8 if MAX_FERMI_DIRAC is large enough
+    double total_fd;
+    gsl_integration_qag (&F, 0, MAX_FERMI_DIRAC, 0, 1e-6,100,GSL_INTEG_GAUSS61, w,&(total_fd), &abserr);
+    assert(total_fd > 1.8);
+
     gsl_integration_workspace_free (w);
 
-    //Save the largest cum. probability, pre-normalisation.
-    total_frac = fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE-1];
+    total_frac = fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE-1]/total_fd;
     //Normalise total integral to unity
     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE; i++)
         fermi_dirac_cumprob[i] /= fermi_dirac_cumprob[LENGTH_FERMI_DIRAC_TABLE - 1];
