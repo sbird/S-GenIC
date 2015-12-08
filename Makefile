@@ -68,7 +68,7 @@ print_spec.o: print_spec.cpp cosmology.hpp power.hpp
 save.o: save.cpp save.hpp part_data.hpp physconst.h thermalvel.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
-thermalvel.o: thermalvel.cpp gsl_spline_wrapper.hpp physconst.h
+thermalvel.o: thermalvel.cpp thermalvel.hpp gsl_spline_wrapper.hpp physconst.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 $(EXEC): main.o $(OBJS)
