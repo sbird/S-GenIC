@@ -4,7 +4,7 @@
 #include <gsl/gsl_rng.h>
 #include "gsl_spline_wrapper.hpp"
 
-#define MAX_FERMI_DIRAC          20.0
+#define MAX_FERMI_DIRAC          17.0
 
 /** Class to store the added thermal velocities of particles obeying Fermi Dirac statistics, like neutrinos */
 class FermiDiracVel
