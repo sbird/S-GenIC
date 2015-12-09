@@ -75,7 +75,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, co
   std::vector<double> transfer_vector[N_TYPES_TAB];
 
   while ( transfer.good() ) {
-      double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm;
+      double T_b, dummy, T_nu, T_nu2,T_tot, T_cdm, T_dmb;
       double k;
       //Discard comments
       if (transfer.get() == '#')
@@ -88,9 +88,13 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, co
       transfer >> T_b;
       //radiation
       transfer >> dummy;
+      //massless neutrinos
       transfer >> T_nu2;
+      //massive neutrinos
       transfer >> T_nu;
       transfer >> T_tot;
+      //DM+baryons
+      transfer >> T_dmb;
       //Ignore the rest of the line
       transfer.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       if ( ! transfer.good() )
@@ -114,8 +118,7 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, co
       }
       /*Add baryons to the CDM if there are no gas particles*/
       else if(no_gas){
-//                 T_cdm = (Omega*T_tot - T_nu*OmegaDM_2ndSpecies)/(Omega-OmegaDM_2ndSpecies);
-            T_cdm = (T_cdm*(Omega-OmegaNu - OmegaBaryon) + T_b*OmegaBaryon)/(Omega-OmegaNu);
+            T_cdm = T_dmb;
       }
       /*This should be equivalent to the above in almost all cases,
        * but perhaps we want to see the effect of changing only the ICs in CAMB for the neutrinos.*/
