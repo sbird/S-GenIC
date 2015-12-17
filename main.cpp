@@ -83,6 +83,9 @@ int main(int argc, char **argv)
   //Needed if ReNormaliseInputSpectrum is on. Otherwise unused
   const auto PrimordialIndex = config.PopValue<double>("PrimordialIndex",1.);
   const auto Sigma8 = config.PopValue<double>("Sigma8",0.8);
+  //Options that exist to test the accuracy of common approximations
+  const auto Radiation = config.PopValue<bool>("Radiation", true);
+  const auto ApproximateGrowth = config.PopValue<bool>("ApproximateGrowth", false);
   //Number of particles desired
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int CbRtNpart[6] = {0};
@@ -126,7 +129,7 @@ int main(int argc, char **argv)
   }
 
   //Make a cosmology
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy, Radiation, ApproximateGrowth);
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {

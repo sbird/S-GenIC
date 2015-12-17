@@ -66,7 +66,7 @@ double Cosmology::OmegaMatter(double a)
 
 double Cosmology::OmegaR(double a)
 {
-    return OMEGAG/(a*a*a*a);
+    return Radiation*OMEGAG/(a*a*a*a);
 }
 
 /*Note q carries units of eV/c. kT/c has units of eV/c.
@@ -257,6 +257,10 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
  */
 double Cosmology::F_Omega(double a)
 {
+  if(ApproximateGrowth){
+    double omega_a = Omega / (Omega + a * (1 - Omega - OmegaLambda) + a * a * a * OmegaLambda);
+    return pow(omega_a, 0.6);
+  }
   double Hprime = -3 * Omega/(a*a*a) -4 * OmegaR(a) - 2* (1-Omega-OmegaLambda)/(a*a);
   //Add the derivative of the neutrino mass to H'
   //d Omega_nu /da = - 4 Omega_nu + (derivative function)

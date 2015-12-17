@@ -9,7 +9,7 @@ class Cosmology
     public:
         //Note: Omega here should be the matter density in the background at z=0.
         //This always includes neutrinos and baryons.
-        Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu), InvertedHierarchy(InvertedHierarchy)
+        Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy, bool Radiation=true, bool ApproximateGrowth=false): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu), InvertedHierarchy(InvertedHierarchy), Radiation(Radiation), ApproximateGrowth(ApproximateGrowth)
         {}
         //Hubble H(z) / h0. Returns in units of 1/s, not internal units.
         double Hubble(double a);
@@ -35,6 +35,10 @@ class Cosmology
         double OmegaLambda;
         double MNu;
         bool InvertedHierarchy;
+        //Should radiation be enabled
+        bool Radiation;
+        //Should we use an approximation to F_Omega
+        bool ApproximateGrowth;
 };
 
 #endif
