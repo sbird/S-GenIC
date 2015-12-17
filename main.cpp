@@ -86,6 +86,7 @@ int main(int argc, char **argv)
   //Options that exist to test the accuracy of common approximations
   const auto Radiation = config.PopValue<bool>("Radiation", true);
   const auto ApproximateGrowth = config.PopValue<bool>("ApproximateGrowth", false);
+  const auto IdenticalTransfer = config.PopValue<bool>("IdenticalTransfer", false);
   //Number of particles desired
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
   int CbRtNpart[6] = {0};
@@ -122,7 +123,7 @@ int main(int argc, char **argv)
             PSpec = new PowerSpec_EH(HubbleParam, Omega, OmegaBaryon, UnitLength_in_cm);
             break;
       case 2:
-            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
+            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos, IdenticalTransfer);
             break;
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);

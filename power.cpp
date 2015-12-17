@@ -10,7 +10,7 @@
 #include <gsl/gsl_integration.h>
 
 PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, const std::string & FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
-                        double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos)
+                        double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos, bool IdenticalTransfer)
 {
   //Set up conversion factor between internal units and CAMB units
   scale = (InputSpectrum_UnitLength_in_cm / UnitLength_in_cm);
@@ -123,11 +123,20 @@ PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, co
               T_cdm = T_tot;
       }
       //Assign transfer functions to structures as T_s/T_t^2
-      ktransfer_vector.push_back(k);
-      transfer_vector[0].push_back(pow(T_b/T_tot,2));
-      transfer_vector[1].push_back(pow(T_cdm/T_tot,2));
-      transfer_vector[2].push_back(pow(T_nu/T_tot,2));
-      transfer_vector[3].push_back(pow(T_nu2/T_tot,2));
+      if(IdenticalTransfer) {
+        ktransfer_vector.push_back(k);
+        transfer_vector[0].push_back(1);
+        transfer_vector[1].push_back(1);
+        transfer_vector[2].push_back(1);
+        transfer_vector[3].push_back(1);
+      }
+      else {
+        ktransfer_vector.push_back(k);
+        transfer_vector[0].push_back(pow(T_b/T_tot,2));
+        transfer_vector[1].push_back(pow(T_cdm/T_tot,2));
+        transfer_vector[2].push_back(pow(T_nu/T_tot,2));
+        transfer_vector[3].push_back(pow(T_nu2/T_tot,2));
+      }
   }
   transfer.close();
 
