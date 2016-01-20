@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	  fprintf(stdout, "Call with <ParameterFile>\n\n");
       exit(0);
     }
-  /*Make sure stdout is line buffered even when not 
+  /*Make sure stdout is line buffered even when not
    * printing to a terminal but, eg, perl*/
   setlinebuf(stdout);
   //May throw std::runtime_error
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "Could not write headers to snapshot\n");
       exit(1);
   }
- 
+
   int64_t FirstId=1;
   //Compute the factors to go from velocity to displacement
   const double hubble_a = cosmo.Hubble(InitTime)*UnitTime_in_s;
@@ -202,9 +202,15 @@ int main(int argc, char **argv)
           therm_vels = new FermiDiracVel (v_th, vnumax/v_th);
           printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
       }
-      lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
-      outdata.SetVelPrefac(vel_prefac, vel_prefac2);
-      FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
+      //Only compute zeldovich displacements if we have all the neutrinos in particles.
+      if(type != 2 || therm_vels->total_frac > 0.95) {
+        lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
+        outdata.SetVelPrefac(vel_prefac, vel_prefac2);
+        FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
+      }
+      //Otherwise pass empty values for the velocity fields.
+      else
+        FirstId = write_particle_data(*osnap, type,NULL, Pgrid, therm_vels, FirstId);
       delete therm_vels;
   }
 
