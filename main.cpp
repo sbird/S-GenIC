@@ -172,11 +172,6 @@ int main(int argc, char **argv)
   for(int type=0; type<N_TYPE;type++){
       if(npart[type] == 0)
               continue;
-      bool tlptpart = twolpt;
-#ifdef NEUTRINOS
-      if (type==2)
-          tlptpart = false;
-#endif
       FermiDiracVel * therm_vels = NULL;
       //For WDM thermal velocities
       if(WDM_Vtherm_On && type == 1){
@@ -194,7 +189,8 @@ int main(int argc, char **argv)
       }
 #endif //NEUTRINOS
       lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
-      FirstId = write_particle_data(osnap, type,outdata, Pgrid, therm_vels, vel_prefac, vel_prefac2, FirstId, tlptpart);
+      outdata.SetVelPrefac(vel_prefac, vel_prefac2);
+      FirstId = write_particle_data(osnap, type,&outdata, Pgrid, therm_vels, FirstId);
       delete therm_vels;
 #ifdef PRINT_SPEC
       std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");

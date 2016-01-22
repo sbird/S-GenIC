@@ -64,9 +64,9 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   return header;
 }
 
-int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, const double vel_prefac, const double vel_prefac2, int64_t FirstId, const bool twolpt)
+int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
-  const int64_t NumPart = outdata.GetNumPart();
+  const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
   float *block;
   id_type *blockid;
   int64_t written=0, pc;
@@ -94,9 +94,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
   pc = 0;
   for(int64_t i = 0; i < NumPart; i++){
       for(int k = 0; k < 3; k++){
-          block[3 * pc + k] = Pgrid.Pos(i,k, type) + outdata.Vel(i,k);
-          if(twolpt)
-                block[3 * pc + k] -= 3./7. * outdata.Vel2(i,k);
+          block[3 * pc + k] = Pgrid.Pos(i,k, type);
+          if(outdata)
+            block[3 * pc + k] += outdata->GetDisp(i,k);
           block[3 * pc + k] = periodic_wrap(block[3*pc+k], Pgrid.GetBox());
       }
       pc++;
@@ -105,7 +105,7 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
       /*Add an extra copy of the position vector for the double neutrino*/
       if(type == NEUTRINO_TYPE) {
 	  for(int k = 0; k < 3; k++)
-	    block[3 * pc + k] = periodic_wrap(Pgrid.Pos(i,k,type) + outdata.Vel(i,k), Pgrid.GetBox());
+	    block[3 * pc + k] = periodic_wrap(Pgrid.Pos(i,k,type) + outdata->GetVel(i,k), Pgrid.GetBox());
 	  pc++;
       }
 #endif //NEUTRINO_PAIRS
@@ -129,9 +129,9 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
   /* write velocities: sizes are the same as for positions */
   for(int64_t i = 0; i < NumPart; i++) {
       for(int k = 0; k < 3; k++){
-          block[3 * pc + k] = vel_prefac*outdata.Vel(i,k);
-          if(twolpt)
-                block[3 * pc + k] += vel_prefac2* outdata.Vel2(i,k);
+        block[3 * pc + k] = 0;
+        if(outdata)
+          block[3 * pc + k] = outdata->GetVel(i,k);
       }
 
       //Add thermal velocities
@@ -142,10 +142,10 @@ int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data& outdata, part
               vtherm[k] = 0;
           therm_vels->add_thermal_speeds(vtherm);
           for(int k = 0; k < 3; k++)
-              block[3 * pc + k] = vel_prefac*outdata.Vel(i,k) + vtherm[k];
+              block[3 * pc + k] = vel_prefac*outdata->GetVel(i,k) + vtherm[k];
           pc++;
           for(int k = 0; k < 3; k++)
-              block[3 * pc + k] = vel_prefac*outdata.Vel(i,k) - vtherm[k];
+              block[3 * pc + k] = vel_prefac*outdata->GetVel(i,k) - vtherm[k];
 #else
           therm_vels->add_thermal_speeds(&block[3 * pc]);
 #endif //NEUTRINO_PAIRS

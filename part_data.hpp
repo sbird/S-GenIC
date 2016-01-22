@@ -45,25 +45,39 @@ class lpt_data
         lpt_data(const int NumPart, bool twolpt=true): twolpt(twolpt),Vel_data(3*NumPart*NumPart*NumPart),Vel_2_data(twolpt*3*NumPart*NumPart*NumPart)
         {}
         //Note Vel_2_data takes zero space if !twolpt
-        //Note these functions are not checked. In particular calling the Vel2 functions will be bad if !twolpt
-        inline double Vel(size_t index, int axis){
-                return Vel_data[3*index+axis];
-        }
         inline void SetVel(FLOAT_TYPE Vel_in, size_t index, int axis){
                 Vel_data[3*index+axis] = Vel_in;
                 return;
-        }
-        inline double Vel2(size_t index, int axis){
-                return Vel_2_data[3*index+axis];
         }
         inline void Set2Vel(FLOAT_TYPE Vel_in, size_t index, int axis){
                 Vel_2_data[3*index+axis] = Vel_in;
                 return;
         }
+        inline double GetVel(size_t index, int axis)
+        {
+            double vel = vel_prefac*Vel_data[3*index+axis];
+            if(twolpt)
+                vel += vel_prefac2*Vel_2_data[3*index+axis];
+            return vel;
+        }
+        inline double GetDisp(size_t index, int axis)
+        {
+            double disp = Vel_data[3*index+axis];
+            if(twolpt)
+                disp -= 3./7.*Vel_2_data[3*index+axis];
+            return disp;
+        }
         inline size_t GetNumPart(){
                 return Vel_data.size()/3;
         }
+        void SetVelPrefac(double vel_prefac_i, double vel_prefac2_i)
+        {
+            vel_prefac = vel_prefac_i;
+            vel_prefac2 = vel_prefac2_i;
+        }
     private:
+        double vel_prefac;
+        double vel_prefac2;
         const bool twolpt;
         std::valarray <FLOAT_TYPE> Vel_data;
         std::valarray <FLOAT_TYPE> Vel_2_data;
