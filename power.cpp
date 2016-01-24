@@ -194,10 +194,15 @@ double PowerSpec_Tabulated::power(double k, int Type)
       transfer = 1;
   else
       transfer = gsl_interp_eval(trans_interp[Type], ktransfer_table, transfer_table[Type], logk, trans_interp_accel[Type]);
+  /* Sometimes, due to numerical roundoff in CAMB, the massive neutrino transfer function will become
+   * slightly negative. Set it to close to zero in this case.*/
+  if(transfer < 0 && Type==2 && transfer > -1e-6){
+      transfer = 1e-14;
+  }
 
   double logP = gsl_interp_eval(pmat_interp, kmatter_table, pmatter_table, logk, pmat_interp_accel);
   double P = pow(10.0, logP) * pow(scale, 3) * transfer;
-
+  assert(P >= 0);
   return P;
 }
 
