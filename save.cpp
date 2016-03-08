@@ -1,5 +1,8 @@
 #include "save.hpp"
 #include <exception>
+#include <iostream>
+#include <string.h>
+#include <cassert>
 #include "physconst.h"
 
 using namespace GadgetWriter;
@@ -64,164 +67,183 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   return header;
 }
 
+class BufferedWrite
+{
+    public:
+        BufferedWrite(GWriteSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring) :
+            snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), blockmaxlen(BUFFER * 1024 * 1024)
+        {
+            if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
+                throw std::ios_base::failure("Failed to allocate "+std::to_string(3*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
+        }
+        ~BufferedWrite()
+        {
+            free(block);
+        }
+        int writeparticles(int type)
+        {
+            int64_t written=0, pc = 0;
+            for(int64_t i = 0; i < NumPart; i++){
+                for(int k = 0; k < ItemsPart; k++){
+                    block[ItemsPart * pc + k] = setter(i,k,type);
+                }
+                pc++;
+#ifdef NEUTRINO_PAIRS
+                /*Add an extra copy of the position vector for the double neutrino*/
+                if(type == NEUTRINO_TYPE) {
+                    for(int k = 0; k < ItemsPart; k++)
+                      block[ItemsPart * pc + k] = setter(i, k, type);
+                    pc++;
+                }
+#endif //NEUTRINO_PAIRS
+                if(pc > blockmaxlen){
+                  if(snap.WriteBlocks(groupstring,type, block, pc,written) != pc)
+                      throw std::ios_base::failure("Could not write data at particle "+std::to_string(i));
+                  written+=pc;
+                  pc = 0;
+                }
+            }
+            if(pc > 0 && snap.WriteBlocks(groupstring,type, block, pc,written) != pc)
+                  throw std::ios_base::failure("Could not write final data");
+            return written;
+       }
+    protected:
+       virtual double setter(int i, int k, int type) = 0;
+    private:
+        float * block;
+        GWriteSnap & snap;
+        const int64_t NumPart;
+        const int ItemsPart;
+        const std::string & groupstring;
+        const int64_t blockmaxlen;
+};
+
+class PosBufferedWrite : public BufferedWrite
+{
+    public:
+        PosBufferedWrite(GWriteSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
+            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Coordinates" : "POS "),
+            Pgrid(Pgrid), outdata(outdata)
+            {}
+    private:
+        virtual double setter(int i, int k, int type)
+        {
+          double value = Pgrid.Pos(i,k, type);
+          if(outdata)
+            value += outdata->GetDisp(i,k);
+          value = periodic_wrap(value, Pgrid.GetBox());
+          return value;
+        }
+        part_grid & Pgrid;
+        lpt_data * outdata;
+};
+
+
+class VelBufferedWrite : public BufferedWrite
+{
+    public:
+        VelBufferedWrite(GWriteSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
+            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Velocities" : "VEL "),
+            therm_vels(therm_vels), outdata(outdata)
+            {
+              memset(vtherm, 0, 3);
+            }
+    private:
+        virtual double setter(int i, int k, int type)
+        {
+          if(k == 0)
+              get_new_therm_vels();
+          assert(k < 0 || k > 2);
+          double value = vtherm[k];
+          if(outdata)
+            value += outdata->GetVel(i,k);
+          return value;
+        }
+          void get_new_therm_vels()
+          {
+              memset(vtherm, 0, 3);
+              if(!therm_vels)
+                  return;
+              therm_vels->add_thermal_speeds(vtherm);
+          }
+        FermiDiracVel *therm_vels;
+        lpt_data * outdata;
+        float vtherm[3];
+};
+
+class IDBufferedWrite : public BufferedWrite
+{
+    public:
+        IDBufferedWrite(GWriteSnap& snap, int64_t NumPart, int64_t FirstId) :
+            BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "ParticleIDs" : "ID  "),
+#ifdef NEUTRINO_PAIRS
+            sw(0),
+#endif
+            FirstId(FirstId)
+            {
+            }
+    private:
+        virtual double setter(int i, int k, int type)
+        {
+#ifdef NEUTRINO_PAIRS
+            if(type == NEUTRINO_TYPE) {
+            sw != sw;
+            return 2*(i+ FirstId) + sw;
+            }
+            else
+#else
+            return i + FirstId;
+#endif
+        }
+#ifdef NEUTRINO_PAIRS
+            bool sw;
+#endif
+            const int64_t FirstId;
+};
+
+/*Class to write zero energies*/
+class EnergyBufferedWrite : public BufferedWrite
+{
+    public:
+    EnergyBufferedWrite(GWriteSnap& snap, int64_t NumPart) :
+        BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "InternalEnergy" : "U   ")
+        {}
+    private:
+    virtual double setter(int i, int k, int type)
+    {
+        return 0;
+    }
+};
+
 int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
   const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
-  float *block;
-  id_type *blockid;
-  int64_t written=0, pc;
-  std::string posstr("POS ");
-  std::string velstr("VEL ");
-  std::string idstr("ID  ");
-  std::string ustr("U   ");
-  //HDF5 has different strings
-  if(snap.GetFormat() == 3){
-      posstr = "Coordinates";
-      velstr = "Velocities";
-      idstr = "ParticleIDs";
-      ustr = "InternalEnergy";
-  }
+  int64_t written=0;
   printf("\nWriting IC-file\n");
-  const int64_t blockmaxlen = BUFFER * 1024 * 1024;
-  if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
-    {
-      fprintf(stderr, "failed to allocate memory for `block' (%ld MB).\n", 3*sizeof(float)*blockmaxlen/1024/1024);
-      throw std::bad_alloc();
-    }
-
-  /*We are about to write the POS block*/
-  /* Add displacement to Lagrangian coordinates, and multiply velocities by correct factor when writing VEL*/
-  pc = 0;
-  for(int64_t i = 0; i < NumPart; i++){
-      for(int k = 0; k < 3; k++){
-          block[3 * pc + k] = Pgrid.Pos(i,k, type);
-          if(outdata)
-            block[3 * pc + k] += outdata->GetDisp(i,k);
-          block[3 * pc + k] = periodic_wrap(block[3*pc+k], Pgrid.GetBox());
-      }
-      pc++;
-
-#ifdef NEUTRINO_PAIRS
-      /*Add an extra copy of the position vector for the double neutrino*/
-      if(type == NEUTRINO_TYPE) {
-	  for(int k = 0; k < 3; k++)
-	    block[3 * pc + k] = periodic_wrap(Pgrid.Pos(i,k,type) + outdata->GetVel(i,k), Pgrid.GetBox());
-	  pc++;
-      }
-#endif //NEUTRINO_PAIRS
-      if(pc > blockmaxlen){
-	    if(snap.WriteBlocks(posstr,type, block, pc,written) != pc) {
-            fprintf(stderr, "Could not write position data at particle %ld", i);
-            exit(2);
-        }
-        written+=pc;
-	    pc = 0;
-	  }
+  {
+    PosBufferedWrite pp(snap, NumPart, outdata, Pgrid);
+    written = pp.writeparticles(type);
+    if(written != NumPart)
+        return written;
   }
-  if(pc > 0 && snap.WriteBlocks(posstr,type, block, pc,written) != pc) {
-        fprintf(stderr, "Could not write final position data");
-        exit(2);
+  {
+    VelBufferedWrite pp(snap, NumPart, therm_vels, outdata);
+    written = pp.writeparticles(type);
+    if(written != NumPart)
+        return written;
   }
-  /*Done writing POS block*/
-  written=0;
-  pc = 0;
-
-  /* write velocities: sizes are the same as for positions */
-  for(int64_t i = 0; i < NumPart; i++) {
-      for(int k = 0; k < 3; k++){
-        block[3 * pc + k] = 0;
-        if(outdata)
-          block[3 * pc + k] = outdata->GetVel(i,k);
-      }
-
-      //Add thermal velocities
-      if(therm_vels) {
-#ifdef NEUTRINO_PAIRS
-          float vtherm[3];
-          for(int k = 0; k < 3; k++)
-              vtherm[k] = 0;
-          therm_vels->add_thermal_speeds(vtherm);
-          for(int k = 0; k < 3; k++)
-              block[3 * pc + k] = vel_prefac*outdata->GetVel(i,k) + vtherm[k];
-          pc++;
-          for(int k = 0; k < 3; k++)
-              block[3 * pc + k] = vel_prefac*outdata->GetVel(i,k) - vtherm[k];
-#else
-          therm_vels->add_thermal_speeds(&block[3 * pc]);
-#endif //NEUTRINO_PAIRS
-      }
-      pc++;
-
-      if(pc > blockmaxlen){
-          if(snap.WriteBlocks(velstr,type, block, pc,written) != pc) {
-            fprintf(stderr, "Could not write velocity data at particle %ld", i);
-            exit(2);
-          }
-          written+=pc;
-          pc = 0;
-      }
+  {
+    IDBufferedWrite pp(snap, NumPart, FirstId);
+    written = pp.writeparticles(type);
+    if(written != NumPart)
+        return written;
   }
-  if(pc > 0 && snap.WriteBlocks(velstr,type, block, pc,written) != pc) {
-    fprintf(stderr, "Could not write final velocity data");
-    exit(2);
+  {
+    EnergyBufferedWrite pp(snap, NumPart);
+    written = pp.writeparticles(type);
+    if(written != NumPart)
+        return written;
   }
-
-  /* write particle ID */
-  written=0;
-  pc = 0;
-  blockid = (id_type *) block;
-  for(int64_t i = 0; i < NumPart; i++) {
-      blockid[pc] = i+FirstId;
-      pc++;
-
-#ifdef NEUTRINO_PAIRS 
-      if(type == 2) {
-	  blockid[pc] = i+FirstId+NumPart;
-	  pc++;
-	}
-#endif //NEUTRINO_PAIRS
-
-      if(pc > blockmaxlen){
-          if(snap.WriteBlocks(idstr,type, block, pc,written) != pc) {
-                fprintf(stderr, "Could not write id data at particle %ld", i);
-                exit(2);
-          }
-          written+=pc;
-	      pc = 0;
-      }
-  }
-  if(pc > 0)
-	  if(snap.WriteBlocks(idstr,type, block, pc,written) != pc) {
-        fprintf(stderr, "Could not write final id data");
-        exit(2);
-      }
-
-  /*Done writing IDs*/
-  /* write zero temperatures if needed */
-  if(type== 0) {
-      written=0;
-      pc = 0;
-      for(int64_t i = 0; i < NumPart; i++) {
-          block[pc] = 0;
-          pc++;
-          if(pc > blockmaxlen){
-              if(snap.WriteBlocks(ustr,type, block, pc,written) != pc) {
-                fprintf(stderr, "Could not write zero temp data at particle %ld", i);
-                exit(2);
-              }
-              written+=pc;
-              pc = 0;
-          }
-      }
-      if(pc > 0)
-         if(snap.WriteBlocks(ustr,type, block, pc,written) != pc) {
-            fprintf(stderr, "Could not write final temperature data");
-            exit(2);
-         }
-  }
-  /*Done writing temperatures*/
-
-  free(block);
   printf("Finished writing IC file.\n");
   FirstId+=NumPart;
 #ifdef NEUTRINO_PAIRS
