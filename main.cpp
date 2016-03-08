@@ -136,8 +136,8 @@ int main(int argc, char **argv)
       PSpec = new WDMPowerSpec(PSpec, WDM_PartMass_in_kev, Omega, OmegaBaryon, HubbleParam, UnitLength_in_cm);
 
   std::string extension("");
-  if (ICFormat > 3 || ICFormat < 2) {
-          fprintf(stderr, "Only Gadget format 2 or HDF5 output is supported.\n");
+  if (ICFormat > 4 || ICFormat < 2) {
+          fprintf(stderr, "Supported ICFormats:\n 2: Gadget 2 format files\n 3: HDF5\n 4: BigFile\n");
           exit(1);
   }
   if (ICFormat == 3){
@@ -148,14 +148,20 @@ int main(int argc, char **argv)
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
-  GadgetWriter::GWriteSnap osnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
+  GadgetWriter::GWriteBaseSnap *osnap;
+#ifdef HAVE_BIGFILE
+  if(ICFormat == 4)
+     osnap = new GadgetWriter::GWriteBigSnap(OutputDir+std::string("/")+FileBase+extension, npart, NumFiles);
+  else
+#endif
+  osnap = new GadgetWriter::GWriteSnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
 
-  if(osnap.WriteHeaders(header)) {
+  if(osnap->WriteHeaders(header)) {
       fprintf(stderr, "Could not write headers to snapshot\n");
       exit(1);
   }
@@ -190,7 +196,7 @@ int main(int argc, char **argv)
 #endif //NEUTRINOS
       lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
       outdata.SetVelPrefac(vel_prefac, vel_prefac2);
-      FirstId = write_particle_data(osnap, type,&outdata, Pgrid, therm_vels, FirstId);
+      FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
       delete therm_vels;
 #ifdef PRINT_SPEC
       std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");

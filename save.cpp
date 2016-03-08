@@ -74,8 +74,8 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
 class BufferedWrite
 {
     public:
-        BufferedWrite(GWriteSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring) :
-            snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), blockmaxlen(BUFFER * 1024 * 1024)
+        BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring, const std::string& dtype) :
+            snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), dtype(dtype), blockmaxlen(BUFFER * 1024 * 1024)
         {
             if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
                 throw std::ios_base::failure("Failed to allocate "+std::to_string(3*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
@@ -83,6 +83,15 @@ class BufferedWrite
         ~BufferedWrite()
         {
             free(block);
+        }
+        int64_t do_write(int type, void * data, int64_t np_write, int64_t begin)
+        {
+#ifdef HAVE_BIGFILE
+            if(snap.GetFormat() == 4)
+                return dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype.c_str(), ItemsPart);
+            else
+#endif
+                return dynamic_cast<GWriteSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin);
         }
         int writeparticles(int type)
         {
@@ -101,13 +110,13 @@ class BufferedWrite
                 }
 #endif //NEUTRINO_PAIRS
                 if(pc > blockmaxlen){
-                  if(snap.WriteBlocks(groupstring,type, block, pc,written) != pc)
+                  if(do_write(type, block, pc,written) != pc)
                       throw std::ios_base::failure("Could not write data at particle "+std::to_string(i));
                   written+=pc;
                   pc = 0;
                 }
             }
-            if(pc > 0 && snap.WriteBlocks(groupstring,type, block, pc,written) != pc)
+            if(pc > 0 && do_write(type, block, pc,written) != pc)
                   throw std::ios_base::failure("Could not write final data");
             return written;
        }
@@ -115,18 +124,19 @@ class BufferedWrite
        virtual double setter(int i, int k, int type) = 0;
     private:
         float * block;
-        GWriteSnap & snap;
+        GWriteBaseSnap& snap;
         const int64_t NumPart;
         const int ItemsPart;
         const std::string & groupstring;
+        const std::string & dtype;
         const int64_t blockmaxlen;
 };
 
 class PosBufferedWrite : public BufferedWrite
 {
     public:
-        PosBufferedWrite(GWriteSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
-            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Coordinates" : "POS "),
+        PosBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
+            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Coordinates" : "POS ", "f4"),
             Pgrid(Pgrid), outdata(outdata)
             {}
     private:
@@ -146,8 +156,8 @@ class PosBufferedWrite : public BufferedWrite
 class VelBufferedWrite : public BufferedWrite
 {
     public:
-        VelBufferedWrite(GWriteSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
-            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Velocities" : "VEL "),
+        VelBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
+            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Velocities" : "VEL ", "f4"),
             therm_vels(therm_vels), outdata(outdata)
             {
               memset(vtherm, 0, 3);
@@ -178,8 +188,8 @@ class VelBufferedWrite : public BufferedWrite
 class IDBufferedWrite : public BufferedWrite
 {
     public:
-        IDBufferedWrite(GWriteSnap& snap, int64_t NumPart, int64_t FirstId) :
-            BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "ParticleIDs" : "ID  "),
+        IDBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int64_t FirstId) :
+            BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "ParticleIDs" : "ID  ", "i"+std::to_string(sizeof(id_type))),
 #ifdef NEUTRINO_PAIRS
             sw(0),
 #endif
@@ -209,8 +219,8 @@ class IDBufferedWrite : public BufferedWrite
 class EnergyBufferedWrite : public BufferedWrite
 {
     public:
-    EnergyBufferedWrite(GWriteSnap& snap, int64_t NumPart) :
-        BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "InternalEnergy" : "U   ")
+    EnergyBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart) :
+        BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "InternalEnergy" : "U   ", "f4")
         {}
     private:
     virtual double setter(int i, int k, int type)
@@ -219,7 +229,7 @@ class EnergyBufferedWrite : public BufferedWrite
     }
 };
 
-int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
+int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
   const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
   printf("\nWriting IC-file\n");
