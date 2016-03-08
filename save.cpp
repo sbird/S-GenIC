@@ -10,7 +10,7 @@ using namespace std;
 
 #define BUFFER 48
 
-gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, bool combined_neutrinos)
+gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, double UnitVelocity_in_cm_per_s, bool combined_neutrinos)
 {
   gadget_header header;
   //No factor of h^2 because mass is in 10^10 M_sun/h
@@ -52,6 +52,7 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
 
   header.BoxSize = Box;
   header.Omega0 = Omega;
+  header.OmegaB = OmegaBaryon;
   header.OmegaLambda = OmegaLambda;
   header.HubbleParam = HubbleParam;
   /*Various flags; Most set by gadget later*/
@@ -64,6 +65,9 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   header.flag_doubleprecision=0;
   header.flag_ic_info=1;
   header.lpt_scalingfactor=1;
+  header.UnitLength_in_cm = UnitLength_in_cm;
+  header.UnitMass_in_g = UnitMass_in_g;
+  header.UnitVelocity_in_cm_per_s = UnitVelocity_in_cm_per_s;
   return header;
 }
 
@@ -218,31 +222,22 @@ class EnergyBufferedWrite : public BufferedWrite
 int64_t write_particle_data(GWriteSnap & snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
   const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
-  int64_t written=0;
   printf("\nWriting IC-file\n");
   {
     PosBufferedWrite pp(snap, NumPart, outdata, Pgrid);
-    written = pp.writeparticles(type);
-    if(written != NumPart)
-        return written;
+    pp.writeparticles(type);
   }
   {
     VelBufferedWrite pp(snap, NumPart, therm_vels, outdata);
-    written = pp.writeparticles(type);
-    if(written != NumPart)
-        return written;
+    pp.writeparticles(type);
   }
   {
     IDBufferedWrite pp(snap, NumPart, FirstId);
-    written = pp.writeparticles(type);
-    if(written != NumPart)
-        return written;
+    pp.writeparticles(type);
   }
   {
     EnergyBufferedWrite pp(snap, NumPart);
-    written = pp.writeparticles(type);
-    if(written != NumPart)
-        return written;
+    pp.writeparticles(type);
   }
   printf("Finished writing IC file.\n");
   FirstId+=NumPart;

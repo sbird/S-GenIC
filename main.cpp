@@ -150,7 +150,7 @@ int main(int argc, char **argv)
 #endif //NEUTRINO_PAIRS
   GadgetWriter::GWriteSnap osnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
   /*Write headers*/
-  gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, combined_neutrinos);
+  gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
