@@ -78,12 +78,12 @@ std::pair<std::string, std::string> SpbConfigParser::parse_line(std::string line
 
 template<> int SpbConfigParser::convert_value<int>(std::string value)
 {
-    return atoi(value.c_str());
+    return std::stoi(value);
 }
 
 template<> double SpbConfigParser::convert_value<double>(std::string value)
 {
-    return atof(value.c_str());
+    return std::stod(value);
 }
 
 //For strings just return them as is
@@ -94,5 +94,5 @@ template<> std::string SpbConfigParser::convert_value<std::string>(std::string v
 
 template<> bool SpbConfigParser::convert_value<bool>(std::string value)
 {
-    return (bool) atoi(value.c_str());
+    return (bool) std::stoi(value);
 }
