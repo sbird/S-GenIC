@@ -1,0 +1,3 @@
+[submodule "GadgetReader"]
+	path = GadgetReader
+	url = https://github.com/sbird/GadgetReader.git
