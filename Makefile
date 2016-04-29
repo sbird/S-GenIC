@@ -17,7 +17,7 @@ OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second 
 OPT += -DHAVE_BIGFILE  #Use this if you have bigfile support compiled in
 HDF_LIB = -lhdf5 -lhdf5_hl
 
-LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD) -L${BIGFILE} -lbigfile-mpi -lbigfile
+LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -L${BIGFILE} -lbigfile-mpi -lbigfile
 CFLAGS += -I${GREAD} -I${BIGFILE} ${OPT}
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
@@ -76,10 +76,10 @@ thermalvel.o: thermalvel.cpp thermalvel.hpp gsl_spline_wrapper.hpp physconst.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 $(EXEC): main.o $(OBJS)
-	${LINK} ${LFLAGS} $^ -o  $@
+	${LINK} $^ ${LFLAGS} -o  $@
 
 btest: test.o ${OBJS}
-	${LINK} ${LFLAGS} -lboost_unit_test_framework $^ -o  $@
+	${LINK} $^ ${LFLAGS} -lboost_unit_test_framework -o  $@
 clean:
 	rm -f $(OBJS) $(EXEC)
 
