@@ -41,7 +41,7 @@ INCL   = save.hpp part_data.hpp thermalvel.hpp power.hpp read_param.hpp displace
 
 .PHONY : clean all test
 
-all: GadgetReader/libwgad.so $(EXEC)
+all: libwgad.so $(EXEC)
 
 test: btest
 	./$^
@@ -49,8 +49,8 @@ test: btest
 doc: Doxyfile main.cpp ${INCL}
 	doxygen $<
 
-GadgetReader/libwgad.so:
-	cd $(GREAD); VPATH=$(GREAD) make
+libwgad.so:
+	cd $(GREAD); VPATH=$(GREAD) make $@
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
