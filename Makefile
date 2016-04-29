@@ -1,5 +1,5 @@
 #Change this to where you installed GadgetReader
-GREAD=${CURDIR}/../GadgetReader
+GREAD=${CURDIR}/GadgetReader
 BIGFILE=${GREAD}/bigfile/src/
 #Use this for extra library directories, eg for FFTW or the GSL.
 LIBDIR =
@@ -41,7 +41,7 @@ INCL   = save.hpp part_data.hpp thermalvel.hpp power.hpp read_param.hpp displace
 
 .PHONY : clean all test
 
-all: $(EXEC)
+all: GadgetReader/libwgad.so $(EXEC)
 
 test: btest
 	./$^
@@ -49,6 +49,8 @@ test: btest
 doc: Doxyfile main.cpp ${INCL}
 	doxygen $<
 
+GadgetReader/libwgad.so:
+	cd $(GREAD); VPATH=$(GREAD) make
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 

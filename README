@@ -16,7 +16,11 @@ Changes over the version of N-GenIC available from the Gadget website are:
 - perl script that runs CAMB and N-GenIC in turn, consistently, and 
 then generates a power spectrum with GenPK to compare with the input.
 
-To build the library, do:
+To build the code, first you need to correctly check out GadgetReader with:
+
+git submodule update --init --recursive
+
+then do:
 
 make
 
