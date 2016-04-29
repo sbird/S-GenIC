@@ -57,16 +57,16 @@ BOOST_AUTO_TEST_CASE(check_generate_header)
     //Check the header is correctly generated
     std::valarray<int64_t> npart(0L,6);
     npart[1] = pow(512,3);
-    gadget_header header = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512000, 0.01, 1.989e43, 3.085678e21, false);
+    gadget_header header = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512000, 0.01, 1.989e43, 3.085678e21, 1e5, false);
     BOOST_CHECK_EQUAL(header.BoxSize, 512000);
     BOOST_CHECK_EQUAL(header.npartTotal[1], pow(512,3));
     //This is the most non-trivial quantity
     BOOST_CHECK_CLOSE_FRACTION(header.mass[1],7.47830444,1e-6);
     //Does it have the right dimensions? If we change mass units, is it proportional?
-    gadget_header header2 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512000, 0.01, 1.989e33, 3.085678e21, false);
+    gadget_header header2 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512000, 0.01, 1.989e33, 3.085678e21,1e5, false);
     BOOST_CHECK_CLOSE(header.mass[1], header2.mass[1]/1e10,1e-6);
     //It should not depend on length units.
-    gadget_header header3 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512, 0.01, 1.989e43, 3.085678e24, false);
+    gadget_header header3 = generate_header(npart, 0.2793, 0.0463, 0.00986007458598642, 0.7207, 0.7, 512, 0.01, 1.989e43, 3.085678e24, 1e5, false);
     BOOST_CHECK_CLOSE(header.mass[1], header3.mass[1],1e-6);
 }
 
