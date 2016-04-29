@@ -1,16 +1,17 @@
+sudo: required
+dist: trusty
 language: cpp
 os: linux
 #Don't use gcc as the default gcc on travis is 4.6, too old for C++11.
-compiler: clang
-addons: 
+compiler: gcc
+addons:
     apt:
         packages:
             - libboost-test-dev
             - libhdf5-serial-dev
             - libopenmpi-dev
             - libfftw3-dev
-env:
-    - OMPI_CXX=clang++
+            - libgsl0-dev
 before-install: git submodule update --init --recursive
 install: true
 script: make && make test
