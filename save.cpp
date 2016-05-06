@@ -167,7 +167,7 @@ class VelBufferedWrite : public BufferedWrite
         {
           if(k == 0)
               get_new_therm_vels();
-          assert(k < 0 || k > 2);
+          assert(k >= 0 || k <= 2);
           double value = vtherm[k];
           if(outdata)
             value += outdata->GetVel(i,k);
