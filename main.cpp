@@ -6,6 +6,9 @@
 #include "thermalvel.hpp"
 #include "save.hpp"
 #include <cassert>
+#ifdef HAVE_BIGFILE
+#include <mpi.h>
+#endif
 
 #ifdef PRINT_SPEC
 void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);
@@ -144,14 +147,15 @@ int main(int argc, char **argv)
       printf("Outputting HDF5 ICs\n");
       extension=".hdf5";
   }
-
 #ifdef NEUTRINO_PAIRS
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
   GadgetWriter::GWriteBaseSnap *osnap;
 #ifdef HAVE_BIGFILE
-  if(ICFormat == 4)
+  if(ICFormat == 4) {
+     MPI_Init(&argc, &argv);
      osnap = new GadgetWriter::GWriteBigSnap(OutputDir+std::string("/")+FileBase+extension, npart, NumFiles);
+  }
   else
 #endif
   osnap = new GadgetWriter::GWriteSnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
@@ -207,5 +211,8 @@ int main(int argc, char **argv)
     delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
+#ifdef HAVE_BIGFILE
+  MPI_Finalize();
+#endif
   return 0;
 }
