@@ -159,6 +159,7 @@ int main(int argc, char **argv)
   else
 #endif
   osnap = new GadgetWriter::GWriteSnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
+  assert(osnap);
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 

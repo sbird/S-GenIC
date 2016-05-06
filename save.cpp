@@ -86,12 +86,22 @@ class BufferedWrite
         }
         int64_t do_write(int type, void * data, int64_t np_write, int64_t begin)
         {
+            int64_t retval;
+            try{
+                retval = dynamic_cast<GWriteSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin);
+            } catch (const std::bad_cast & e) {
 #ifdef HAVE_BIGFILE
-            if(snap.GetFormat() == 4)
-                return dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype.c_str(), ItemsPart);
-            else
+                try {
+                retval = dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype.c_str(), ItemsPart);
+                } catch(const std::bad_cast & e) {
 #endif
-                return dynamic_cast<GWriteSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin);
+                std::cout << e.what() << '\n';
+                exit(1);
+#ifdef HAVE_BIGFILE
+                }
+#endif
+            }
+            return retval;
         }
         int writeparticles(int type)
         {
