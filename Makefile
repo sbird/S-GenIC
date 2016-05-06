@@ -24,10 +24,10 @@ CFLAGS += -I${GREAD} -I${BIGFILE} ${OPT}
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp
-  LINK +=mpic++ -openmp
+  LINK = mpic++ -openmp
 else
   CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(PRO)
-  LINK +=mpic++ $(PRO)
+  LINK = mpic++ $(PRO)
   LFLAGS += -lm -lgomp
 endif
 
@@ -55,7 +55,7 @@ libwgad.so:
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 main.o: main.cpp ${INCL}
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(LINK) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 test.o: test.cpp ${INCL}
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
