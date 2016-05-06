@@ -147,10 +147,22 @@ class PosBufferedWrite : public BufferedWrite
 {
     public:
         PosBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
-            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Coordinates" : "POS ", "f4"),
+            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat()), "f4"),
             Pgrid(Pgrid), outdata(outdata)
             {}
     private:
+        std::string name(int format)
+        {
+            switch(format)
+            {
+                case 3:
+                    return "Coordinates";
+                case 4:
+                    return "Position";
+                default:
+                    return "POS ";
+            }
+        }
         virtual double setter(int i, int k, int type)
         {
           double value = Pgrid.Pos(i,k, type);
@@ -168,12 +180,24 @@ class VelBufferedWrite : public BufferedWrite
 {
     public:
         VelBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
-            BufferedWrite(snap, NumPart, 3, snap.GetFormat() == 3 ? "Velocities" : "VEL ", "f4"),
+            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat()), "f4"),
             therm_vels(therm_vels), outdata(outdata)
             {
               memset(vtherm, 0, 3);
             }
     private:
+        std::string name(int format)
+        {
+            switch(format)
+            {
+                case 3:
+                    return "Velocities";
+                case 4:
+                    return "Velocity";
+                default:
+                    return "VEL ";
+            }
+        }
         virtual double setter(int i, int k, int type)
         {
           if(k == 0)
@@ -200,7 +224,7 @@ class IDBufferedWrite : public BufferedWrite
 {
     public:
         IDBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int64_t FirstId) :
-            BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "ParticleIDs" : "ID  ", "i"+std::to_string(sizeof(id_type))),
+            BufferedWrite(snap, NumPart, 1, name(snap.GetFormat()), "i"+std::to_string(sizeof(id_type))),
 #ifdef NEUTRINO_PAIRS
             sw(0),
 #endif
@@ -208,6 +232,18 @@ class IDBufferedWrite : public BufferedWrite
             {
             }
     private:
+        std::string name(int format)
+        {
+            switch(format)
+            {
+                case 3:
+                    return "ParticleIDs";
+                case 4:
+                    return "ID";
+                default:
+                    return "ID  ";
+            }
+        }
         virtual double setter(int i, int k, int type)
         {
 #ifdef NEUTRINO_PAIRS
@@ -231,7 +267,7 @@ class EnergyBufferedWrite : public BufferedWrite
 {
     public:
     EnergyBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart) :
-        BufferedWrite(snap, NumPart, 1, snap.GetFormat() == 3 ? "InternalEnergy" : "U   ", "f4")
+        BufferedWrite(snap, NumPart, 1, snap.GetFormat() > 2 ? "InternalEnergy" : "U   ", "f4")
         {}
     private:
     virtual double setter(int i, int k, int type)
