@@ -212,7 +212,8 @@ int main(int argc, char **argv)
   printf("Initial scale factor = %g\n", InitTime);
 
 #ifdef HAVE_BIGFILE
-  MPI_Finalize();
+  if(ICFormat == 4)
+    MPI_Finalize();
 #endif
   return 0;
 }
