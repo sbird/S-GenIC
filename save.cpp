@@ -71,13 +71,13 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   return header;
 }
 
-class BufferedWrite
+template <typename T> class BufferedWrite
 {
     public:
-        BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring, const std::string& dtype) :
-            snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), dtype(dtype), blockmaxlen(BUFFER * 1024 * 1024)
+        BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring) :
+            snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), blockmaxlen(BUFFER * 1024 * 1024)
         {
-            if(!(block = (float *) malloc(blockmaxlen*ItemsPart*sizeof(float))))
+            if(!(block = (T *) malloc(blockmaxlen*ItemsPart*sizeof(T))))
                 throw std::ios_base::failure("Failed to allocate "+std::to_string(ItemsPart*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
         }
         ~BufferedWrite()
@@ -92,7 +92,7 @@ class BufferedWrite
             } catch (const std::bad_cast & e) {
 #ifdef HAVE_BIGFILE
                 try {
-                retval = dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype.c_str(), ItemsPart);
+                retval = dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype().c_str(), ItemsPart);
                 } catch(const std::bad_cast & e) {
 #endif
                 std::cout << e.what() << '\n';
@@ -134,20 +134,32 @@ class BufferedWrite
     protected:
        virtual double setter(int i, int k, int type) = 0;
     private:
-        float * block;
+        std::string dtype(void) {
+            throw std::runtime_error("Need to specialise dtype for class");
+        }
+        T * block;
         GWriteBaseSnap& snap;
         const int64_t NumPart;
         const int ItemsPart;
         const std::string & groupstring;
-        const std::string & dtype;
         const int64_t blockmaxlen;
 };
 
-class PosBufferedWrite : public BufferedWrite
+template <> std::string BufferedWrite<float>::dtype(void) {
+    return "f4";
+};
+template <> std::string BufferedWrite<double>::dtype(void) {
+    return "f8";
+};
+template <> std::string BufferedWrite<id_type>::dtype(void) {
+        return "i"+std::to_string(sizeof(id_type));
+};
+
+class PosBufferedWrite : public BufferedWrite<float>
 {
     public:
         PosBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
-            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat()), "f4"),
+            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat())),
             Pgrid(Pgrid), outdata(outdata)
             {}
     private:
@@ -176,11 +188,11 @@ class PosBufferedWrite : public BufferedWrite
 };
 
 
-class VelBufferedWrite : public BufferedWrite
+class VelBufferedWrite : public BufferedWrite<float>
 {
     public:
         VelBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
-            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat()), "f4"),
+            BufferedWrite(snap, NumPart, 3, name(snap.GetFormat())),
             therm_vels(therm_vels), outdata(outdata)
             {
               memset(vtherm, 0, 3);
@@ -220,11 +232,11 @@ class VelBufferedWrite : public BufferedWrite
         float vtherm[3];
 };
 
-class IDBufferedWrite : public BufferedWrite
+class IDBufferedWrite : public BufferedWrite<id_type>
 {
     public:
         IDBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int64_t FirstId) :
-            BufferedWrite(snap, NumPart, 1, name(snap.GetFormat()), "i"+std::to_string(sizeof(id_type))),
+            BufferedWrite(snap, NumPart, 1, name(snap.GetFormat())),
 #ifdef NEUTRINO_PAIRS
             sw(0),
 #endif
@@ -263,11 +275,11 @@ class IDBufferedWrite : public BufferedWrite
 };
 
 /*Class to write zero energies*/
-class EnergyBufferedWrite : public BufferedWrite
+class EnergyBufferedWrite : public BufferedWrite<float>
 {
     public:
     EnergyBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart) :
-        BufferedWrite(snap, NumPart, 1, snap.GetFormat() > 2 ? "InternalEnergy" : "U   ", "f4")
+        BufferedWrite(snap, NumPart, 1, snap.GetFormat() > 2 ? "InternalEnergy" : "U   ")
         {}
     private:
     virtual double setter(int i, int k, int type)
