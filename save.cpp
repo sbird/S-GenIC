@@ -77,8 +77,8 @@ class BufferedWrite
         BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring, const std::string& dtype) :
             snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), dtype(dtype), blockmaxlen(BUFFER * 1024 * 1024)
         {
-            if(!(block = (float *) malloc(blockmaxlen*3*sizeof(float))))
-                throw std::ios_base::failure("Failed to allocate "+std::to_string(3*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
+            if(!(block = (float *) malloc(blockmaxlen*ItemsPart*sizeof(float))))
+                throw std::ios_base::failure("Failed to allocate "+std::to_string(ItemsPart*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
         }
         ~BufferedWrite()
         {
@@ -108,6 +108,7 @@ class BufferedWrite
             int64_t written=0, pc = 0;
             for(int64_t i = 0; i < NumPart; i++){
                 for(int k = 0; k < ItemsPart; k++){
+                    assert(ItemsPart*pc + k < blockmaxlen*ItemsPart);
                     block[ItemsPart * pc + k] = setter(i,k,type);
                 }
                 pc++;
@@ -119,7 +120,7 @@ class BufferedWrite
                     pc++;
                 }
 #endif //NEUTRINO_PAIRS
-                if(pc > blockmaxlen){
+                if(pc >= blockmaxlen){
                   if(do_write(type, block, pc,written) != pc)
                       throw std::ios_base::failure("Could not write data at particle "+std::to_string(i));
                   written+=pc;
