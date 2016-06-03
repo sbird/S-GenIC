@@ -74,7 +74,7 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
 template <typename T> class BufferedWrite
 {
     public:
-        BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string& groupstring) :
+        BufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int ItemsPart, const std::string groupstring) :
             snap(snap), NumPart(NumPart), ItemsPart(ItemsPart), groupstring(groupstring), blockmaxlen(BUFFER * 1024 * 1024)
         {
             if(!(block = (T *) malloc(blockmaxlen*ItemsPart*sizeof(T))))
@@ -128,7 +128,7 @@ template <typename T> class BufferedWrite
                 }
             }
             if(pc > 0 && do_write(type, block, pc,written) != pc)
-                  throw std::ios_base::failure("Could not write final data");
+                  throw std::ios_base::failure("Could not write final data for: "+groupstring);
             return written;
        }
     protected:
@@ -141,7 +141,7 @@ template <typename T> class BufferedWrite
         GWriteBaseSnap& snap;
         const int64_t NumPart;
         const int ItemsPart;
-        const std::string & groupstring;
+        const std::string groupstring;
         const int64_t blockmaxlen;
 };
 
