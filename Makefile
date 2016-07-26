@@ -15,10 +15,17 @@ OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second 
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
 OPT += -DHAVE_BIGFILE  #Use this if you have bigfile support compiled in
-HDF_LIB = -lhdf5 -lhdf5_hl
+	#Check for a pkgconfig; if one exists we are probably debian.
+ifeq ($(shell pkg-config --exists hdf5 && echo 1),1)
+	HDF_LIB = $(shell pkg-config --libs hdf5) -lhdf5_hl
+	HDF_INC = $(shell pkg-config --cflags hdf5)
+else
+	HDF_LIB = -lhdf5 -lhdf5_hl
+	HDF_INC =
+endif
 
 LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -L${BIGFILE} -lbigfile
-CFLAGS += -I${GREAD} -I${BIGFILE} ${OPT}
+CFLAGS += -I${GREAD} -I${BIGFILE} ${OPT} ${HDF_INC}
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
 #Are we using gcc or icc?
