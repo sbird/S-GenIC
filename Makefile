@@ -17,17 +17,17 @@ OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second 
 OPT += -DHAVE_BIGFILE  #Use this if you have bigfile support compiled in
 HDF_LIB = -lhdf5 -lhdf5_hl
 
-LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -L${BIGFILE} -lbigfile-mpi -lbigfile
+LFLAGS += $(LIBDIR) -lfftw3f_threads -lfftw3f -lfftw3_threads -lfftw3 -lgsl -lgslcblas -lpthread ${HDF_LIB} -lwgad -L${GREAD} -Wl,-rpath,$(GREAD),--no-add-needed,--as-needed -L${BIGFILE} -lbigfile
 CFLAGS += -I${GREAD} -I${BIGFILE} ${OPT}
 #PRO = -fprofile-generate
 #PRO = -fprofile-use -fprofile-correction
 #Are we using gcc or icc?
 ifeq (icc,$(findstring icc,${CC}))
   CFLAGS +=-O2 -g -c -w1 -openmp
-  LINK = mpic++ -openmp
+  LINK = $(CXX) -openmp
 else
   CFLAGS +=-O2 -ffast-math -g -c -Wall -fopenmp $(PRO)
-  LINK = mpic++ $(PRO)
+  LINK = $(CXX) $(PRO)
   LFLAGS += -lm -lgomp
 endif
 

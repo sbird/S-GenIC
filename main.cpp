@@ -6,9 +6,6 @@
 #include "thermalvel.hpp"
 #include "save.hpp"
 #include <cassert>
-#ifdef HAVE_BIGFILE
-#include <mpi.h>
-#endif
 
 #ifdef PRINT_SPEC
 void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);
@@ -153,7 +150,6 @@ int main(int argc, char **argv)
   GadgetWriter::GWriteBaseSnap *osnap;
 #ifdef HAVE_BIGFILE
   if(ICFormat == 4) {
-     MPI_Init(&argc, &argv);
      osnap = new GadgetWriter::GWriteBigSnap(OutputDir+std::string("/")+FileBase+extension, npart, NumFiles);
   }
   else
@@ -212,9 +208,5 @@ int main(int argc, char **argv)
     delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
-#ifdef HAVE_BIGFILE
-  if(ICFormat == 4)
-    MPI_Finalize();
-#endif
   return 0;
 }

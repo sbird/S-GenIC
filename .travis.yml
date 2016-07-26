@@ -9,7 +9,6 @@ addons:
         packages:
             - libboost-test-dev
             - libhdf5-serial-dev
-            - libopenmpi-dev
             - libfftw3-dev
             - libgsl0-dev
 before-install: git submodule update --init --recursive
