@@ -14,7 +14,7 @@ LIBDIR =
 OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second DM component
 #OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 #OPT   += -DPRINT_SPEC #Use this to print out the spectrum (with non-Gaussianity) after calculating ICs.
-OPT += -DHAVE_BIGFILE  #Use this if you have bigfile support compiled in
+OPT += -DHAVE_BGFL  #Use this if you have bigfile support compiled in
 	#Check for a pkgconfig; if one exists we are probably debian.
 ifeq ($(shell pkg-config --exists hdf5 && echo 1),1)
 	HDF_LIB = $(shell pkg-config --libs hdf5) -lhdf5_hl
@@ -56,7 +56,10 @@ test: btest
 doc: Doxyfile main.cpp ${INCL}
 	doxygen $<
 
-libwgad.so:
+$(BIGFILE)/bigfile.h:
+	./boostrap.sh
+
+libwgad.so: $(BIGFILE)/bigfile.h
 	cd $(GREAD); VPATH=$(GREAD) make $@
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@

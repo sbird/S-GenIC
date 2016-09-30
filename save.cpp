@@ -90,14 +90,14 @@ template <typename T> class BufferedWrite
             try{
                 retval = dynamic_cast<GWriteSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin);
             } catch (const std::bad_cast & e) {
-#ifdef HAVE_BIGFILE
+#ifdef HAVE_BGFL
                 try {
                 retval = dynamic_cast<GWriteBigSnap&>(snap).WriteBlocks(groupstring, type, data, np_write, begin, dtype().c_str(), ItemsPart);
                 } catch(const std::bad_cast & e) {
 #endif
                 std::cout << e.what() << '\n';
                 exit(1);
-#ifdef HAVE_BIGFILE
+#ifdef HAVE_BGFL
                 }
 #endif
             }

@@ -6,9 +6,7 @@
 #include "part_data.hpp"
 #include "thermalvel.hpp"
 #include <gadgetwriter.hpp>
-#ifdef HAVE_BIGFILE
 #include <gadgetwritebigfile.hpp>
-#endif
 
 #ifdef NO64BITID
         typedef int32_t id_type;

@@ -148,7 +148,7 @@ int main(int argc, char **argv)
   npart[NEUTRINO_TYPE] *= 2;
 #endif //NEUTRINO_PAIRS
   GadgetWriter::GWriteBaseSnap *osnap;
-#ifdef HAVE_BIGFILE
+#ifdef HAVE_BGFL
   if(ICFormat == 4) {
      osnap = new GadgetWriter::GWriteBigSnap(OutputDir+std::string("/")+FileBase+extension, npart, NumFiles);
   }
