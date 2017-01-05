@@ -290,7 +290,8 @@ class EnergyBufferedWrite : public BufferedWrite<float>
 
 int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
-  const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
+  const int64_t NPcbrt = Pgrid.GetNumPart(type);
+  const int64_t NumPart = NPcbrt*NPcbrt*NPcbrt;
   printf("\nWriting IC-file\n");
   {
     PosBufferedWrite pp(snap, NumPart, outdata, Pgrid);
