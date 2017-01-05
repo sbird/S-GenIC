@@ -7,10 +7,6 @@
 #include "save.hpp"
 #include <cassert>
 
-#ifdef PRINT_SPEC
-void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);
-#endif
-
 int main(int argc, char **argv)
 {
   if(argc < 2)
@@ -22,6 +18,8 @@ int main(int argc, char **argv)
   /*Make sure stdout is line buffered even when not 
    * printing to a terminal but, eg, perl*/
   setlinebuf(stdout);
+  //May throw std::runtime_error
+  try {
   //Read the config file
   SpbConfigParser config(argv[1]);
   //Cosmological parameters
@@ -197,16 +195,30 @@ int main(int argc, char **argv)
 #endif //NEUTRINOS
       lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
       outdata.SetVelPrefac(vel_prefac, vel_prefac2);
+      try {
       FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
+      } catch(std::ios_base::failure& e) {
+          std::cerr<<e.what();
+          return 4;
+      }
       delete therm_vels;
-#ifdef PRINT_SPEC
-      std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");
-      print_spec(type, PSpec, cosmo, spec_filename, Redshift, UnitLength_in_cm);
-#endif
   }
 
     delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
+  }
+  catch(std::runtime_error& e) {
+      std::cerr<<e.what();
+      return 1;
+  }
+  catch(std::invalid_argument& e) {
+      std::cerr<<e.what();
+      return 2;
+  }
+  catch(std::domain_error& e) {
+      std::cerr<<e.what();
+      return 3;
+  }
   return 0;
 }

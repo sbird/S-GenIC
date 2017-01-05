@@ -42,7 +42,7 @@ class lpt_data
 {
     public:
         //Again, NumPart is the cube root of the particle number!
-        lpt_data(const int NumPart, bool twolpt=true): twolpt(twolpt),Vel_data(3*NumPart*NumPart*NumPart),Vel_2_data(twolpt*3*NumPart*NumPart*NumPart)
+        lpt_data(const int NumPart, bool twolpt=true): vel_prefac(0), vel_prefac2(0), twolpt(twolpt),Vel_data(3*NumPart*NumPart*NumPart),Vel_2_data(twolpt*3*NumPart*NumPart*NumPart)
         {}
         //Note Vel_2_data takes zero space if !twolpt
         inline void SetVel(FLOAT_TYPE Vel_in, size_t index, int axis){

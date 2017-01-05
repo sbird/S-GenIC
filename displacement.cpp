@@ -12,7 +12,7 @@
 #include "power.hpp"
 
 /**Initialise the memory for the FFTs*/
-DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt): Nmesh(Nmesh), twolpt(twolpt), Seed(Seed), Box(Box)
+DisplacementFields::DisplacementFields(size_t Nmesh, int Seed, double Box, bool twolpt): Nmesh(Nmesh), twolpt(twolpt), Seed(Seed), Box(Box), Forward_plan2(), Inverse_plan_grad(), twosrc(NULL), ctwosrc(NULL), cdigrad(), digrad()
 {
   size_t bytes = sizeof(double) * 2*Nmesh*Nmesh*(Nmesh/2+1);
   Disp = (double *) fftw_malloc(bytes);

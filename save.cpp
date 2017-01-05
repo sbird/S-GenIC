@@ -12,7 +12,7 @@ using namespace std;
 
 gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, double UnitVelocity_in_cm_per_s, bool combined_neutrinos)
 {
-  gadget_header header;
+  gadget_header header = {};
   //No factor of h^2 because mass is in 10^10 M_sun/h
   double scale = 3* HUBBLE* HUBBLE / (UnitMass_in_g / pow(UnitLength_in_cm, 3) * 8 * M_PI * GRAVITY) * pow(Box,3);
   /*Set masses*/
@@ -44,8 +44,8 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
   for(int i=0; i< N_TYPE; ++i){
     header.NallHW[i] = ( npart[i] >> 32);
     header.npartTotal[i] = npart[i] - ((uint64_t)header.NallHW[i] << 32);
+    header.npart[i] = npart[i];
   }
-
 
   header.time = InitTime;
   header.redshift = 1.0 / InitTime - 1;
@@ -290,7 +290,8 @@ class EnergyBufferedWrite : public BufferedWrite<float>
 
 int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, part_grid& Pgrid, FermiDiracVel *therm_vels, int64_t FirstId)
 {
-  const int64_t NumPart = Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type)*Pgrid.GetNumPart(type);
+  const int64_t NPcbrt = Pgrid.GetNumPart(type);
+  const int64_t NumPart = NPcbrt*NPcbrt*NPcbrt;
   printf("\nWriting IC-file\n");
   {
     PosBufferedWrite pp(snap, NumPart, outdata, Pgrid);
