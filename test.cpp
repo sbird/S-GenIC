@@ -25,27 +25,6 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
 
-
-#ifdef PRINT_SPEC
-BOOST_AUTO_TEST_CASE(check_print_spec)
-{
-        const int dims=5;
-        float field[2*dims*dims*(dims/2+1)]={0};
-        float pos[30];
-        for(int i=0; i<30; i++)
-                pos[i]=i/3.;
-        fieldize(10, dims,field,10,10,pos,1);
-        //Check off-diagonal elements are zero
-        BOOST_CHECK_CLOSE_FRACTION(field[0],10.7638874,1e-6);
-        BOOST_CHECK_EQUAL(field[3],0);
-        BOOST_CHECK_EQUAL(field[20],0);
-        BOOST_CHECK_EQUAL(field[125],0);
-        //Check on-diagonals
-        BOOST_CHECK_CLOSE_FRACTION(field[124],2.08333,1e-6);
-
-}
-#endif
-
 // BOOST_AUTO_TEST_CASE(check_displacement_fields)
 // {
 //

@@ -7,10 +7,6 @@
 #include "save.hpp"
 #include <cassert>
 
-#ifdef PRINT_SPEC
-void print_spec(int type, PowerSpec * PSpec, Cosmology & cosmo, std::string& filename, double Redshift, double UnitLength_in_cm);
-#endif
-
 int main(int argc, char **argv)
 {
   if(argc < 2)
@@ -206,10 +202,6 @@ int main(int argc, char **argv)
           return 4;
       }
       delete therm_vels;
-#ifdef PRINT_SPEC
-      std::string spec_filename = std::string(OutputDir)+std::string("/")+std::string("inputspec_")+std::string(FileBase)+std::string(".txt");
-      print_spec(type, PSpec, cosmo, spec_filename, Redshift, UnitLength_in_cm);
-#endif
   }
 
     delete PSpec;
