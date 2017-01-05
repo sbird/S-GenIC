@@ -5,14 +5,27 @@ os: linux
 #Don't use gcc as the default gcc on travis is 4.6, too old for C++11.
 compiler: gcc
 addons:
-    apt:
-        packages:
+  apt:
+    packages:
             - libboost-test-dev
             - libhdf5-serial-dev
             - libfftw3-dev
             - libgsl0-dev
-before-install: git submodule update --init --recursive
+  coverity_scan:
+    project:
+      name: "sbird/S-GenIC"
+      description: "Generate initial conditions for gadget simulations"
+    notification_email: sbird4@jhu.edu
+    build_command_prepend: git submodule update --init --recursive
+    build_command:   make -j4
+    branch_pattern: coverity_scan
 install: true
-script:
-    - make && make test
-    - ./N-GenIC testdata/integration/test_dm/_genic_params.ini
+script: true
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "BjrvCdyEwvzGseGm7s76yWulPIGuVJXegFaZ+ZJa/16S8BKlsv5Vsi1wATKg76gmnWzLyy/3O4JiFfeUTZLbDiIcHQvXvZP2izWUm+vk6wyP64FotvQKz70zxh1LZHjxshsZXH0s97H+RaYk14muNUm8tXGex/TqKD39SuOwpLLLYUILCRLkqO9I2xUbTVbz+Yhl0PJlveYDhbvFVCsM6OgMGfSDM2NavtqVNA2YWlJYk4lBmCjC1iKIQ1wI3cSFNmJ8YOWC8kMkAE/b9rNe5DnRw5zWe9QIql+4t1fG1H3mDeJSBd6bqrc9dSJeyZm07+nVeGaVsEBfvhfu4ZyVGX01ZNFh+DikZpdA9e/gp5WwJYkhayQNVdBC1X57QwPeSdA7DmwZz9qmQn4hIhXwiPBoVZenb7nvzqC/I+bNMeVmMweH2ZdqZYtXw+E0bk3WQplDRTQNxXnSLzJLrh3pDiU8gkNTB/D72tngzPaywF4o/JNANi2Li+9ElW3BFVT+CGL8p55sCeVjTCWXGnIxYyGGwWDfo+WbcpQMBdr1b8VkL8N2b6hR1oK/f9vl6Am89xDnO1hLwNwcNYgEd0IZng+d4lRCo00XcAiCuzE5NkI/3gbyySDu+pXib+WE9cg69GITa733Gxsp1b3ben0aXo9u0fuIbIs+dBqR+w3n3aM="
+
+before_install:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
