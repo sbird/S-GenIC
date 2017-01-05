@@ -195,18 +195,17 @@ int main(int argc, char **argv)
 #endif //NEUTRINOS
       lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
       outdata.SetVelPrefac(vel_prefac, vel_prefac2);
-      try {
       FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
-      } catch(std::ios_base::failure& e) {
-          std::cerr<<e.what();
-          return 4;
-      }
       delete therm_vels;
   }
 
     delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
+  }
+  catch(std::ios_base::failure& e) {
+      std::cerr<<e.what();
+      return 4;
   }
   catch(std::runtime_error& e) {
       std::cerr<<e.what();
