@@ -48,7 +48,7 @@ INCL   = save.hpp part_data.hpp thermalvel.hpp power.hpp read_param.hpp displace
 
 .PHONY : clean all test
 
-all: libwgad.so $(EXEC)
+all: $(EXEC)
 
 test: btest
 	./$^
@@ -59,8 +59,8 @@ doc: Doxyfile main.cpp ${INCL}
 $(BIGFILE)/bigfile.h:
 	./boostrap.sh
 
-libwgad.so: $(BIGFILE)/bigfile.h
-	cd $(GREAD); VPATH=$(GREAD) make $@
+$(GREAD)/libwgad.so: $(BIGFILE)/bigfile.h $(GREAD)/gadgetwriter.hpp
+	cd $(GREAD); VPATH=$(GREAD) make $(@F)
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
@@ -85,7 +85,7 @@ save.o: save.cpp save.hpp part_data.hpp physconst.h thermalvel.hpp
 thermalvel.o: thermalvel.cpp thermalvel.hpp gsl_spline_wrapper.hpp physconst.h
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
-$(EXEC): main.o $(OBJS)
+$(EXEC): main.o $(OBJS) $(GREAD)/libwgad.so
 	${LINK} $^ ${LFLAGS} -o  $@
 
 btest: test.o ${OBJS}
