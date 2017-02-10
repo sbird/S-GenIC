@@ -121,7 +121,7 @@ template <typename T> class BufferedWrite
             return written;
        }
     protected:
-       virtual double setter(int i, int k, int type) = 0;
+       virtual T setter(int i, int k, int type) = 0;
     private:
         std::string dtype(void) {
             throw std::runtime_error("Need to specialise dtype for class");
@@ -164,7 +164,7 @@ class PosBufferedWrite : public BufferedWrite<float>
                     return "POS ";
             }
         }
-        virtual double setter(int i, int k, int type)
+        virtual float setter(int i, int k, int type)
         {
           double value = Pgrid.Pos(i,k, type);
           if(outdata)
@@ -199,7 +199,7 @@ class VelBufferedWrite : public BufferedWrite<float>
                     return "VEL ";
             }
         }
-        virtual double setter(int i, int k, int type)
+        virtual float setter(int i, int k, int type)
         {
           if(k == 0)
               get_new_therm_vels();
@@ -242,7 +242,7 @@ class IDBufferedWrite : public BufferedWrite<id_type>
                     return "ID  ";
             }
         }
-        virtual double setter(int i, int k, int type)
+        virtual id_type setter(int i, int k, int type)
         {
             return i + FirstId;
         }
@@ -257,7 +257,7 @@ class EnergyBufferedWrite : public BufferedWrite<float>
         BufferedWrite(snap, NumPart, 1, snap.GetFormat() > 2 ? "InternalEnergy" : "U   ")
         {}
     private:
-    virtual double setter(int i, int k, int type)
+    virtual float setter(int i, int k, int type)
     {
         return 0;
     }
