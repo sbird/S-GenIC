@@ -142,9 +142,6 @@ int main(int argc, char **argv)
       printf("Outputting HDF5 ICs\n");
       extension=".hdf5";
   }
-#ifdef NEUTRINO_PAIRS
-  npart[NEUTRINO_TYPE] *= 2;
-#endif //NEUTRINO_PAIRS
   GadgetWriter::GWriteBaseSnap *osnap;
 #ifdef HAVE_BGFL
   if(ICFormat == 4) {

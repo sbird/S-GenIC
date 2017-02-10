@@ -27,9 +27,6 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
 
   if(npart[NEUTRINO_TYPE]){
     header.mass[NEUTRINO_TYPE] = OmegaNuPart * scale / npart[NEUTRINO_TYPE];
-#ifdef NEUTRINO_PAIRS
-    header.mass[NEUTRINO_TYPE] /= 2;
-#endif //NEUTRINO_PAIRS
     OmegaCDM -=OmegaNuPart;
   }
   /*For the "edit the transfer function" neutrino simulation method, we would *not* want to do this.
@@ -112,14 +109,6 @@ template <typename T> class BufferedWrite
                     block[ItemsPart * pc + k] = setter(i,k,type);
                 }
                 pc++;
-#ifdef NEUTRINO_PAIRS
-                /*Add an extra copy of the position vector for the double neutrino*/
-                if(type == NEUTRINO_TYPE) {
-                    for(int k = 0; k < ItemsPart; k++)
-                      block[ItemsPart * pc + k] = setter(i, k, type);
-                    pc++;
-                }
-#endif //NEUTRINO_PAIRS
                 if(pc >= blockmaxlen){
                   if(do_write(type, block, pc,written) != pc)
                       throw std::ios_base::failure("Could not write data at particle "+std::to_string(i));
@@ -237,9 +226,6 @@ class IDBufferedWrite : public BufferedWrite<id_type>
     public:
         IDBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, int64_t FirstId) :
             BufferedWrite(snap, NumPart, 1, name(snap.GetFormat())),
-#ifdef NEUTRINO_PAIRS
-            sw(0),
-#endif
             FirstId(FirstId)
             {
             }
@@ -258,20 +244,9 @@ class IDBufferedWrite : public BufferedWrite<id_type>
         }
         virtual double setter(int i, int k, int type)
         {
-#ifdef NEUTRINO_PAIRS
-            if(type == NEUTRINO_TYPE) {
-            sw != sw;
-            return 2*(i+ FirstId) + sw;
-            }
-            else
-#else
             return i + FirstId;
-#endif
         }
-#ifdef NEUTRINO_PAIRS
-            bool sw;
-#endif
-            const int64_t FirstId;
+        const int64_t FirstId;
 };
 
 /*Class to write zero energies*/
@@ -311,10 +286,6 @@ int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, 
   }
   printf("Finished writing IC file.\n");
   FirstId+=NumPart;
-#ifdef NEUTRINO_PAIRS
-  if(type==2)
-          FirstId+=NumPart;
-#endif
   return FirstId;
 }
 

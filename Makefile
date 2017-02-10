@@ -12,7 +12,6 @@ LIBDIR =
 # The most accurate option is to use a regular grid, Nmesh >= 2 * Npart and turn this off.
 #OPT   +=  -DCORRECT_CIC  
 OPT   +=  -DNEUTRINOS  # this will make type 2 be neutrinos instead of a second DM component
-#OPT   +=  -DNEUTRINO_PAIRS  # this will produce an additional partner for every neutrino with opposite thermal velocities
 OPT += -DHAVE_BGFL  #Use this if you have bigfile support compiled in
 	#Check for a pkgconfig; if one exists we are probably debian.
 ifeq ($(shell pkg-config --exists hdf5 && echo 1),1)
