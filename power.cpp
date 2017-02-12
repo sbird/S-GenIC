@@ -8,6 +8,8 @@
 #include <cassert>
 //For the normalized power spectrum
 #include <gsl/gsl_integration.h>
+//For FAKE_BARYON_TYPE
+#include "save.hpp"
 
 PowerSpec_Tabulated::PowerSpec_Tabulated(const std::string& FileWithTransfer, const std::string & FileWithInputSpectrum, double Omega, double OmegaLambda, double OmegaBaryon, double OmegaNu,
                         double InputSpectrum_UnitLength_in_cm, double UnitLength_in_cm, bool no_gas, bool combined_neutrinos)
@@ -185,6 +187,8 @@ double PowerSpec_Tabulated::power(double k, int Type)
 {
   double logk = log10(k*scale);
   double transfer;
+  if(Type == FAKE_BARYON_TYPE)
+      Type = BARYON_TYPE;
 
   if(logk < ktransfer_table[0] || logk > ktransfer_table[NTransferTable - 1])
     return 0;

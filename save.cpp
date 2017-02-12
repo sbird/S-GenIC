@@ -10,7 +10,7 @@ using namespace std;
 
 #define BUFFER 48
 
-gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, double UnitVelocity_in_cm_per_s, bool combined_neutrinos)
+gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, double OmegaBaryon, double OmegaNuPart, double OmegaFakeBaryon, double OmegaLambda, double HubbleParam, double Box, double InitTime, double UnitMass_in_g, double UnitLength_in_cm, double UnitVelocity_in_cm_per_s, bool combined_neutrinos)
 {
   gadget_header header = {};
   //No factor of h^2 because mass is in 10^10 M_sun/h
@@ -24,7 +24,10 @@ gadget_header generate_header(std::valarray<int64_t> & npart, double Omega, doub
     header.mass[BARYON_TYPE] = OmegaBaryon * scale / npart[BARYON_TYPE];
     OmegaCDM -= OmegaBaryon;
   }
-
+  if(npart[FAKE_BARYON_TYPE]) {
+    header.mass[FAKE_BARYON_TYPE] = OmegaFakeBaryon * scale / npart[FAKE_BARYON_TYPE];
+    OmegaCDM -= OmegaFakeBaryon;
+  }
   if(npart[NEUTRINO_TYPE]){
     header.mass[NEUTRINO_TYPE] = OmegaNuPart * scale / npart[NEUTRINO_TYPE];
     OmegaCDM -=OmegaNuPart;

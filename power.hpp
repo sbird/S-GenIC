@@ -6,7 +6,6 @@
 #include <vector>
 #include <gsl/gsl_interp.h>
 
-
 //Abstract base class to allow calling of different types of power spectrum
 class PowerSpec
 {

@@ -26,6 +26,7 @@ int main(int argc, char **argv)
   const auto Omega = config.PopValue<double>("Omega");
   const auto OmegaLambda = config.PopValue<double>("OmegaLambda");
   const auto OmegaBaryon = config.PopValue<double>("OmegaBaryon");
+  const auto OmegaFakeBaryon = config.PopValue<double>("OmegaFakeBaryon",0);
   const auto HubbleParam = config.PopValue<double>("HubbleParam");
   //Which output format should we use. 4 is bigfile, 3 is HDF5, 2 is Gadget 2. Default to 3.
   const auto ICFormat = config.PopValue<int>("ICFormat", 3);
@@ -86,6 +87,8 @@ int main(int argc, char **argv)
   CbRtNpart[BARYON_TYPE] = config.PopValue<int>("NBaryon", 0);
   CbRtNpart[DM_TYPE] = config.PopValue<int>("NCDM", 0);
   CbRtNpart[NEUTRINO_TYPE] = config.PopValue<int>("NNeutrino", 0);
+  if(OmegaFakeBaryon > 0)
+    CbRtNpart[FAKE_BARYON_TYPE] = CbRtNpart[DM_TYPE]/6.;
   for(int type=0; type<N_TYPES; ++type)
       npart[type] = static_cast<int64_t>(CbRtNpart[type])*CbRtNpart[type]*CbRtNpart[type];
 
@@ -118,7 +121,7 @@ int main(int argc, char **argv)
             PSpec = new PowerSpec_EH(HubbleParam, Omega, OmegaBaryon, UnitLength_in_cm);
             break;
       case 2:
-            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, cosmo.OmegaNu(1),InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
+            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaFakeBaryon+OmegaBaryon, cosmo.OmegaNu(1),InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
             break;
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);
@@ -151,7 +154,7 @@ int main(int argc, char **argv)
   osnap = new GadgetWriter::GWriteSnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
   assert(osnap);
   /*Write headers*/
-  gadget_header header = generate_header(npart, Omega, OmegaBaryon, cosmo.OmegaNu(1), OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
+  gadget_header header = generate_header(npart, Omega, OmegaBaryon, cosmo.OmegaNu(1), OmegaFakeBaryon, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
