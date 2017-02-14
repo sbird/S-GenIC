@@ -26,9 +26,9 @@ int main(int argc, char **argv)
   const auto Omega = config.PopValue<double>("Omega");
   const auto OmegaLambda = config.PopValue<double>("OmegaLambda");
   const auto OmegaBaryon = config.PopValue<double>("OmegaBaryon");
-  const auto OmegaDM_2ndSpecies = config.PopValue<double>("OmegaDM_2ndSpecies");
+  const auto OmegaDM_2ndSpecies = config.PopValue<double>("OmegaNeutrino");
   const auto HubbleParam = config.PopValue<double>("HubbleParam");
-  //Which output format should we use. 3 is HDF5, 2 is Gadget 2. Default to 3.
+  //Which output format should we use. 4 is bigfile, 3 is HDF5, 2 is Gadget 2. Default to 3.
   const auto ICFormat = config.PopValue<int>("ICFormat", 3);
   //How many output files to use in the set
   const auto NumFiles = config.PopValue<int>("NumFiles");
@@ -60,18 +60,15 @@ int main(int argc, char **argv)
   const auto UnitMass_in_g = config.PopValue<double>("UnitMass_in_g", 1.989e43);
   const double UnitTime_in_s = UnitLength_in_cm / UnitVelocity_in_cm_per_s;
   //WDM options
-  bool WDM_Vtherm_On = config.PopValue<bool>("WDM_On",false);
-  WDM_Vtherm_On = config.PopValue<bool>("WDM_Vtherm_On",false) && WDM_Vtherm_On;
+  bool WDM_Vtherm_On = config.PopValue<bool>("WDM_Vtherm_On",false);
   const auto WDM_PartMass_in_kev = config.PopValue<double>("WDM_PartMass_in_kev", 0);
   //Neutrino options
-  //Enable particle neutrinos for type 2 particles. Does nothing unless NU_Vtherm is also true
-  bool NU_Vtherm_On = config.PopValue<bool>("NU_On",false);
-  //Add thermal velocities to type 2 particles if NU_On is also true.
-  NU_Vtherm_On = config.PopValue<bool>("NU_Vtherm_On",false) && NU_Vtherm_On;
+  //Add thermal velocities to type 2 particles
+  bool NU_Vtherm_On = config.PopValue<bool>("NU_Vtherm_On",false);
   //This triggers the use of neutrinos via an altered transfer function
   //Should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
-  const auto combined_neutrinos = config.PopValue<bool>("NU_KSPACE",false);
+  const auto combined_neutrinos = config.PopValue<bool>("NU_in_DM",false);
   //Changes whether we have two heavy and one light neutrino or one heavy two light.
   const auto InvertedHierarchy = config.PopValue<bool>("InvertedHierarchy",false);
   //Total neutrino mass
