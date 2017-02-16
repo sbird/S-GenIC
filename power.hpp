@@ -133,13 +133,12 @@ class NormalizedPowerSpec: public PowerSpec
             delete PSpec;
         }
         //public as is used in the integrator function, which is not in this class
-        double R8;
+        double R8, Dplus;
     private:
         PowerSpec * PSpec;
         //Note: Uses the R8 parameter below and calls power(k, Type)
         double TopHatSigma2();
-        double Norm;
-        double PrimordialIndex, Dplus;
+        double PrimordialIndex, Norm;
 };
 
 //A decorator for adding the effect of warm dark matter

@@ -211,12 +211,13 @@ double PowerSpec_Tabulated::power(double k, int Type)
 
 //Definitions for the normalized power spectrum
 //These mostly compute sigma_8 via the GSL
-NormalizedPowerSpec::NormalizedPowerSpec(PowerSpec * PSpec, double Sigma8, double PrimordialIndex, double Dplus, double UnitLength_in_cm): PSpec(PSpec), PrimordialIndex(PrimordialIndex), Dplus(Dplus)
+NormalizedPowerSpec::NormalizedPowerSpec(PowerSpec * PSpec, double Sigma8, double PrimordialIndex, double Dplus, double UnitLength_in_cm): Dplus(Dplus), PSpec(PSpec), PrimordialIndex(PrimordialIndex), Norm(1.)
 {
-        R8 = 8 * (3.085678e24 / UnitLength_in_cm);	/* 8 Mpc/h */
+        /* 8 Mpc/h */
+        R8 = 8 * (3.085678e24 / UnitLength_in_cm);
         //Uses R8
         Norm = Sigma8 * Sigma8 / TopHatSigma2();
-        printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n\n", Sigma8, Norm);
+        printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n", Sigma8, Norm);
 //         Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
 //         Dplus = cosmo.GrowthFactor(InitTime, 1.0);
         printf("Dplus initial redshift =%g  \n\n", Dplus);
@@ -229,13 +230,15 @@ double sigma2_int(double k, void * params)
   double kr, kr2, w, x;
   kr = r * k;
   kr2 = kr * kr;
+  /*Power spectrum is at starting redshift, we want it at z=0*/
+  double Dscale = pow(PSpec->Dplus,2);
 
   /*Series expansion; actually good until kr~1*/
-  if(kr < 1e-2)
+  if(kr < 1e-3)
       w = 1./3. - kr2/30. +kr2*kr2/840.;
   else
       w = 3 * (sin(kr) / kr - cos(kr)) / kr2;
-  x = 4 * M_PI * k * k * w * w * PSpec->power(k,100);
+  x = 4 * M_PI * k * k * w * w * PSpec->power(k,100) * Dscale;
   return x;
 }
 
@@ -249,7 +252,7 @@ double NormalizedPowerSpec::TopHatSigma2()
 
   /* note: 500/R is here chosen as integration boundary (infinity) */
   gsl_integration_qags (&F, 0, 500./this->R8, 0, 1e-4,1000,w,&result, &abserr);
-//   printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+  printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
   return result;
 }
