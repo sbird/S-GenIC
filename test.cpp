@@ -109,6 +109,10 @@ BOOST_AUTO_TEST_CASE(check_power_spec_camb)
     BOOST_CHECK_CLOSE(pspec2.power(0.111030E+00/1e3,0)/pspec2.power(0.111030E+00/1e3,6), pow(0.200504E+05/0.277947E+05,2),1e-6);
     //CDM
     BOOST_CHECK_CLOSE(pspec2.power(0.111030E+00/1e3,1)/pspec2.power(0.111030E+00/1e3,6), pow(0.293336E+05/0.277947E+05,2),1e-6);
+    //Check that normalisation works.
+    PowerSpec_Tabulated *pspec_ptr = new PowerSpec_Tabulated(trans.c_str(), matpow.c_str(), 0.222+0.0449, 0.7331, 0.0449,0.,3.085678e24, 3.085678e21, false, false);
+    NormalizedPowerSpec normspec(pspec_ptr, 0.918785/80., 1.0, 80, 3.085678e21);
+    BOOST_CHECK_CLOSE(normspec.power(0.208152E-02/1e3,1)*80*80, pspec.power(0.208152E-02/1e3,1),1e-3);
 }
 
 class TestFermiDirac: public FermiDiracVel

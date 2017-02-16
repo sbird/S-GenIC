@@ -217,10 +217,10 @@ NormalizedPowerSpec::NormalizedPowerSpec(PowerSpec * PSpec, double Sigma8, doubl
         R8 = 8 * (3.085678e24 / UnitLength_in_cm);
         //Uses R8
         Norm = Sigma8 * Sigma8 / TopHatSigma2();
-        printf("Normalization adjusted to  Sigma8=%g   (Normfac=%g)\n", Sigma8, Norm);
+        printf("Normalization adjusted by %g so  Sigma8 = %g\n", Norm, Sigma8);
 //         Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
 //         Dplus = cosmo.GrowthFactor(InitTime, 1.0);
-        printf("Dplus initial redshift =%g  \n\n", Dplus);
+        printf("Growth factor to z=0: %g \n", Dplus);
 }
 
 double sigma2_int(double k, void * params)
@@ -252,7 +252,7 @@ double NormalizedPowerSpec::TopHatSigma2()
 
   /* note: 500/R is here chosen as integration boundary (infinity) */
   gsl_integration_qags (&F, 0, 500./this->R8, 0, 1e-4,1000,w,&result, &abserr);
-  printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
+//   printf("gsl_integration_qng in TopHatSigma2. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
   gsl_integration_workspace_free (w);
   return result;
 }
