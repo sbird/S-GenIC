@@ -26,9 +26,6 @@ double Cosmology::Hubble(double a)
         hubble_a += (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
         //Add the radiation
         hubble_a += OmegaR(a);
-        //If neutrinos are massless, add them too. Otherwise they are included in OmegaMatter
-        if(MNu == 0)
-                hubble_a += OMEGANU/(a*a*a*a);
         return HUBBLE * sqrt(hubble_a);
 }
 
@@ -66,7 +63,13 @@ double Cosmology::OmegaMatter(double a)
 
 double Cosmology::OmegaR(double a)
 {
-    return OMEGAG/(a*a*a*a);
+    if(NoRadiation)
+        return 0;
+    double omr = OMEGAG/(a*a*a*a);
+    //If neutrinos are massless, add them too. Otherwise they are included in OmegaMatter
+    if(MNu == 0)
+        omr += OMEGANU/(a*a*a*a);
+    return omr;
 }
 
 /*Note q carries units of eV/c. kT/c has units of eV/c.
@@ -265,8 +268,6 @@ double Cosmology::F_Omega(double a)
       Hprime += 3*OmegaNu(1)/(a*a*a);
       Hprime += OmegaNuPrimed(a);
   }
-  else
-      Hprime += -4*OMEGANU/(a*a*a*a);
   double HH = Hubble(a);
   double ff = HUBBLE*HUBBLE*Hprime/HH/HH/2. + 5.*Omega/(2*a*a*HH*HH*growth(a));
   return ff;

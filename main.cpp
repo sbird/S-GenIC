@@ -71,6 +71,8 @@ int main(int argc, char **argv)
   const auto combined_neutrinos = config.PopValue<bool>("NU_in_DM",false);
   //Changes whether we have two heavy and one light neutrino or one heavy two light.
   const auto InvertedHierarchy = config.PopValue<bool>("InvertedHierarchy",false);
+  //If enabled, turn off radiation in the initial velocities
+  const auto NoRadiation = config.PopValue<bool>("NoRadiation",false);
   //Total neutrino mass
   const auto NU_PartMass_in_ev = config.PopValue<double>("NU_PartMass_in_ev",0);
   //Parameter for the Efstathiou power spectrum. Generally does nothing.
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
   }
 
   //Make a cosmology
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy);
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy, NoRadiation);
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {

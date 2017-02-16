@@ -205,24 +205,24 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
 {
     //Check that we get the right scalings for total matter domination.
     //Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu),
-    Cosmology cosmo(0.7, 1., 0., 0., false);
+    Cosmology cosmo(0.7, 1., 0., 0., false,false);
     BOOST_CHECK_CLOSE(cosmo.Hubble(1), HUBBLE,1e-2);
     BOOST_CHECK_CLOSE(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.),1e-1);
     BOOST_CHECK_CLOSE(cosmo.growth(0.5)/cosmo.growth(1), 0.5,2e-2);
     //Check that massless neutrinos work
-    BOOST_CHECK_CLOSE(cosmo.OmegaNu(1), cosmo.OmegaR(1)*7./8.*pow(pow(4/11.,1/3.)*1.00381,4)*3,1e-3);
+    BOOST_CHECK_CLOSE(cosmo.OmegaNu(1), (cosmo.OmegaR(1)-cosmo.OmegaNu(1))*7./8.*pow(pow(4/11.,1/3.)*1.00381,4)*3,2e-3);
     BOOST_CHECK_CLOSE(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4),1e-6);
     //Check that the velocity correction d ln D1/d lna is constant
     BOOST_CHECK_CLOSE(1.0, cosmo.F_Omega(1.5),1e-1);
     BOOST_CHECK_CLOSE(1.0, cosmo.F_Omega(2),1e-2);
 
     //More observationally relevant tests
-    Cosmology cosmo2(0.7, 0.3, 0.7, 0., false);
+    Cosmology cosmo2(0.7, 0.3, 0.7, 0., false,false);
     BOOST_CHECK_CLOSE(0.01*log(cosmo2.growth(0.01+1e-5)/cosmo2.growth(0.01-1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
     BOOST_CHECK_CLOSE(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01),1e-3);
 
     //Massive neutrinos
-    Cosmology nuc(0.7, 0.3, 0.7, 1.0, false);
+    Cosmology nuc(0.7, 0.3, 0.7, 1.0, false,false);
     BOOST_CHECK_CLOSE(0.01*log(nuc.growth(0.01+1e-5)/nuc.growth(0.01-1e-5))/2e-5, nuc.F_Omega(0.01),1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125,1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4),1e-2);
