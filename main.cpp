@@ -70,7 +70,8 @@ int main(int argc, char **argv)
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.
   const auto combined_neutrinos = config.PopValue<bool>("NU_in_DM",false);
   //Changes whether we have two heavy and one light neutrino or one heavy two light.
-  const auto InvertedHierarchy = config.PopValue<bool>("InvertedHierarchy",false);
+  //0 is 3 degenerate species, 1 is normal (two light species) and -1 is inverted (two heavy)
+  const auto Hierarchy = config.PopValue<int>("Hierarchy",0);
   //If enabled, turn off radiation in the initial velocities
   const auto NoRadiation = config.PopValue<bool>("NoRadiation",false);
   //Total neutrino mass
@@ -123,7 +124,7 @@ int main(int argc, char **argv)
   }
 
   //Make a cosmology
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, InvertedHierarchy, NoRadiation);
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {

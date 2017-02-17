@@ -2,6 +2,8 @@
 #include <math.h>
 #include <gsl/gsl_integration.h>
 #include "physconst.h"
+#include <valarray>
+#include <cassert>
 
 /**This file contains code to compute the Hubble function at arbitrary redshift. Most of the code integrates
  * Omega_Nu for massive neutrinos, taken from the Gadget-3 patches..**/
@@ -14,8 +16,41 @@
 /*For massless neutrinos, rho_nu/rho_g = 7/8 (T_nu/T_cmb)^4 *N_eff, but we absorbed N_eff into T_nu above*/
 #define OMEGANU (OMEGAG*7/8.*pow(TNU/T_CMB0,4)*3)
 //Neutrino mass splittings
-//Neglect the smaller of the two mass splittings: 7.54e-5 is close enough to zero. #define M21
-#define M32 2.43e-3 //Particle data group: +- 0.06 eV
+#define M21 7.53e-5 //Particle data group 2016: +- 0.18e-5 eV2
+#define M32n 2.44e-3 //Particle data group: +- 0.06e-3 eV2
+#define M32i 2.51e-3 //Particle data group: +- 0.06e-3 eV2
+//(this is different for normal and inverted hierarchy)
+
+/* Compute the three neutrino masses,
+ * including the neutrino mass splittings
+ * from oscillation experiments.
+ * mnu is the total neutrino mass in eV.
+ * Hierarchy is -1 for inverted (two heavy),
+ * 1 for normal (two light) and 0 for degenerate.*/
+std::valarray<double> NuPartMasses(double mnu, int Hierarchy)
+{
+    std::valarray<double> numasses(mnu/3.,3);
+    //Hierarchy == 0 is 3 degenerate neutrinos
+    if(Hierarchy == 0)
+        return numasses;
+
+    const double M32 = Hierarchy > 0 ? M32n : -M32i;
+    //If the total mass is below that allowed by the hierarchy,
+    //assume one active neutrino.
+    if(mnu < ((Hierarchy > 0) ? sqrt(M32n) + sqrt(M21) : 2*sqrt(M32i) -sqrt(M21))) {
+        return std::valarray<double> ({mnu, 0, 0});
+    }
+    //DD is the summed masses of the two closest neutrinos
+    double DD1 = 4 * mnu/3. - 2/3.*sqrt(mnu*mnu + 3*M32 + 1.5*M21);
+    //Last term was neglected initially. This should be very well converged.
+    double DD = 4 * mnu/3. - 2/3.*sqrt(mnu*mnu + 3*M32 + 1.5*M21 + 0.75*M21*M21/DD1/DD1);
+    assert(isfinite(DD));
+    assert(fabs(DD1/DD -1) < 1e-2);
+    numasses[0] = mnu - DD;
+    numasses[1] = 0.5*(DD + M21/DD);
+    numasses[2] = 0.5*(DD - M21/DD);
+    return numasses;
+}
 
 //Hubble H(z) / H0 in units of 1/T.
 double Cosmology::Hubble(double a)
@@ -33,21 +68,10 @@ double Cosmology::Hubble(double a)
 * rho_nu and friends are not externally callable*/
 double Cosmology::OmegaNu(double a)
 {
-        double rhonu;
-        if (MNu >= M32) {
-            double split = M32;
-            //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
-            if (InvertedHierarchy)
-                split *= -1;
-            //This one is the degenerate state with two neutrinos in it.
-            //Solve a quadratic equation in total mass to get:
-            double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
-            double M3 = MNu - 2*M2;
-            rhonu =2*OmegaNu_single(a,M2)+OmegaNu_single(a,M3);
-        }
-        else {
-            //For smaller masses, just assume that only one neutrino is massive.
-            rhonu = OmegaNu_single(a,MNu)+2*OmegaNu_single(a,0);
+        double rhonu = 0;
+        auto numasses = NuPartMasses(MNu, Hierarchy);
+        for(int i=0; i<3;i++){
+            rhonu += OmegaNu_single(a,numasses[i]);
         }
         return rhonu;
 }
@@ -210,22 +234,10 @@ double rho_nuprime_int(double q, void * params)
 * rho_nu and friends are not externally callable*/
 double Cosmology::OmegaNuPrimed(double a)
 {
-        double rhonu;
-        if (MNu >= M32) {
-            double split = M32;
-            //Sign of the mass splitting depends on hierarchy: inverted means the heavy state is degenerate.
-            if (InvertedHierarchy)
-                split *= -1;
-            //This one is the degenerate state with two neutrinos in it.
-            //Solve a quadratic equation in total mass to get:
-            double M2 = (2*MNu - sqrt(MNu*MNu + 3*split))/3;
-            double M3 = MNu - 2*M2;
-            rhonu =2*OmegaNuPrimed_single(a,M2)+OmegaNuPrimed_single(a,M3);
-        }
-        else {
-            //For smaller masses, just assume that only one neutrino is massive.
-            rhonu = OmegaNuPrimed_single(a,MNu)+2*OmegaNuPrimed_single(a,0);
-        }
+        double rhonu = 0;
+        auto numasses = NuPartMasses(MNu, Hierarchy);
+        for(int i=0; i<3;i++)
+            rhonu += OmegaNuPrimed_single(a,numasses[i]);
         return rhonu;
 }
 

@@ -286,3 +286,30 @@ BOOST_AUTO_TEST_CASE(check_part_grid)
                 BOOST_CHECK_CLOSE(cofm, static_cast<double>(j)*Box/NumPart[1], 1e-6);
             }
 }
+
+//Neutrino mass spectrum allowed by oscillation experiments.
+std::valarray<double> NuPartMasses(double mnu, int Hierarchy);
+#define M21 7.53e-5 //Particle data group 2016: +- 0.18e-5 eV2
+#define M32n 2.44e-3 //Particle data group: +- 0.06e-3 eV2 
+#define M32i 2.51e-3 //Particle data group: +- 0.06e-3 eV2 
+
+BOOST_AUTO_TEST_CASE(check_numass)
+{
+    auto numass = NuPartMasses(0.3,0);
+    for(auto nn : numass)
+        BOOST_CHECK_CLOSE(nn,0.1,1e-3);
+    numass = NuPartMasses(0.3,1);
+    /*Check the original inequalities are satisfied*/
+    BOOST_CHECK_CLOSE(numass[0]+numass[1]+numass[2], 0.3,1e-3);
+    BOOST_CHECK_CLOSE(numass[0]*numass[0] - numass[1]*numass[1], M32n,1e-3);
+    BOOST_CHECK_CLOSE(numass[1]*numass[1] - numass[2]*numass[2], M21,1e-3);
+    numass = NuPartMasses(0.08,1);
+    BOOST_CHECK_CLOSE(numass[0]+numass[1]+numass[2], 0.08,1e-3);
+    BOOST_CHECK_CLOSE(numass[0]*numass[0] - numass[1]*numass[1], M32n,1e-3);
+    BOOST_CHECK_CLOSE(numass[1]*numass[1] - numass[2]*numass[2], M21,1e-3);
+    numass = NuPartMasses(0.11,-1);
+    BOOST_CHECK_CLOSE(numass[0]+numass[1]+numass[2], 0.11,1e-3);
+    BOOST_CHECK_CLOSE(numass[0]*numass[0] - numass[1]*numass[1], -M32i,1e-3);
+    BOOST_CHECK_CLOSE(numass[1]*numass[1] - numass[2]*numass[2], M21,1e-3);
+}
+
