@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   const auto WDM_PartMass_in_kev = config.PopValue<double>("WDM_PartMass_in_kev", 0);
   //Neutrino options
   //Add thermal velocities to type 2 particles
-  bool NU_Vtherm_On = config.PopValue<bool>("NU_Vtherm_On",false);
+  bool NU_Vtherm_On = config.PopValue<bool>("NU_Vtherm_On",true);
   //This triggers the use of neutrinos via an altered transfer function
   //Should be on only if you are faking neutrinos by combining them with the dark matter,
   //and changing the transfer function, which is a terrible way of simulating neutrinos. So leave it off.

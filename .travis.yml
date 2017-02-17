@@ -15,4 +15,4 @@ before-install: git submodule update --init --recursive
 install: true
 script:
     - make && make test
-    - ./N-GenIC testdata/integration/test_dm/_genic_params.ini
+    - ./N-GenIC ngenic.param

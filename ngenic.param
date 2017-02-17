@@ -1,62 +1,98 @@
+#==Required parameters==
+# This is the size of the FFT grid used to
+# compute the displacement field. One
+# should have Nmesh >= Npart.
+Nmesh = 512
+# Random seed for modes in phase realisation
+Seed = 9281110
 
-Nmesh=768        # This is the size of the FFT grid used to 
-                           # compute the displacement field. One
-                           # should have Nmesh >= Npart.
+# Periodic box size of simulation
+Box = 256000
 
-Box= 512000.0   # Periodic box size of simulation
+# Base-filename of output files
+FileBase = testdm
+# Directory for storing output files
+OutputDir = testdata/
 
-FileBase =test                 # Base-filename of output files
-OutputDir= test   # Directory for output
+# Total matter density  (at z=0)
+Omega = 0.288
+# Cosmological constant (at z=0)
+OmegaLambda = 0.712
+# Baryon density        (at z=0)
+OmegaBaryon = 0.0472
+# Hubble parameter (may be used for power spec parameterization)
+HubbleParam = 0.7
+# Starting redshift
+Redshift = 99
 
-#(Cube root of) particle numbers
-NBaryon = 128
-NCDM = 128
-NNeutrino = 128
+#Number of files used in output snapshot set, for ICFormat < 4.
+NumFiles = 2
+# filename of tabulated MATTER powerspectrum from CAMB
+FileWithInputSpectrum = testdata/cambv2_matterpow_99.dat
+# filename of transfer functions from CAMB
+FileWithTransfer = testdata/cambv2_matterpow_99.dat
 
-ICFormat=3              # 2 for Gadget output, 3 for HDF5
+#==Optional Parameters==
+# (Cube root of) number of particles
+NBaryon = 64
+NCDM = 64
+NNeutrino = 64
 
-Omega= 0.2793       # Total matter density  (at z=0)
-OmegaLambda= 0.7207       # Cosmological constant (at z=0)
-OmegaBaryon= 0.0463      # Baryon density        (at z=0)
-OmegaNeutrino = 0      # Omega for a second dark matter species (at z=0)
-HubbleParam= 0.7       # Hubble paramater (may be used for power spec parameterization)
+#Particle mass of neutrinos in eV.
+#OmegaNu is derived self-consistently from this value
+#and hence not specified separately.
+NU_PartMass_in_ev = 0
+#1,0,-1 correspond to normal, inverted and degenerate neutrino species hierarchies, respectively.
+#Note if you ask for a mass below the minimum allowed by the hierarchy, 
+#you will get a single massive neutrino species.
+Hierarchy = 0
+#Output format of ICs: 1 and 2 correspond to Gadget format 1 and 2, 3 is HDF5 and 4 is BigFile.
+ICFormat = 3
 
-Redshift= 99        # Starting redshift
+# Enable twolpt
+# Note this is only formally derived for single-fluid (CDM) simulations.
+TWOLPT = 0
+#If 1, each mode will be scattered from the mean power to mimic cosmic variance
+RayleighScatter = 1
+#If true, do not include radiation (inc. massless neutrinos) 
+#when computing the Hubble function (for the velocity prefactor)
+NoRadiation = 0
 
-WhichSpectrum=2         # "1" selects Eisenstein & Hu spectrum,
-		           # "2" selects a tabulated power spectrum in
-                           # the file 'FileWithInputSpectrum'
-                           # otherwise, Efstathiou parametrization is used
+#==Specialised optional parameters you are unlikely to use==
+# "1" selects Eisenstein & Hu spectrum,
+# "2" selects a tabulated power spectrum in
+# the file 'FileWithInputSpectrum'
+# otherwise, Efstathiou parametrization is used
+WhichSpectrum = 2
 
-NumFiles= 4
-FileWithInputSpectrum= /home/spb/data/hybrid-kspace/b512p512nu0.15z99/ics_matterpow_99.dat  # filename of tabulated MATTER powerspectrum from CAMB
-                                           
-FileWithTransfer= /home/spb/data/hybrid-kspace/b512p512nu0.15z99/ics_transfer_99.dat  # filename of transfer functions from CAMB
+# defines length unit of tabulated
+# input spectrum in cm/h. By default 1 Mpc.
+# Only used for CAMB power spectra.
+InputSpectrum_UnitLength_in_cm = 3.085678e24
 
-InputSpectrum_UnitLength_in_cm= 3.085678e24 # defines length unit of tabulated
-                                            # input spectrum in cm/h. 
-                                            # Note: This can be chosen different from UnitLength_in_cm
+# if set to zero, the tabulated spectrum is
+# assumed to be normalized already in its amplitude to
+# the starting redshift, otherwise this is recomputed
+# based on the specified sigma8
+ReNormalizeInputSpectrum = 0
 
-ReNormalizeInputSpectrum=0                # if set to zero, the
-                                            # tabulated spectrum is
-                                            # assumed to be normalized
-                                            # already in its amplitude to
-                                            # the starting redshift,
-                                            # otherwise this is recomputed
-                                            # based on the specified sigma8
+#Amplitude of matter fluctuations at z=0, used only if ReNormalizeInputSpectrum=1.
+Sigma8 = 0.8
+#ns - only used for non-tabulated power spectra.
+PrimordialIndex = 1.
 
-Sigma8 =                0.8
-Seed =181170    #  seed for IC-generator
-RayleighScatter  =    0
+# defines length unit of output (in cm/h)
+UnitLength_in_cm = 3.085678e21
+# defines mass unit of output (in g/cm)
+UnitMass_in_g = 1.989e43
+# defines velocity unit of output (in cm/sec)
+UnitVelocity_in_cm_per_s = 1e5
 
-UnitLength_in_cm =        3.085678e21   # defines length unit of output (in cm/h) 
-UnitMass_in_g    =        1.989e43      # defines mass unit of output (in g/cm)
-UnitVelocity_in_cm_per_s= 1e5           # defines velocity unit of output (in cm/sec)
+# If 1, the neutrino masses will be included in the dark matter particles,
+# as a change in the transfer function. This is a very inaccurate way to simulate neutrinos.
+NU_in_DM = 0
+#If one, add neutrino thermal velocities to type 2 particles.
+NU_Vtherm_On = 1
 
-
-NU_in_DM =0      # Add neutrinos to the dark matter particles. NOT a good idea.
-NU_Vtherm_On= 1
-NU_PartMass_in_ev= 0
-
-TWOLPT =            1       # Enable twolpt
-
+#Shape parameter, only for Efstathiou power spectrum
+ShapeGamma = 0.201
