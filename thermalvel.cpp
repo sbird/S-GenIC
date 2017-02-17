@@ -17,8 +17,6 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
         return WDM_V0;
 }
 
-#ifdef NEUTRINOS
-
 // This function converts the dimensionless units used in the integral to dimensionful units.
 // Unit scaling velocity for neutrinos:
 // This is an arbitrary rescaling of the unit system in the Fermi-Dirac kernel so we can integrate dimensionless quantities.
@@ -35,8 +33,6 @@ double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double
     NU_V0*=sqrt(1+redshift);
     return NU_V0;
 }
-
-#endif //NEUTRINOS
 
 //Fermi-Dirac kernel for below
 double fermi_dirac_kernel(double x, void * params)

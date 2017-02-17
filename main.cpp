@@ -26,7 +26,6 @@ int main(int argc, char **argv)
   const auto Omega = config.PopValue<double>("Omega");
   const auto OmegaLambda = config.PopValue<double>("OmegaLambda");
   const auto OmegaBaryon = config.PopValue<double>("OmegaBaryon");
-  const auto OmegaDM_2ndSpecies = config.PopValue<double>("OmegaNeutrino");
   const auto HubbleParam = config.PopValue<double>("HubbleParam");
   //Which output format should we use. 4 is bigfile, 3 is HDF5, 2 is Gadget 2. Default to 3.
   const auto ICFormat = config.PopValue<int>("ICFormat", 3);
@@ -109,6 +108,8 @@ int main(int argc, char **argv)
   /*Set particle numbers*/
   if(npart.sum() == 0)
           exit(1);
+  //Make a cosmology
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
   //Initialise a power spectrum
   PowerSpec * PSpec;
   switch(WhichSpectrum)
@@ -117,14 +118,12 @@ int main(int argc, char **argv)
             PSpec = new PowerSpec_EH(HubbleParam, Omega, OmegaBaryon, UnitLength_in_cm);
             break;
       case 2:
-            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, OmegaDM_2ndSpecies,InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
+            PSpec = new PowerSpec_Tabulated(FileWithTransfer, FileWithInputSpectrum, Omega, OmegaLambda, OmegaBaryon, cosmo.OmegaNu(1),InputSpectrum_UnitLength_in_cm, UnitLength_in_cm, !npart[BARYON_TYPE], combined_neutrinos);
             break;
       default:
             PSpec = new PowerSpec_Efstathiou(ShapeGamma, UnitLength_in_cm);
   }
 
-  //Make a cosmology
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {
@@ -152,7 +151,7 @@ int main(int argc, char **argv)
   osnap = new GadgetWriter::GWriteSnap(OutputDir+std::string("/")+FileBase+extension, npart,NumFiles, sizeof(id_type));
   assert(osnap);
   /*Write headers*/
-  gadget_header header = generate_header(npart, Omega, OmegaBaryon, OmegaDM_2ndSpecies, OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
+  gadget_header header = generate_header(npart, Omega, OmegaBaryon, cosmo.OmegaNu(1), OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 
   //Generate regular particle grid
   part_grid Pgrid(CbRtNpart, header.mass, Box);
@@ -181,7 +180,6 @@ int main(int argc, char **argv)
         therm_vels = new FermiDiracVel (wdm_vth);
         printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
       }
-#ifdef NEUTRINOS
       //Neutrino thermal velocities
       if(NU_Vtherm_On && type == 2) {
           //Init structure for neutrino velocities
@@ -189,7 +187,6 @@ int main(int argc, char **argv)
           therm_vels = new FermiDiracVel (v_th);
           printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
       }
-#endif //NEUTRINOS
       lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
       outdata.SetVelPrefac(vel_prefac, vel_prefac2);
       FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);

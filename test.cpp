@@ -290,8 +290,8 @@ BOOST_AUTO_TEST_CASE(check_part_grid)
 //Neutrino mass spectrum allowed by oscillation experiments.
 std::valarray<double> NuPartMasses(double mnu, int Hierarchy);
 #define M21 7.53e-5 //Particle data group 2016: +- 0.18e-5 eV2
-#define M32n 2.44e-3 //Particle data group: +- 0.06e-3 eV2 
-#define M32i 2.51e-3 //Particle data group: +- 0.06e-3 eV2 
+#define M32n 2.44e-3 //Particle data group: +- 0.06e-3 eV2
+#define M32i 2.51e-3 //Particle data group: +- 0.06e-3 eV2
 
 BOOST_AUTO_TEST_CASE(check_numass)
 {

@@ -264,10 +264,9 @@ lpt_data DisplacementFields::displacement_fields(const int type, part_grid& Pgri
             /* Compute displacement gradient
             * do disp(0,0), disp(0,1), disp(0,2), disp(1,1), disp(1,2), disp(2,2) only as vector symmetric*/
             for(int ax=2;ax>=axes; ax--){
-        #ifdef NEUTRINOS
+                //Neutrinos do not have 2lpt
                 if(type == 2)
                     break;
-        #endif
                 #pragma omp parallel for
                 for(size_t i = 0; i < Nmesh; i++) {
                     for(size_t j = 0; j < Nmesh; j++) {
@@ -306,10 +305,8 @@ lpt_data DisplacementFields::displacement_fields(const int type, part_grid& Pgri
      maxdisp=displacement_read_out(1, outdata, Pgrid, axes, type);
     }
 
-    if (twolpt) {
-#ifdef NEUTRINOS
-    if(type != 2){
-#endif
+    //2lpt not computed for neutrinos
+    if (twolpt && type != 2) {
       /* So now digrad[axes] contains phi,ii and twosrc contains  sum_(i>j)(- phi,ij^2)
        * We want to now compute phi,ii^(2), the laplacian of the 2LPT term, in twosrc */
       #pragma omp parallel for
@@ -353,9 +350,6 @@ lpt_data DisplacementFields::displacement_fields(const int type, part_grid& Pgri
               /* read-out displacements */
               maxdisp2=displacement_read_out(2, outdata, Pgrid, axes, type);
           }
-#ifdef NEUTRINOS
-    } //type !=2
-#endif
     } //end twolpt
 
   printf("\nMaximum Zeldovich displacement: %g kpc/h, in units of the part-spacing= %g\n",
