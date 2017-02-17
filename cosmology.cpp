@@ -44,7 +44,7 @@ std::valarray<double> NuPartMasses(double mnu, int Hierarchy)
     double DD1 = 4 * mnu/3. - 2/3.*sqrt(mnu*mnu + 3*M32 + 1.5*M21);
     //Last term was neglected initially. This should be very well converged.
     double DD = 4 * mnu/3. - 2/3.*sqrt(mnu*mnu + 3*M32 + 1.5*M21 + 0.75*M21*M21/DD1/DD1);
-    assert(isfinite(DD));
+    assert(std::isfinite(DD));
     assert(fabs(DD1/DD -1) < 1e-2);
     numasses[0] = mnu - DD;
     numasses[1] = 0.5*(DD + M21/DD);
