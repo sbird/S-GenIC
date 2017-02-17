@@ -11,9 +11,10 @@
  * due to the neutrinos being slightly coupled at e+- annihilation.
  * See Mangano et al 2005 (hep-ph/0506164)
  *The correction is (3.046/3)^(1/4), for N_eff = 3.046 */
-#define TNU     (T_CMB0*pow(4/11.,1/3.)*1.00381)              /* Neutrino + antineutrino background temperature in Kelvin */
+/* Neutrino + antineutrino background temperature in Kelvin */
+#define TNU     (T_CMB0*pow(4/11.,1/3.)*1.00328)
 
-#define  GRAVITY     6.672e-8 // cm^3 g^-1 s^-2
-#define  HUBBLE      3.2407789e-18   /* in h/sec */
+#define  GRAVITY     6.67408e-8 // cm^3 g^-1 s^-2
+#define  HUBBLE      3.24077929e-18   /* in h/sec */
 
 #endif
