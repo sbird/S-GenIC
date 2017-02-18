@@ -19,13 +19,13 @@ class Cosmology
         //Radiation density
         double OmegaR(double a);
         double GrowthFactor(double astart, double aend);
-        double growth(double a);
         double F_Omega(double a);
         double F2_Omega(double a);
         double OmegaNuPrimed(double a);
         //The matter density
         double OmegaMatter(double a);
     private:
+        double growth(double a, double *dDda);
         /* Return the matter density in a single neutrino species.
         * Not externally callable*/
         double OmegaNu_single(double a,double mnu);

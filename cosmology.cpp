@@ -1,6 +1,8 @@
 #include "cosmology.hpp"
 #include <math.h>
 #include <gsl/gsl_integration.h>
+#include <gsl/gsl_odeiv2.h>
+#include <gsl/gsl_errno.h>
 #include "physconst.h"
 #include <valarray>
 #include <cassert>
@@ -188,35 +190,51 @@ double Cosmology::OmegaNu_single(double a,double mnu)
 
 double Cosmology::GrowthFactor(double astart, double aend)
 {
-  return growth(aend) / growth(astart);
+  return growth(aend, NULL) / growth(astart, NULL);
 }
 
-double growth_int(double a, void * param)
+int growth_ode(double a, const double yy[], double dyda[], void * param)
 {
     Cosmology * d_this = (Cosmology *) param;
-    return 1./pow(a* (d_this->Hubble(a)),3);
+    const double hub = d_this->Hubble(a)/HUBBLE;
+    dyda[0] = yy[1]/pow(a,3)/hub;
+    dyda[1] = yy[0] * a * hub * 1.5;
+    return GSL_SUCCESS;
 }
 
 /** The growth function is given as a 2nd order DE in Peacock 1999, Cosmological Physics.
- * Here we use an integral form: D1(a) = H integral(1/a^3 H^3 da)
- * Note there is a free proportionality constant, which Eisenstein takes to be 5/2 Omega_m
- * so that D(a) -> a as a-> 0
- * See astro-ph/9709054
+ * D'' + a'/a D' - 1.5 * (a'/a)^2 D = 0
+ * 1/a (a D')' - 1.5 (a'/a)^2 D
+ * where ' is d/d tau = a^2 H d/da
+ * Define F = a^3 H dD/da
+ * and we have: dF/da = 1.5 a H D
  */
-double Cosmology::growth(double a)
+double Cosmology::growth(double a, double * dDda)
 {
-  gsl_integration_workspace * w = gsl_integration_workspace_alloc (GSL_VAL);
-  double hubble_a;
-  double result,abserr;
-  gsl_function F;
-  F.function = &growth_int;
+  gsl_odeiv2_system FF;
+  FF.function = &growth_ode;
+  FF.jacobian = NULL;
+  FF.dimension = 2;
   //Just pass the whole structure as the params pointer, as GSL won't let us make the integrand a member function
-  F.params = this;
-  hubble_a = Hubble(a);
-  gsl_integration_qag (&F, 0, a, 0, 1e-4,GSL_VAL,GSL_INTEG_GAUSS61, w,&result, &abserr);
-//   printf("gsl_integration_qng in growth. Result %g, error: %g, intervals: %lu\n",result, abserr,w->size);
-  gsl_integration_workspace_free (w);
-  return 5./2*Omega*hubble_a * result;
+  FF.params = this;
+  gsl_odeiv2_driver * drive = gsl_odeiv2_driver_alloc_standard_new(&FF,gsl_odeiv2_step_rkf45, 1e-5, 1e-8,1e-8,1,1);
+  /* The initial conditions need a little care.
+   * We start early (around matter/rad equality) 
+   * so the decaying mode has time to decay.
+   * Note the normalisation of D is arbitrary 
+   * and never seen outside this function.*/
+  double yinit[2] = {1e-5, 0};
+  double curtime = 2e-5;
+  int stat = gsl_odeiv2_driver_apply(drive, &curtime,a, yinit);
+  if (stat != GSL_SUCCESS) {
+      printf("gsl_odeiv in growth: %d. Result at %g is %g %g\n",stat, curtime, yinit[0], yinit[1]);
+  }
+  gsl_odeiv2_driver_free(drive);
+  /*Store derivative of D if needed.*/
+  if(dDda) {
+      *dDda = yinit[1]/pow(a,3)/(Hubble(a)/HUBBLE);
+  }
+  return yinit[0];
 }
 
 /*Note q carries units of eV/c. kT/c has units of eV/c.
@@ -264,29 +282,21 @@ double Cosmology::OmegaNuPrimed_single(double a, double mnu)
 }
 
 /*
- * This is the Zeldovich approximation prefactor, f1 = d ln D1 / dlna.
- * By differentiating the growth function we get:
- * f = H' / H + 5/2 Omega /(a^2 H^2 D1)
- * and 2H H' = H0^2 * (-3 Omega/a^3 - 4 Omega_R/a^4 - 2 OmegaK/a^2)
- * The derivative of the neutrino density is solved numerically
+ * This is the Zeldovich approximation prefactor, 
+ * f1 = d ln D1 / dlna = a / D (dD/da)
  */
 double Cosmology::F_Omega(double a)
 {
-  double Hprime = -3 * Omega/(a*a*a) -4 * OmegaR(a) - 2* (1-Omega-OmegaLambda)/(a*a);
-  //Add the derivative of the neutrino mass to H'
-  //d Omega_nu /da = - 4 Omega_nu + (derivative function)
-  //With massive neutrinos OmegaNu is added twice
-  if(MNu > 0) {
-      Hprime += 3*OmegaNu(1)/(a*a*a);
-      Hprime += OmegaNuPrimed(a);
-  }
-  double HH = Hubble(a);
-  double ff = HUBBLE*HUBBLE*Hprime/HH/HH/2. + 5.*Omega/(2*a*a*HH*HH*growth(a));
-  return ff;
+    double dD1da=0;
+    double D1 = growth(a, &dD1da);
+    return a / D1 * dD1da;
 }
 
 /* The 2LPT prefactor, f2 = d ln D2/dlna.
- * This is an approximation rather than the exact result, and not strictly valid for closed universes.
+ * This is an approximation rather than the exact result, 
+ * and not strictly valid for closed universes.
+ * The approximation should be good enough since 
+ * the 2lpt term is generally small.
  */
 double Cosmology::F2_Omega(double a)
 {

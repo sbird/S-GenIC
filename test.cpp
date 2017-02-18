@@ -208,7 +208,8 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     Cosmology cosmo(0.7, 1., 0., 0., 0,false);
     BOOST_CHECK_CLOSE(cosmo.Hubble(1), HUBBLE,1e-2);
     BOOST_CHECK_CLOSE(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.),1e-1);
-    BOOST_CHECK_CLOSE(cosmo.growth(0.5)/cosmo.growth(1), 0.5,2e-2);
+    BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.5,1), 2,2e-2);
+    BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.05,1), 20.01,0.1);
     //Check that massless neutrinos work
     BOOST_CHECK_CLOSE(cosmo.OmegaNu(1), (cosmo.OmegaR(1)-cosmo.OmegaNu(1))*7./8.*pow(pow(4/11.,1/3.)*1.00328,4)*3,2e-3);
     BOOST_CHECK_CLOSE(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4),1e-6);
@@ -218,12 +219,15 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
 
     //More observationally relevant tests
     Cosmology cosmo2(0.7, 0.3, 0.7, 0., 0,false);
-    BOOST_CHECK_CLOSE(0.01*log(cosmo2.growth(0.01+1e-5)/cosmo2.growth(0.01-1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
+    BOOST_CHECK_CLOSE(0.01*log(cosmo2.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
     BOOST_CHECK_CLOSE(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01),1e-3);
-
+    //Check growth factor during matter domination
+    BOOST_CHECK_CLOSE(cosmo2.GrowthFactor(0.15,0.3), 1.99,0.1);
+    //Check growth factor likely relevant for rescaling
+    BOOST_CHECK_CLOSE(cosmo2.GrowthFactor(0.01,1.), 89.296,0.1);
     //Massive neutrinos
     Cosmology nuc(0.7, 0.3, 0.7, 1.0, 0,false);
-    BOOST_CHECK_CLOSE(0.01*log(nuc.growth(0.01+1e-5)/nuc.growth(0.01-1e-5))/2e-5, nuc.F_Omega(0.01),1e-3);
+    BOOST_CHECK_CLOSE(0.01*log(nuc.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, nuc.F_Omega(0.01),1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125,1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(1.), 1.0/93.14/0.7/0.7,1e-2);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4),1e-2);
