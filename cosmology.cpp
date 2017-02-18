@@ -237,50 +237,6 @@ double Cosmology::growth(double a, double * dDda)
   return yinit[0];
 }
 
-/*Note q carries units of eV/c. kT/c has units of eV/c.
- * M_nu has units of eV  Here c=1.
- * This has 1/epsilon instead of epsilon as in rho_nu_int*/
-double rho_nuprime_int(double q, void * params)
-{
-        double amnu = *((double *)params);
-        double epsilon = sqrt(q*q+amnu*amnu);
-        double f0 = 1./(exp(q/(BOLEVK*TNU))+1);
-        return q*q*f0/epsilon;
-}
-
-/* Return the total matter density in neutrinos.
-* rho_nu and friends are not externally callable*/
-double Cosmology::OmegaNuPrimed(double a)
-{
-        double rhonu = 0;
-        auto numasses = NuPartMasses(MNu, Hierarchy);
-        for(int i=0; i<3;i++)
-            rhonu += OmegaNuPrimed_single(a,numasses[i]);
-        return rhonu;
-}
-
-/** Do the integral of the derivative of OmegaNu wrt log a, which is
- *  -4 OmegaNu(a) + M_nu/a^2 q^2 f0(q) / epsilon da
- *  Neglect mass splitting for this one.
- */
-double Cosmology::OmegaNuPrimed_single(double a, double mnu)
-{
-     double abserr;
-     double amnu = a*mnu;
-     gsl_function F;
-     gsl_integration_workspace * w = gsl_integration_workspace_alloc (GSL_VAL);
-     F.function = &rho_nuprime_int;
-     F.params = &amnu;
-     double rhonu;
-     gsl_integration_qag (&F, 0, 500*BOLEVK*TNU,0 , 1e-9,GSL_VAL,6,w,&rhonu, &abserr);
-     rhonu = mnu*mnu*rhonu/pow(a,2)*get_rho_nu_conversion();
-     //rhonu has units of g/cm^3
-     rhonu /= (3* HUBBLE* HUBBLE / (8 * M_PI * GRAVITY));
-     rhonu /= HubbleParam*HubbleParam;
-     gsl_integration_workspace_free (w);
-     return rhonu-4*OmegaNu_single(a,mnu);
-}
-
 /*
  * This is the Zeldovich approximation prefactor, 
  * f1 = d ln D1 / dlna = a / D (dD/da)

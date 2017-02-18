@@ -220,7 +220,6 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     //More observationally relevant tests
     Cosmology cosmo2(0.7, 0.3, 0.7, 0., 0,false);
     BOOST_CHECK_CLOSE(0.01*log(cosmo2.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
-    BOOST_CHECK_CLOSE(0.01*(cosmo2.OmegaNu(0.01+1e-5)-cosmo2.OmegaNu(0.01-1e-5))/2e-5, cosmo2.OmegaNuPrimed(0.01),1e-3);
     //Check growth factor during matter domination
     BOOST_CHECK_CLOSE(cosmo2.GrowthFactor(0.15,0.3), 1.99,0.1);
     //Check growth factor likely relevant for rescaling
@@ -231,12 +230,6 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125,1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(1.), 1.0/93.14/0.7/0.7,1e-2);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4),1e-2);
-
-    BOOST_CHECK_CLOSE(0.01*(nuc.OmegaNu(0.01+1e-5)-nuc.OmegaNu(0.01-1e-5))/2e-5, nuc.OmegaNuPrimed(0.01),1e-3);
-    BOOST_CHECK_CLOSE(0.02*(nuc.OmegaNu(0.02+1e-5)-nuc.OmegaNu(0.02-1e-5))/2e-5, nuc.OmegaNuPrimed(0.02),1e-3);
-    BOOST_CHECK_CLOSE(0.0002*(nuc.OmegaNu(0.0002+1e-8)-nuc.OmegaNu(0.0002-1e-8))/2e-8, nuc.OmegaNuPrimed(0.0002),1e-3);
-    BOOST_CHECK_CLOSE((nuc.OmegaNu(1+1e-5)-nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1),1e-3);
-    BOOST_CHECK_CLOSE(log(nuc.OmegaNu(1+1e-5)/nuc.OmegaNu(1-1e-5))/2e-5, nuc.OmegaNuPrimed(1)/nuc.OmegaNu(1),1e-3);
 }
 
 BOOST_AUTO_TEST_CASE(check_part_grid)

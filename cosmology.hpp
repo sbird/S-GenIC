@@ -21,7 +21,6 @@ class Cosmology
         double GrowthFactor(double astart, double aend);
         double F_Omega(double a);
         double F2_Omega(double a);
-        double OmegaNuPrimed(double a);
         //The matter density
         double OmegaMatter(double a);
     private:
@@ -29,7 +28,6 @@ class Cosmology
         /* Return the matter density in a single neutrino species.
         * Not externally callable*/
         double OmegaNu_single(double a,double mnu);
-        double OmegaNuPrimed_single(double a,double mnu);
         /*The derivative wrt a of the total matter density in all neutrino species*/
         double HubbleParam;
         double Omega;
