@@ -198,7 +198,7 @@ int growth_ode(double a, const double yy[], double dyda[], void * param)
     Cosmology * d_this = (Cosmology *) param;
     const double hub = d_this->Hubble(a)/HUBBLE;
     dyda[0] = yy[1]/pow(a,3)/hub;
-    dyda[1] = yy[0] * a * hub * 1.5;
+    dyda[1] = yy[0] * 1.5 * a * d_this->OmegaMatter(a) / hub;
     return GSL_SUCCESS;
 }
 
