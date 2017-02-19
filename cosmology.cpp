@@ -218,13 +218,13 @@ double Cosmology::growth(double a, double * dDda)
   //Just pass the whole structure as the params pointer, as GSL won't let us make the integrand a member function
   FF.params = this;
   gsl_odeiv2_driver * drive = gsl_odeiv2_driver_alloc_standard_new(&FF,gsl_odeiv2_step_rkf45, 1e-5, 1e-8,1e-8,1,1);
-  /* The initial conditions need a little care.
-   * We start early (around matter/rad equality) 
-   * so the decaying mode has time to decay.
-   * Note the normalisation of D is arbitrary 
+   /* We start early to avoid lambda.*/
+  double curtime = 1e-5;
+  /* Initial velocity chosen so that D = Omegar + 3/2 Omega_m a,
+   * the solution for a matter/radiation universe.*
+   * Note the normalisation of D is arbitrary
    * and never seen outside this function.*/
-  double yinit[2] = {1e-5, 0};
-  double curtime = 2e-5;
+  double yinit[2] = {OmegaR(curtime) + 1.5 * OmegaMatter(curtime)*curtime, pow(curtime,3)*Hubble(curtime)/HUBBLE * 1.5 * OmegaMatter(curtime)};
   int stat = gsl_odeiv2_driver_apply(drive, &curtime,a, yinit);
   if (stat != GSL_SUCCESS) {
       printf("gsl_odeiv in growth: %d. Result at %g is %g %g\n",stat, curtime, yinit[0], yinit[1]);
