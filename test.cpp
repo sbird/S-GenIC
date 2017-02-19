@@ -24,6 +24,7 @@
 #include <math.h>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
+#include <gsl/gsl_sf_hyperg.h>
 
 // BOOST_AUTO_TEST_CASE(check_displacement_fields)
 // {
@@ -204,26 +205,35 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
 BOOST_AUTO_TEST_CASE(check_cosmology)
 {
     //Check that we get the right scalings for total matter domination.
-    //Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, bool InvertedHierarchy): HubbleParam(HubbleParam), Omega(Omega), OmegaLambda(OmegaLambda), MNu(MNu),
+    //Cosmology(double HubbleParam, double Omega, double OmegaLambda, double MNu, int Hierarchy, bool NoRadiation)
     Cosmology cosmo(0.7, 1., 0., 0., 0,false);
     BOOST_CHECK_CLOSE(cosmo.Hubble(1), HUBBLE,1e-2);
     BOOST_CHECK_CLOSE(cosmo.Hubble(0.1), cosmo.Hubble(1)/pow(0.1,3/2.),1e-1);
     BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.5,1), 2,2e-2);
-    BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.05,1), 20.01,0.1);
     //Check that massless neutrinos work
     BOOST_CHECK_CLOSE(cosmo.OmegaNu(1), (cosmo.OmegaR(1)-cosmo.OmegaNu(1))*7./8.*pow(pow(4/11.,1/3.)*1.00328,4)*3,2e-3);
     BOOST_CHECK_CLOSE(cosmo.OmegaNu(0.01), cosmo.OmegaNu(1)/pow(0.01,4),1e-6);
     //Check that the velocity correction d ln D1/d lna is constant
     BOOST_CHECK_CLOSE(1.0, cosmo.F_Omega(1.5),1e-1);
     BOOST_CHECK_CLOSE(1.0, cosmo.F_Omega(2),1e-2);
+    //Check radiation against exact solution from gr-qc/0504089
+    double omegar = cosmo.OmegaR(1);
+    auto radgrow = [omegar](double aa){ return omegar + 1.5 * 1. * aa; };
+    BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.05,1), radgrow(1.)/radgrow(0.05),1e-3);
+    BOOST_CHECK_CLOSE(cosmo.GrowthFactor(0.001,0.01), radgrow(0.01)/radgrow(0.001),1e-2);
 
-    //More observationally relevant tests
-    Cosmology cosmo2(0.7, 0.3, 0.7, 0., 0,false);
-    BOOST_CHECK_CLOSE(0.01*log(cosmo2.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, cosmo2.F_Omega(0.01),1e-3);
+    //Check against exact solutions from gr-qc/0504089: No radiation!
+    //Note that the GSL hyperg needs the last argument to be < 1
+    double omegal = 0.5;
+    double omegam = 0.5;
+    Cosmology cosmo3(0.7, omegam, omegal, 0., 0,true);
+    //Omega_L + Omega_M = 1 => D+ ~ Gauss hypergeometric function
+    auto growth = [omegam, omegal](double aa) { return aa * gsl_sf_hyperg_2F1(1./3, 1, 11./6, -omegal/omegam*pow(aa,3));};
     //Check growth factor during matter domination
-    BOOST_CHECK_CLOSE(cosmo2.GrowthFactor(0.15,0.3), 1.99,0.1);
-    //Check growth factor likely relevant for rescaling
-    BOOST_CHECK_CLOSE(cosmo2.GrowthFactor(0.01,1.), 89.296,0.1);
+    BOOST_CHECK_CLOSE(cosmo3.GrowthFactor(0.5,1), growth(1.)/growth(0.5),1e-3);
+    BOOST_CHECK_CLOSE(cosmo3.GrowthFactor(0.15,0.3), growth(0.3)/growth(0.15),1e-3);
+    BOOST_CHECK_CLOSE(cosmo3.GrowthFactor(0.01,1.), growth(1)/growth(0.01),1e-3);
+    BOOST_CHECK_CLOSE(0.01*log(cosmo3.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, cosmo3.F_Omega(0.01),1e-3);
     //Massive neutrinos
     Cosmology nuc(0.7, 0.3, 0.7, 1.0, 0,false);
     BOOST_CHECK_CLOSE(0.01*log(nuc.GrowthFactor(0.01-1e-5,0.01+1e-5))/2e-5, nuc.F_Omega(0.01),1e-3);
