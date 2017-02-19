@@ -218,9 +218,6 @@ NormalizedPowerSpec::NormalizedPowerSpec(PowerSpec * PSpec, double Sigma8, doubl
         //Uses R8
         Norm = Sigma8 * Sigma8 / TopHatSigma2();
         printf("Normalization adjusted by %g so  Sigma8 = %g\n", Norm, Sigma8);
-//         Cosmology cosmo(HubbleParam, Omega, OmegaLambda, MNu, InvertedHierarchy);
-//         Dplus = cosmo.GrowthFactor(InitTime, 1.0);
-        printf("Growth factor to z=0: %g \n", Dplus);
 }
 
 double sigma2_int(double k, void * params)

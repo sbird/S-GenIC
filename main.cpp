@@ -127,7 +127,9 @@ int main(int argc, char **argv)
   //If normalisation or WDM are on, decorate the base power spectrum
   //to do that
   if (ReNormalizeInputSpectrum) {
-      PSpec = new NormalizedPowerSpec(PSpec, Sigma8, PrimordialIndex, cosmo.GrowthFactor(InitTime, 1.0), UnitLength_in_cm);
+      double Dplus = cosmo.GrowthFactor(InitTime, 1.0);
+      printf("Growth factor to z=0: %g \n", Dplus);
+      PSpec = new NormalizedPowerSpec(PSpec, Sigma8, PrimordialIndex, Dplus, UnitLength_in_cm);
   }
   if(WDM_Vtherm_On)
       PSpec = new WDMPowerSpec(PSpec, WDM_PartMass_in_kev, Omega, OmegaBaryon, HubbleParam, UnitLength_in_cm);
