@@ -28,13 +28,12 @@ class Cosmology
         /* Return the matter density in a single neutrino species.
         * Not externally callable*/
         double OmegaNu_single(double a,double mnu);
-        /*The derivative wrt a of the total matter density in all neutrino species*/
-        double HubbleParam;
-        double Omega;
-        double OmegaLambda;
-        double MNu;
-        int Hierarchy;
-        bool NoRadiation;
+        const double HubbleParam;
+        const double Omega;
+        const double OmegaLambda;
+        const double MNu;
+        const int Hierarchy;
+        const bool NoRadiation;
 };
 
 #endif
