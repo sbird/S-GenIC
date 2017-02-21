@@ -5,6 +5,7 @@
 #include "read_param.hpp"
 #include "thermalvel.hpp"
 #include "save.hpp"
+#include <stdexcept>
 #include <cassert>
 
 int main(int argc, char **argv)
