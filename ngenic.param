@@ -30,14 +30,17 @@ NumFiles = 2
 # filename of tabulated MATTER powerspectrum from CAMB
 FileWithInputSpectrum = testdata/cambv2_matterpow_99.dat
 # filename of transfer functions from CAMB
-FileWithTransfer = testdata/cambv2_matterpow_99.dat
+FileWithTransfer = testdata/cambv2_transfer_99.dat
 
-#==Optional Parameters==
 # (Cube root of) number of particles
+# Baryons (type 0)
 NBaryon = 64
+# CDM (type 1)
 NCDM = 64
+# Neutrinos (type 2)
 NNeutrino = 64
 
+#==Optional Parameters==
 #Particle mass of neutrinos in eV.
 #OmegaNu is derived self-consistently from this value
 #and hence not specified separately.
@@ -91,7 +94,8 @@ UnitVelocity_in_cm_per_s = 1e5
 # If 1, the neutrino masses will be included in the dark matter particles,
 # as a change in the transfer function. This is a very inaccurate way to simulate neutrinos.
 NU_in_DM = 0
-#If one, add neutrino thermal velocities to type 2 particles.
+#Add thermal velocities to the neutrino particles (particle type 2). 
+#If you want particle neutrinos, set this to 1 and NNeutrino > 0 above.
 NU_Vtherm_On = 1
 
 #Shape parameter, only for Efstathiou power spectrum
