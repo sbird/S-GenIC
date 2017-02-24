@@ -201,7 +201,7 @@ lpt_data DisplacementFields::displacement_fields(const int type, part_grid& Pgri
 			  p_of_k = PSpec->power(kmag, type);
 
 			  // printf(" k %d %g %g \n",Type,kmag,p_of_k);
-                          if(RayleighScatter)
+              if(RayleighScatter)
 			        p_of_k *= -log(ampl);
 
 			  delta = fac * sqrt(p_of_k) ;

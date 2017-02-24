@@ -280,6 +280,7 @@ int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, 
     IDBufferedWrite pp(snap, NumPart, FirstId);
     pp.writeparticles(type);
   }
+  if(type == BARYON_TYPE)
   {
     EnergyBufferedWrite pp(snap, NumPart);
     pp.writeparticles(type);
