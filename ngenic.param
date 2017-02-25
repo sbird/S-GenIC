@@ -45,7 +45,9 @@ NNeutrino = 64
 #OmegaNu is derived self-consistently from this value
 #and hence not specified separately.
 NU_PartMass_in_ev = 0
-#1,0,-1 correspond to normal, inverted and degenerate neutrino species hierarchies, respectively.
+#1,0,-1 correspond to normal, degenerate and inverted neutrino species hierarchies, respectively.
+#Normal is one heavy species, two light species. Inverted is two heavy, one light.
+#Degenerate means all species have the same mass.
 #Note if you ask for a mass below the minimum allowed by the hierarchy, 
 #you will get a single massive neutrino species.
 Hierarchy = 0
