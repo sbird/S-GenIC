@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
 BOOST_AUTO_TEST_CASE(check_part_grid)
 {
     //First check for a small number of DM particles
-    int NumPart[6] = {0,0,0,0,0,0};
+    int64_t NumPart[6] = {0,0,0,0,0,0};
     double Masses[6] = {0,0,0,0,0,0};
     NumPart[1] = 16;
     Masses[1] = 1;
