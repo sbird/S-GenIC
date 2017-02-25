@@ -83,7 +83,7 @@ int main(int argc, char **argv)
   const auto Sigma8 = config.PopValue<double>("Sigma8",0.8);
   //Number of particles desired
   std::valarray<int64_t> npart((int64_t)0,(size_t)N_TYPE);
-  int CbRtNpart[6] = {0};
+  int64_t CbRtNpart[6] = {0};
   CbRtNpart[BARYON_TYPE] = config.PopValue<int>("NBaryon", 0);
   CbRtNpart[DM_TYPE] = config.PopValue<int>("NCDM", 0);
   CbRtNpart[NEUTRINO_TYPE] = config.PopValue<int>("NNeutrino", 0);

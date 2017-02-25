@@ -3,7 +3,7 @@
 //memset
 #include <string.h>
 
-part_grid::part_grid(const int NumPart_i[], const double Masses[], const double Box): NumPart(NumPart_i, (size_t)N_TYPES), Box(Box)
+part_grid::part_grid(const int64_t NumPart_i[], const double Masses[], const double Box): NumPart(NumPart_i, (size_t)N_TYPES), Box(Box)
 {
     assert(NumPart.size() == N_TYPES);
     //Mean interparticle spacing
@@ -75,7 +75,7 @@ double part_grid::Pos(size_t index, int axis, int type)
     return pos;
 }
 
-int part_grid::GetNumPart(int type)
+int64_t part_grid::GetNumPart(int type)
 {
     return NumPart[type];
 }
