@@ -196,6 +196,7 @@ int main(int argc, char **argv)
       delete therm_vels;
   }
 
+    delete osnap;
     delete PSpec;
   printf("Initial scale factor = %g\n", InitTime);
 
