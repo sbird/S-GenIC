@@ -77,24 +77,22 @@ double FermiDiracVel::get_fermi_dirac_vel(double p)
 }
 
 //Add a randomly generated thermal speed in v_amp*(min_fd, max_fd) to a 3-velocity
-void FermiDiracVel::add_thermal_speeds(float *vel)
+std::valarray<float> FermiDiracVel::get_thermal_speeds()
 {
-    double v, phi, theta, vx, vy, vz;
     const double p = gsl_rng_uniform (g_rng);
     //m_vamp multiples by the dimensional factor to get a velocity again.
-    v = get_fermi_dirac_vel(p);
+    const double v = get_fermi_dirac_vel(p);
+    std::valarray<float> vel(0.,3);
 
     //Random phase
-    phi = 2 * M_PI * gsl_rng_uniform (g_rng);
-    theta = acos(2 * gsl_rng_uniform (g_rng) - 1);
+    const double phi = 2 * M_PI * gsl_rng_uniform (g_rng);
+    const double theta = acos(2 * gsl_rng_uniform (g_rng) - 1);
 
-    vx = v * sin(theta) * cos(phi);
-    vy = v * sin(theta) * sin(phi);
-    vz = v * cos(theta);
+    vel[0] = v * sin(theta) * cos(phi);
+    vel[1] = v * sin(theta) * sin(phi);
+    vel[2] = v * cos(theta);
 
-    vel[0] += vx;
-    vel[1] += vy;
-    vel[2] += vz;
+    return vel;
 }
 
 

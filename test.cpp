@@ -169,14 +169,12 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
 //     for(int i = 0; i < LENGTH_FERMI_DIRAC_TABLE/2; i+=20)
 //         printf("%g %g\n", nuvels.get_fdv(i), nuvels.get_fdvc(i));
     //Remember to reseed the rng...
-    float vel[3]={0,0,0};
-    nuvels.add_thermal_speeds(vel);
+    std::valarray<float> vel = nuvels.get_thermal_speeds();
     //Check scaling is linear
     //Remember to reseed the rng...
     TestFermiDirac nuvels2(200);
     nuvels2.reseed(23);
-    float vel2[3]={0,0,0};
-    nuvels2.add_thermal_speeds(vel2);
+    std::valarray<float> vel2 = nuvels2.get_thermal_speeds();
     BOOST_CHECK_CLOSE(sqrt(vel2[0]*vel2[0]+vel2[1]*vel2[1]+vel2[2]*vel2[2]), 2*sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]),1e-6);
     for(int i=0; i<3; i++)
         BOOST_CHECK_CLOSE(vel2[i], 2*vel[i],1e-6);
@@ -187,8 +185,7 @@ BOOST_AUTO_TEST_CASE(check_fermi_vel)
     int nsample;
     for (nsample=0; nsample < 10000; nsample++)
     {
-        float vvel[3]={0,0,0};
-        nuvels.add_thermal_speeds(vvel);
+        std::valarray<float> vvel = nuvels.get_thermal_speeds();
         double v2 =sqrt(vvel[0]*vvel[0]+vvel[1]*vvel[1]+vvel[2]*vvel[2]);
         max = std::max(v2, max);
         min = std::min(v2, min);

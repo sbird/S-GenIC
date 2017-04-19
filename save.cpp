@@ -182,9 +182,8 @@ class VelBufferedWrite : public BufferedWrite<float>
     public:
         VelBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, FermiDiracVel * therm_vels, lpt_data * outdata) :
             BufferedWrite(snap, NumPart, 3, name(snap.GetFormat())),
-            therm_vels(therm_vels), outdata(outdata)
+            therm_vels(therm_vels), outdata(outdata),vtherm(0.,3)
             {
-              vtherm[0] = vtherm[1] = vtherm[2] = 0;
             }
     private:
         std::string name(int format)
@@ -213,12 +212,11 @@ class VelBufferedWrite : public BufferedWrite<float>
           {
               if(!therm_vels)
                   return;
-              vtherm[0] = vtherm[1] = vtherm[2] = 0;
-              therm_vels->add_thermal_speeds(vtherm);
+              vtherm = therm_vels->get_thermal_speeds();
           }
         FermiDiracVel *therm_vels;
         lpt_data * outdata;
-        float vtherm[3];
+        std::valarray<float> vtherm;
 };
 
 class IDBufferedWrite : public BufferedWrite<id_type>
