@@ -14,9 +14,6 @@
  * which comes into the Zel'dovich approximation.*/
 /* Omega_g = 4 \sigma_B T_{CMB}^4 8 \pi G / (3 c^3 H^2)*/
 #define OMEGAG (4*STEFAN_BOLTZMANN*8*M_PI*GRAVITY/(3*LIGHTCGS*LIGHTCGS*LIGHTCGS*HUBBLE*HUBBLE*HubbleParam*HubbleParam)*pow(T_CMB0,4))
-/*Neutrinos are included in the radiation*/
-/*For massless neutrinos, rho_nu/rho_g = 7/8 (T_nu/T_cmb)^4 *N_eff, but we absorbed N_eff into T_nu above*/
-#define OMEGANU (OMEGAG*7/8.*pow(TNU/T_CMB0,4)*3)
 //Neutrino mass splittings
 #define M21 7.53e-5 //Particle data group 2016: +- 0.18e-5 eV2
 #define M32n 2.44e-3 //Particle data group: +- 0.06e-3 eV2
@@ -61,7 +58,7 @@ double Cosmology::Hubble(double a)
         double hubble_a = OmegaMatter(a);
         //curvature and lambda
         hubble_a += (1 - Omega - OmegaLambda) / (a * a) + OmegaLambda;
-        //Add the radiation
+        //Add the radiation, including neutrinos
         hubble_a += OmegaR(a);
         return HUBBLE * sqrt(hubble_a);
 }
@@ -80,11 +77,23 @@ double Cosmology::OmegaNu(double a)
 
 double Cosmology::OmegaMatter(double a)
 {
-    double OmegaMatter = Omega / (a * a * a);
-    //add massive neutrinos, possibly slightly relativistic, to the evolution
-    if (MNu > 0)
-        OmegaMatter += OmegaNu(a) - OmegaNu(1)/ (a * a * a);
-    return OmegaMatter;
+    double OmegaM = Omega;
+    /* Do not include neutrinos
+     * in the source term of the growth function
+     * in growth_ode, unless they are already not
+     * free-streaming. This is not right if
+     * our box overlaps with their free-streaming scale.
+     * In that case the growth factor will be scale-dependent.
+     * In practice the box will either be larger
+     * than the horizon, which is not accurate anyway, or the neutrino
+     * mass will be larger than current constraints allow,
+     * so we don't worry about it too much.*/
+    if(MNu > 0) {
+       OmegaM -= OmegaNu(1);
+       if (!NeutrinosFreeStreaming)
+          OmegaM += OmegaNu(a);
+    }
+    return OmegaM/(a * a * a);
 }
 
 double Cosmology::OmegaR(double a)
@@ -92,10 +101,21 @@ double Cosmology::OmegaR(double a)
     if(NoRadiation)
         return 0;
     double omr = OMEGAG/(a*a*a*a);
-    //If neutrinos are massless, add them too. Otherwise they are included in OmegaMatter
-    if(MNu == 0)
-        omr += OMEGANU/(a*a*a*a);
+    //Neutrinos are included in the radiation,
+    //unless they are massive and not free-streaming
+    if(MNu == 0 || NeutrinosFreeStreaming)
+      omr += OmegaNu(a);
     return omr;
+}
+
+bool Cosmology::SetNeutrinoFreeStream(double box, double v_th, double a)
+{
+    /*Neutrino free-streaming length from Lesgourgues & Pastor*/
+    double nufs = 2 * M_PI * sqrt(2/3.) * v_th / Hubble(a)/a;
+    NeutrinosFreeStreaming = nufs > box/4.;
+    if(!NeutrinosFreeStreaming)
+        fprintf(stderr,"WARNING: Neutrino free-streaming at %g boxes. May be inaccurate as scale-dependent growth is not modelled.\n",nufs/box);
+    return NeutrinosFreeStreaming;
 }
 
 /*Note q carries units of eV/c. kT/c has units of eV/c.
@@ -198,6 +218,7 @@ int growth_ode(double a, const double yy[], double dyda[], void * param)
     Cosmology * d_this = (Cosmology *) param;
     const double hub = d_this->Hubble(a)/HUBBLE;
     dyda[0] = yy[1]/pow(a,3)/hub;
+    /*We want neutrinos to be non-relativistic, as only this part gravitates*/
     dyda[1] = yy[0] * 1.5 * a * d_this->OmegaMatter(a) / hub;
     return GSL_SUCCESS;
 }

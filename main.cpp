@@ -119,6 +119,8 @@ int main(int argc, char **argv)
           exit(1);
   //Make a cosmology
   Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
+  //Set the flag that checks whether neutrinos are free-streaming
+  cosmo.SetNeutrinoFreeStream(Box*UnitLength_in_cm, v_th * UnitVelocity_in_cm_per_s, InitTime);
   //Initialise a power spectrum
   PowerSpec * PSpec;
   switch(WhichSpectrum)
