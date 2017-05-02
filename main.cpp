@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 
   //Init structure for neutrino velocities
   //Maximum velocity to sample Fermi-Dirac from, in km/s at z=0
-  const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
+  const double v_th = NU_V0(Redshift, std::max(NU_PartMass_in_ev,1e-3), UnitVelocity_in_cm_per_s);
   //Convert physical km/s at z=0 in an unperturbed universe to internal gadget (comoving) velocity units at starting redshift.
   double vnumax = config.PopValue<double>("Max_nuvel", -1)*pow((1+Redshift),1.5)*(UnitVelocity_in_cm_per_s/1e5);
   if (vnumax < 0)
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   /*Write headers*/
   gadget_header header = generate_header(npart, Omega, OmegaBaryon, cosmo.OmegaNu(1), OmegaLambda, HubbleParam, Box, InitTime, UnitMass_in_g, UnitLength_in_cm, UnitVelocity_in_cm_per_s, combined_neutrinos);
 
-  if ( vnumax/v_th <= MAX_FERMI_DIRAC ) {
+  if ( vnumax/v_th < MAX_FERMI_DIRAC ) {
       FermiDiracVel therm_vels (v_th, vnumax/v_th);
       header.mass[NEUTRINO_TYPE]*=therm_vels.total_frac;
       printf("F-D velocity scale: %g (km/s). Max particle vel: %g (km/s). Fraction of mass in particles: %g\n",v_th/sqrt(1+Redshift), vnumax/sqrt(1+Redshift), therm_vels.total_frac);
