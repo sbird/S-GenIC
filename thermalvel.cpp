@@ -30,9 +30,10 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
 //NOTE: this m is the mass of a SINGLE neutrino species, not the sum of neutrinos!
 double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s)
 {
-    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift)* (LIGHTCGS / UnitVelocity_in_cm_per_s);
-    NU_V0*=sqrt(1+redshift);
-    return NU_V0;
+    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift);
+    if(NU_PartMass_in_ev == 0)
+        NU_V0 = 1;
+    return NU_V0 * sqrt(1+redshift) * (LIGHTCGS / UnitVelocity_in_cm_per_s);
 }
 
 //Fermi-Dirac kernel for below
