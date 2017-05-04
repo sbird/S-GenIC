@@ -203,7 +203,7 @@ int main(int argc, char **argv)
           printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
       }
       //Only compute zeldovich displacements if we have all the neutrinos in particles.
-      if(type != 2 || therm_vels->total_frac > 0.95) {
+      if(type != 2 || !therm_vels || therm_vels->total_frac > 0.95) {
         lpt_data outdata = displace.displacement_fields(type, Pgrid, PSpec, RayleighScatter);
         outdata.SetVelPrefac(vel_prefac, vel_prefac2);
         FirstId = write_particle_data(*osnap, type,&outdata, Pgrid, therm_vels, FirstId);
