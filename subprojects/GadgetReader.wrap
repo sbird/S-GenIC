@@ -1,0 +1,4 @@
+[wrap-git]
+directory = GadgetReader
+url = https://github.com/sbird/GadgetReader.git
+revision=head
