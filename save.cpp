@@ -77,10 +77,6 @@ template <typename T> class BufferedWrite
             if(!(block = (T *) malloc(blockmaxlen*ItemsPart*sizeof(T))))
                 throw std::ios_base::failure("Failed to allocate "+std::to_string(ItemsPart*sizeof(float)*blockmaxlen/1024/1024)+" MB for write buffer");
         }
-        ~BufferedWrite()
-        {
-            free(block);
-        }
         int64_t do_write(int type, void * data, int64_t np_write, int64_t begin)
         {
             int64_t retval;
@@ -122,6 +118,10 @@ template <typename T> class BufferedWrite
        }
     protected:
        virtual T setter(int i, int k, int type) = 0;
+       virtual ~BufferedWrite()
+       {
+           free(block);
+       }
     private:
         std::string dtype(void) {
             throw std::runtime_error("Need to specialise dtype for class");
