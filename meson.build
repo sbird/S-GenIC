@@ -7,6 +7,7 @@ if cpp.has_argument('-fopenmp')
     add_project_arguments('-fopenmp', language: 'cpp')
     omp_dep = cpp.find_library('gomp', required : false)
 endif
+add_project_arguments('-DHAVE_BGFL', language: 'cpp')
 fftw3th = cpp.find_library('fftw3f_threads', required : false)
 fftw3fth = cpp.find_library('fftw3_threads', required : false)
 fftw3f = dependency('fftw3f')
