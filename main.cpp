@@ -194,13 +194,13 @@ int main(int argc, char **argv)
               continue;
       FermiDiracVel * therm_vels = NULL;
       //For WDM thermal velocities
-      if(WDM_Vtherm_On && type == 1){
+      if(WDM_Vtherm_On && type == DM_TYPE){
         const double wdm_vth = WDM_V0(Redshift, WDM_PartMass_in_kev, Omega-OmegaBaryon, HubbleParam, UnitVelocity_in_cm_per_s);
         therm_vels = new FermiDiracVel (wdm_vth);
         printf("\nWarm dark matter rms velocity dispersion at starting redshift = %g km/sec\n\n",3.59714 * wdm_vth);
       }
       //Neutrino thermal velocities
-      if(NU_Vtherm_On && type == 2) {
+      if(NU_Vtherm_On && type == NEUTRINO_TYPE) {
           therm_vels = new FermiDiracVel (v_th, vnumax/v_th);
           printf("\nNeutrino rms vel. dispersion %g (km/s)\n\n",v_th/sqrt(1+Redshift));
       }
