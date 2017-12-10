@@ -1,5 +1,3 @@
-sudo: required
-dist: trusty
 language: cpp
 os: linux
 #Don't use gcc as the default gcc on travis is 4.6, too old for C++11.
