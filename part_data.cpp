@@ -27,17 +27,16 @@ part_grid::part_grid(const int64_t NumPart_i[], const double Masses[], const dou
         }
     }
     //Zero the shifts
-    memset(shift, 0, 3*N_TYPES*sizeof(double));
+    memset(shift, 0, N_TYPES*sizeof(double));
     //We shift each pair of particle types out a little,
     //so they don't have the same positions.
-    //Each type will move along a different axis: this of course only works if N_TYPES <=6.
     for(int i=0; i<paircnt; i++) {
         //Move them such that M_i M_j == M_j M_i and the total displacement is less than unity.
         //Make sure to pair particles that exist together.
         double totmass = Masses[primary[i]]+Masses[pair[i]];
         assert(totmass > 0);
-        shift[primary[i]][i] = -0.5*Masses[pair[i]]/totmass;
-        shift[pair[i]][i] = 0.5*Masses[primary[i]]/totmass;
+        shift[primary[i]] = -0.5*Masses[pair[i]]/totmass;
+        shift[pair[i]] = 0.5*Masses[primary[i]]/totmass;
     }
 }
 
@@ -71,7 +70,7 @@ double part_grid::Pos(size_t index, int axis, int type)
             i = 0;
     }
     assert(pspace[type] > 0);
-    double pos = i*pspace[type] + shift[type][axis];
+    double pos = i*pspace[type];
     return pos;
 }
 

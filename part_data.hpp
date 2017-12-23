@@ -30,11 +30,14 @@ class part_grid
         inline double GetBox(){
             return Box;
         }
+        double get_shift(int type) {
+            return shift[type];
+        }
     private:
         const std::valarray<int64_t> NumPart;
         const double Box;
         double pspace[N_TYPES];
-        double shift[N_TYPES][3];
+        double shift[N_TYPES];
 };
 
 //Class to store the Zeldovich and 2LPT displacements for a particle type.

@@ -166,7 +166,7 @@ class PosBufferedWrite : public BufferedWrite<float>
         }
         virtual float setter(int i, int k, int type)
         {
-          double value = Pgrid.Pos(i,k, type);
+          double value = Pgrid.Pos(i,k, type) + Pgrid.get_shift(type);
           if(outdata)
             value += outdata->GetDisp(i,k);
           value = periodic_wrap(value, Pgrid.GetBox());
