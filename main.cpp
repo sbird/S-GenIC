@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   if(npart.sum() == 0)
           exit(1);
   //Set the flag that checks whether neutrinos are free-streaming
-  cosmo.SetNeutrinoFreeStream(Box*UnitLength_in_cm, v_th * UnitVelocity_in_cm_per_s, InitTime);
+  cosmo.SetNeutrinoFreeStream(Box*UnitLength_in_cm, v_th * UnitVelocity_in_cm_per_s*sqrt(InitTime), InitTime);
   //Initialise a power spectrum
   PowerSpec * PSpec;
   switch(WhichSpectrum)
