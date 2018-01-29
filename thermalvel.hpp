@@ -36,7 +36,4 @@ class FermiDiracVel
 //Amplitude of the random velocity for WDM
 double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const double Omega_CDM, const double HubbleParam, const double UnitVelocity_in_cm_per_s);
 
-//Amplitude of the random velocity for neutrinos
-double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s);
-
 #endif

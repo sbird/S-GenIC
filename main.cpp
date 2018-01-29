@@ -90,9 +90,11 @@ int main(int argc, char **argv)
   for(int type=0; type<N_TYPES; ++type)
       npart[type] = static_cast<int64_t>(CbRtNpart[type])*CbRtNpart[type]*CbRtNpart[type];
 
+  //Make a cosmology
+  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
   //Init structure for neutrino velocities
   //Maximum velocity to sample Fermi-Dirac from, in km/s at z=0
-  const double v_th = NU_V0(Redshift, NU_PartMass_in_ev, UnitVelocity_in_cm_per_s);
+  const double v_th = cosmo.NU_V0(Redshift, UnitVelocity_in_cm_per_s);
   //Convert physical km/s at z=0 in an unperturbed universe to internal gadget (comoving) velocity units at starting redshift.
   double vnumax = config.PopValue<double>("Max_nuvel", -1)*pow((1+Redshift),1.5)*(UnitVelocity_in_cm_per_s/1e5);
   if (vnumax < 0 || vnumax > v_th*MAX_FERMI_DIRAC)
@@ -117,8 +119,6 @@ int main(int argc, char **argv)
   /*Set particle numbers*/
   if(npart.sum() == 0)
           exit(1);
-  //Make a cosmology
-  Cosmology cosmo(HubbleParam, Omega, OmegaLambda, NU_PartMass_in_ev, Hierarchy, NoRadiation);
   //Set the flag that checks whether neutrinos are free-streaming
   cosmo.SetNeutrinoFreeStream(Box*UnitLength_in_cm, v_th * UnitVelocity_in_cm_per_s, InitTime);
   //Initialise a power spectrum

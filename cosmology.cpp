@@ -52,6 +52,30 @@ std::valarray<double> NuPartMasses(double mnu, int Hierarchy)
     return numasses;
 }
 
+// This function converts the dimensionless units used in the integral to dimensionful units.
+// Unit scaling velocity for neutrinos:
+// This is an arbitrary rescaling of the unit system in the Fermi-Dirac kernel so we can integrate dimensionless quantities.
+// The true thing to integrate is:
+// q^2 /(e^(q c / kT) + 1 ) dq between 0 and q.
+// So we choose x = (q c / kT_0) and integrate between 0 and x_0.
+// The units are restored by multiplying the resulting x by kT/c for q
+// To get a v we then use q = a m v/c^2
+// to get:   v/c =x kT/(m a)
+//NOTE: this m is the mass of a SINGLE neutrino species, not the sum of neutrinos!
+double Cosmology::NU_V0(const double redshift, const double UnitVelocity_in_cm_per_s)
+{
+    auto masses = NuPartMasses(MNu, Hierarchy);
+    //Normal or degenerate hierarchy: one heavy species, others neglected.
+    double singlemass = masses[0];
+    //Inverted hierarchy: two heavy species, other two neglected.
+    if(Hierarchy < 0)
+        singlemass = (masses[1] + masses[2])/2.;
+    double NU_V0 = BOLEVK*TNU/singlemass * (1+ redshift);
+    if(MNu == 0)
+        NU_V0 = 1;
+    return NU_V0 * sqrt(1+redshift) * (LIGHTCGS / UnitVelocity_in_cm_per_s);
+}
+
 //Hubble H(z) / H0 in units of 1/T.
 double Cosmology::Hubble(double a)
 {

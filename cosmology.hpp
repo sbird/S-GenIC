@@ -23,6 +23,8 @@ class Cosmology
         double F2_Omega(double a);
         //The matter density
         double OmegaMatter(double a);
+        //Neutrino velocity scale
+        double NU_V0(const double redshift, const double UnitVelocity_in_cm_per_s);
         //Check whether neutrinos are free-streaming
         bool SetNeutrinoFreeStream(double box, double v_th, double a);
     private:

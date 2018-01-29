@@ -18,24 +18,6 @@ double WDM_V0(const double redshift, const double WDM_PartMass_in_kev, const dou
         return WDM_V0;
 }
 
-// This function converts the dimensionless units used in the integral to dimensionful units.
-// Unit scaling velocity for neutrinos:
-// This is an arbitrary rescaling of the unit system in the Fermi-Dirac kernel so we can integrate dimensionless quantities.
-// The true thing to integrate is:
-// q^2 /(e^(q c / kT) + 1 ) dq between 0 and q.
-// So we choose x = (q c / kT_0) and integrate between 0 and x_0.
-// The units are restored by multiplying the resulting x by kT/c for q
-// To get a v we then use q = a m v/c^2
-// to get:   v/c =x kT/(m a)
-//NOTE: this m is the mass of a SINGLE neutrino species, not the sum of neutrinos!
-double NU_V0(const double redshift, const double NU_PartMass_in_ev, const double UnitVelocity_in_cm_per_s)
-{
-    double NU_V0 = BOLEVK*TNU/(NU_PartMass_in_ev/3.) * (1+ redshift);
-    if(NU_PartMass_in_ev == 0)
-        NU_V0 = 1;
-    return NU_V0 * sqrt(1+redshift) * (LIGHTCGS / UnitVelocity_in_cm_per_s);
-}
-
 //Fermi-Dirac kernel for below
 double fermi_dirac_kernel(double x, void * params)
 {
