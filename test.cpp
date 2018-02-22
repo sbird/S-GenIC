@@ -141,15 +141,19 @@ class TestFermiDirac: public FermiDiracVel
 
 BOOST_AUTO_TEST_CASE(check_fermi_vel)
 {
+    //Make a cosmology
+    Cosmology cosmo(0.7,0.3, 0.7, 1, 0, 0);
     //Check has units of velocity
-    BOOST_CHECK_CLOSE(NU_V0(0, 1, 1e3), 100*NU_V0(0, 1, 1e5),1e-6);
+    BOOST_CHECK_CLOSE(cosmo.NU_V0(0, 1e3), 100*cosmo.NU_V0(0, 1e5),1e-6);
+    //Make a cosmology
+    Cosmology cosmolow(0.7,0.3, 0.7, 0.1, 0, 0);
     //Check scales linearly with neutrino mass
-    BOOST_CHECK_CLOSE(NU_V0(0, 0.1, 1e5), 10*NU_V0(0, 1, 1e5),1e-6);
+    BOOST_CHECK_CLOSE(cosmolow.NU_V0(0, 1e5), 10*cosmo.NU_V0(0, 1e5),1e-6);
     //Check scales as z^3/2 (due to gadgets cosmological velocity unit)
-    BOOST_CHECK_CLOSE(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5),1e-6);
+//     BOOST_CHECK_CLOSE(pow(0.5, 1.5)*NU_V0(1, 1, 1e5), NU_V0(0, 1, 1e5),1e-6);
     //Check it is correct (roughly). This is
     //(4/11)^1/3* 2.7255* 1.00381* 8.61734e-5 * 2.99792e5/(M_nu/3)
-    BOOST_CHECK_CLOSE(NU_V0(0,1, 1e5), 151.265,1e-4);
+    BOOST_CHECK_CLOSE(cosmo.NU_V0(0, 1e5), 151.265,1e-4);
 
     //Seed table with velocity of 100 km/s
     TestFermiDirac nuvels(100);
@@ -237,59 +241,6 @@ BOOST_AUTO_TEST_CASE(check_cosmology)
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.5), nuc.OmegaNu(1.)/0.125,1e-3);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(1.), 1.0/93.14/0.7/0.7,1e-2);
     BOOST_CHECK_CLOSE(nuc.OmegaNu(0.00001)*pow(0.00001,4), nuc.OmegaNu(0.00002)*pow(0.00002,4),1e-2);
-}
-
-BOOST_AUTO_TEST_CASE(check_part_grid)
-{
-    //First check for a small number of DM particles
-    int64_t NumPart[6] = {0,0,0,0,0,0};
-    double Masses[6] = {0,0,0,0,0,0};
-    NumPart[1] = 16;
-    Masses[1] = 1;
-    double Box = 20.;
-    part_grid P(NumPart, Masses, Box);
-    for (int i=0; i< NumPart[1]; i++)
-        for (int j=0; j< NumPart[1]; j++)
-            for (int k=0; k< NumPart[1]; k++)
-            {
-                //Check each axis in turn
-                size_t index = i*NumPart[1]*NumPart[1]+j*NumPart[1]+k;
-                BOOST_CHECK_CLOSE(static_cast<double>(i)*Box/NumPart[1], P.Pos(index, 0, 1),1e-6);
-                BOOST_CHECK_CLOSE(static_cast<double>(j)*Box/NumPart[1], P.Pos(index, 1, 1),1e-6);
-                BOOST_CHECK_CLOSE(static_cast<double>(k)*Box/NumPart[1], P.Pos(index, 2, 1),1e-6);
-            }
-    //Now add baryons and neutrinos and check that the particle spacing is working.
-    NumPart[0] = 16;
-    Masses[0] = 1/6.;
-    NumPart[2] = 16;
-    Masses[2] = 1/36.;
-    part_grid Pnu(NumPart, Masses, Box);
-    for (int i=0; i< NumPart[1]-1; i++)
-        for (int j=0; j< NumPart[1]-1; j++)
-            for (int k=0; k< NumPart[1]-1; k++)
-            {
-                size_t index[3];
-                //Check the spacing between particles is still correct in all directions
-                for(int type = 0; type < 3; type++){
-                    index[type] = i*NumPart[type]*NumPart[type]+j*NumPart[type]+k;
-                    BOOST_CHECK_CLOSE(Pnu.Pos((i+1)*NumPart[type]*NumPart[type]+j*NumPart[type]+k, 0, type)-Pnu.Pos(index[type], 0, type), Box/NumPart[type], 1e-6);
-                    BOOST_CHECK_CLOSE(Pnu.Pos(i*NumPart[type]*NumPart[type]+(j+1)*NumPart[type]+k, 1, type)-Pnu.Pos(index[type], 1, type), Box/NumPart[type], 1e-6);
-                    BOOST_CHECK_CLOSE(Pnu.Pos(i*NumPart[type]*NumPart[type]+j*NumPart[type]+k+1, 2, type)-Pnu.Pos(index[type], 2, type), Box/NumPart[type], 1e-6);
-                }
-                //Check that no two types have the same position
-                for(int type = 0; type < 2; type++){
-                    bool same_pos = true;
-                    for(int axis=0; axis < 3; axis++) {
-                        same_pos *= (Pnu.Pos(index[type], axis, type) == Pnu.Pos(index[type+1], axis, type+1));
-                    }
-                    BOOST_CHECK_EQUAL(same_pos, false);
-                }
-                //Check the center of mass is unchanged.
-                double cofm = (Pnu.Pos(index[0], 0, 0)*Masses[0]+Pnu.Pos(index[1], 0, 1)*Masses[1]+Pnu.Pos(index[2], 0, 2)*Masses[2])/(Masses[0]+Masses[1]+Masses[2]);
-                BOOST_CHECK_CLOSE(cofm, static_cast<double>(i)*Box/NumPart[1], 1e-6);
-                cofm = (Pnu.Pos(index[0], 1, 0)*Masses[0]+Pnu.Pos(index[1], 1, 1)*Masses[1]+Pnu.Pos(index[2], 1, 2)*Masses[2])/(Masses[0]+Masses[1]+Masses[2]);
-                BOOST_CHECK_CLOSE(cofm, static_cast<double>(j)*Box/NumPart[1], 1e-6);
-            }
 }
 
 //Neutrino mass spectrum allowed by oscillation experiments.
