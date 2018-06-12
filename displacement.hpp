@@ -35,8 +35,8 @@ class DisplacementFields
         fftwf_plan Inverse_plan_grad[3];
         float *twosrc;
         fftwf_complex *ctwosrc;
-        fftwf_complex *(cdigrad[3]);
-        float *(digrad[3]);
+        fftwf_complex *cdigrad[3];
+        float *digrad[3];
 };
 
 #endif
