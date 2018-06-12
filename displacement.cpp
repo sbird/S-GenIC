@@ -369,7 +369,7 @@ double DisplacementFields::displacement_read_out(const int order, lpt_data& outd
    const int64_t NumPart = outdata.GetNumPart();
    //This needs openmp 3.1, (gcc 4.7)
    #pragma omp parallel for reduction(max: maxdisp)
-   for(int n = 0; n < NumPart; n++)
+   for(int64_t n = 0; n < NumPart; n++)
    {
                double dis;
                double f1, f2, f3, f4, f5, f6, f7, f8;
