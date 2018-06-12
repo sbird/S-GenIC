@@ -73,7 +73,7 @@ DisplacementFields::~DisplacementFields()
 
 
 /**Little macro to work the storage order of the FFT.*/
-inline int KVAL(const size_t n, const size_t Nmesh)
+inline int64_t KVAL(const size_t n, const size_t Nmesh)
 {
     return (n < Nmesh / 2 ? n : n - Nmesh);
 }
