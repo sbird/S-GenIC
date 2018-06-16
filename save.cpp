@@ -96,11 +96,11 @@ template <typename T> class BufferedWrite
             }
             return retval;
         }
-        int writeparticles(int type)
+        int64_t writeparticles(int type)
         {
             int64_t written=0, pc = 0;
             for(int64_t i = 0; i < NumPart; i++){
-                for(int k = 0; k < ItemsPart; k++){
+                for(int64_t k = 0; k < ItemsPart; k++){
                     assert(ItemsPart*pc + k < blockmaxlen*ItemsPart);
                     block[ItemsPart * pc + k] = setter(i,k,type);
                 }
@@ -129,7 +129,7 @@ template <typename T> class BufferedWrite
         T * block;
         GWriteBaseSnap& snap;
         const int64_t NumPart;
-        const int ItemsPart;
+        const int64_t ItemsPart;
         const std::string groupstring;
         const int64_t blockmaxlen;
 };
