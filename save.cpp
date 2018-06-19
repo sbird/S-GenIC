@@ -150,7 +150,11 @@ class PosBufferedWrite : public BufferedWrite<float>
         PosBufferedWrite(GWriteBaseSnap& snap, int64_t NumPart, lpt_data * outdata, part_grid & Pgrid) :
             BufferedWrite(snap, NumPart, 3, name(snap.GetFormat())),
             Pgrid(Pgrid), outdata(outdata)
-            {}
+            {
+            for(int i=0; i< 120; i++)
+                histogram[i] = 0;
+            }
+        size_t histogram[120];
     private:
         std::string name(int format)
         {
@@ -170,6 +174,8 @@ class PosBufferedWrite : public BufferedWrite<float>
           if(outdata)
             value += outdata->GetDisp(i,k);
           value = periodic_wrap(value, Pgrid.GetBox());
+          if(k == 0)
+            histogram[static_cast<int>(119.99*value/Pgrid.GetBox())]++;
           return value;
         }
         part_grid & Pgrid;
@@ -269,6 +275,8 @@ int64_t write_particle_data(GWriteBaseSnap& snap, int type, lpt_data * outdata, 
   {
     PosBufferedWrite pp(snap, NumPart, outdata, Pgrid);
     pp.writeparticles(type);
+    for(int i=0; i< 120; i++)
+    printf("%d %ld\n", i, pp.histogram[i]);
   }
   {
     VelBufferedWrite pp(snap, NumPart, therm_vels, outdata);
